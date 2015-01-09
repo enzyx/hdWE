@@ -15,9 +15,11 @@ main: argparser     (manuel)    done
 # Conventions    #
 ##################
 
-Filenames:
-trajectory information in subfolder '/propagation'
-
+trajectory and MD data in subfolder '/propagation'
+filename conventions for AMBER propagation:
+ITXXXX_BINXXXX_SEGXXXX_start.rst7
+...
+RMSD values should be saved in a global variable.
 
 
 
