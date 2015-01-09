@@ -1,12 +1,15 @@
 ##################
 #  Basic classes #
 ##################
-class: Bin
+type                dev         status
+---------------------------------------
+class: Bin          
 class: Trajectory
 module: startMD		(fabian)
 module: rmsdCalc	(fabian)
 module: log
 module: fork
+main: argparser     (manuel)    done
 
 ##################
 # Conventions    #
