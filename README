@@ -5,8 +5,8 @@ type                dev         status
 ---------------------------------------
 class: Bin          
 class: Trajectory
-module: startMD		(fabian)
-module: rmsdCalc	(fabian)
+module: propagate_MD	(fabian)
+module: calc_RMSD	(fabian)
 module: log
 module: fork
 main: argparser     (manuel)    done
@@ -15,7 +15,7 @@ main: argparser     (manuel)    done
 # Conventions    #
 ##################
 
-trajectory and MD data in subfolder '/propagation'
+trajectory and MD data in subfolder 'workdir/propagation/'
 filename conventions for AMBER propagation:
 ITXXXX_BINXXXX_SEGXXXX.rst7
 ...
