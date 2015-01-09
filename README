@@ -1,4 +1,14 @@
 ##################
+#  Basic classes #
+##################
+class: Bin
+class: Trajectory
+module: startMD
+module: rmsdCalc
+module: log
+module: fork
+
+##################
 #    Git Howto   #
 ##################
 
