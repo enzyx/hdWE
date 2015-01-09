@@ -9,6 +9,17 @@ module: log
 module: fork
 
 ##################
+# Conventions    #
+##################
+
+Filenames:
+trajectory information in subfolder '/propagation'
+
+
+
+
+
+##################
 #    Git Howto   #
 ##################
 
