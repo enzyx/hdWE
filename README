@@ -3,8 +3,8 @@
 ##################
 class: Bin
 class: Trajectory
-module: startMD
-module: rmsdCalc
+module: startMD		(fabian)
+module: rmsdCalc	(fabian)
 module: log
 module: fork
 
