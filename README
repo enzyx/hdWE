@@ -1,0 +1,15 @@
+##################
+#    Git Howto   #
+##################
+
+git clone ssh://fabi@rex/home/software/hdWE 
+
+git status
+git add trajectory.py
+
+git commit -a
+git log
+
+git push
+git pull
+
