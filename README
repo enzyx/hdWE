@@ -18,16 +18,25 @@ options:
 -mode	(serial, later: parallel cpu, cuda ...)
 -debug  (if True, save all generated input lines and MD output )
 
+input:
+-which trajectories exist/shall be propagated
+-the previous end configuration, stored in the history of the trajectory,
+ from which to start the propatation.
+
+output:
+-only logging output, the MD output is produced externally.
 
 stuff to discuss: None
 
 #module: calc_coord	(fabian)
 
 description:
+checks whether the MD has run correctly and the output was produced.
 calculates the RMSD (or any coordinate) of all previously propagated trajectories 
 with respect to all existing bin_refcoords.
 This is done using a respective analysis module of the MD software used for
 trajectory propagation. Should again be easily adaptable.
+check wheter the  MD analysis tool ouput was produced.
 Every trajectory will have a 'bin_values' array where the RMSDs are stored.
 
 options:
@@ -35,15 +44,23 @@ options:
 -mode    (serial, later; parallel)
 -debug
 
+input:
+-bin_refcoords
+-trajectory end coords
+
+output:
+-trajectory attribute with RMSD to all bin_refcoords
+
+
 stuff to discuss: 
 what happens, if during the RMSD calculations an 'out of bin trajectory' is found?
-is a new bin instantly created in this module?
+I think a  new bin should be created in this module.
 what happens if within the loop over the bins a new bin is created?
 
 #module: resort
 
 description:
-assumes that all new bins have bin created and all RMSDs calculated.
+assumes that all new bins have been created and all RMSDs calculated.
 resorts all trajectories in the new corresponding bins, whether
 there are to many or less trajectories in one bin or not.
 saves 'where they come from'. as the history is saved, it does not matter 
@@ -66,6 +83,17 @@ options:
 
 stuff to discuss: None
 
+#module: reweight (future)
+
+description:
+reweight the bin probabilities based on the bin-to-bin rates by
+using the equilibrium condition (flux_bin_ij = - flux_bin_ji for all i and j).
+This can drastically speed up convergene at the beginning.
+Probability is shifted over free energy barriers and does not have
+to flow there in 'real time'.
+
+
+
 #module: update_and_log
 
 description:
@@ -78,11 +106,28 @@ options:
 
 stuff to discuss: 
 How is the trajectory class logged?
-I would suggest a file format that contains everything for one iteration
+I would suggest a file that contains everything for one iteration
 and is saved every iteration.
+How does the file format look?
 
 #main: argparser     (manuel)    done
 obvious
+
+
+###################
+# Analysis Tools  #
+###################
+
+
+calculate Free Energy Landscape (for any coordinate), this is bin independent.
+calculate bin to bin rate Matrix (to get first order state to state rates, right now i dont
+remember why this does not generally give the correct rates), this is bin dependent.
+trace trajectories between defined states (with labelling) to get the rates. This is in principle bin independent.
+put together all completed trajectories between to states to get the pathways
+
+
+
+
 
 
 ##################
