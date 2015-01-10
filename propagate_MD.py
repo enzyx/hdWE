@@ -9,13 +9,13 @@ def propagate_AMBER(directory,IT,BIN,SEG,dir_infile,dir_topology,remove_nonoblig
                                 '_BIN' + str(BIN).zfill(4) + \
                                 '_SEG' + str(SEG).zfill(4)
                                 
-    dir_start_coords        =   directory + '/' + string_trajectory_index+'_start.rst7'
+    dir_start_coords        =   directory + '/' + string_trajectory_index+'.rst7'
     dir_end_coords          =   directory + '/' + string_trajectory_index+'_end.rst7'
     dir_trajectory_coords   =   directory + '/' + string_trajectory_index+'.nc'
     dir_outfile             =   directory + '/' + string_trajectory_index+'.out'
     
-    exec_amber_string       =   'pmemd -O \
-                                -p ' + dir_topology + \
+    exec_amber_string       =   'pmemd -O' + \
+                                ' -p ' + dir_topology + \
                                 ' -i ' + dir_infile + \
                                 ' -c ' + dir_start_coords + \
                                 ' -o ' + dir_outfile + \

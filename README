@@ -1,25 +1,113 @@
 ##################
 #  Basic classes #
 ##################
-type                dev         status
----------------------------------------
+type                	dev         	status
+-------------------------------------------------
 class: Bin          
 class: Trajectory
-module: propagate_MD	(fabian)
-module: calc_RMSD	(fabian)
-module: log
-module: fork
-main: argparser     (manuel)    done
+
+#module: propagate_MD	(fabian)
+
+description:
+propagates the configurations in the updated bin/trajectory class
+using a MD program.
+The MD program specific code should be modular and easily adaptable.
+
+options: 
+-MD_software
+-mode	(serial, later: parallel cpu, cuda ...)
+-debug  (if True, save all generated input lines and MD output )
+
+
+stuff to discuss: None
+
+#module: calc_coord	(fabian)
+
+description:
+calculates the RMSD (or any coordinate) of all previously propagated trajectories 
+with respect to all existing bin_refcoords.
+This is done using a respective analysis module of the MD software used for
+trajectory propagation. Should again be easily adaptable.
+Every trajectory will have a 'bin_values' array where the RMSDs are stored.
+
+options:
+-MD_software
+-mode    (serial, later; parallel)
+-debug
+
+stuff to discuss: 
+what happens, if during the RMSD calculations an 'out of bin trajectory' is found?
+is a new bin instantly created in this module?
+what happens if within the loop over the bins a new bin is created?
+
+#module: resort
+
+description:
+assumes that all new bins have bin created and all RMSDs calculated.
+resorts all trajectories in the new corresponding bins, whether
+there are to many or less trajectories in one bin or not.
+saves 'where they come from'. as the history is saved, it does not matter 
+in which order they are resorted into the bins.
+
+options:
+-debug
+
+stuff to discuss: None
+
+#module: split_and_merge
+
+description:
+applies the split and merge rules to the trajectories for all bins.
+trajectories should have a property in the history that tells if 
+they splitted or merged.
+
+options:
+-debug
+
+stuff to discuss: None
+
+#module: update_and_log
+
+description:
+shifts the information to become history, logs everything.
+the log should enable the restart of the script for the next iteration from here.
+With the log file(s) all the post-analysis should be possible.
+
+options:
+-debug
+
+stuff to discuss: 
+How is the trajectory class logged?
+I would suggest a file format that contains everything for one iteration
+and is saved every iteration.
+
+#main: argparser     (manuel)    done
+obvious
+
 
 ##################
 # Conventions    #
 ##################
 
-trajectory and MD data in subfolder 'workdir/propagation/'
+#trajectory and MD data in subfolder '/workdir/propagation/'
 filename conventions for AMBER propagation:
-ITXXXX_BINXXXX_SEGXXXX.rst7
+XXXXX_XXXXX_XXXXX.rst7 (ITERATION_BIN_SEGMENT)
 ...
-RMSD values should be saved in a global variable.
+
+The saved coordinates correspond to the end configuration of the propagation in one iteration.
+The starting coordinates of this propagation are saved as the end configuration of a previous propagation.
+They are conneced via a 'history' attribute of the actual trajectory.
+
+
+
+#bin reference coordinates in '/workdir/bin_refcoords/'
+XXXXX.rst7
+
+#log databank per iteration in '/workdir/history/'
+XXXXX.log ?
+
+#any debugging output in '/workdir/debug/'
+
 
 
 
