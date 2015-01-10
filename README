@@ -6,7 +6,7 @@ type                	dev         	status
 class: Bin          
 class: Trajectory
 
-#module: propagate_MD	(fabian)
+#module/class: propagate	(fabian)
 
 description:
 propagates the configurations in the updated bin/trajectory class
@@ -28,7 +28,7 @@ output:
 
 stuff to discuss: None
 
-#module: calc_coord	(fabian)
+#module: assign_bins	(fabian)
 
 description:
 checks whether the MD has run correctly and the output was produced.
@@ -38,6 +38,10 @@ This is done using a respective analysis module of the MD software used for
 trajectory propagation. Should again be easily adaptable.
 check wheter the  MD analysis tool ouput was produced.
 Every trajectory will have a 'bin_values' array where the RMSDs are stored.
+resorts all trajectories in the new corresponding bins, whether
+there are to many or less trajectories in one bin or not.
+saves 'where they come from'. as the history is saved, it does not matter 
+in which order they are resorted into the bins.
 
 options:
 -MD_software
@@ -49,27 +53,12 @@ input:
 -trajectory end coords
 
 output:
+-trajectories assigned to bins
 -trajectory attribute with RMSD to all bin_refcoords
 
 
 stuff to discuss: 
-what happens, if during the RMSD calculations an 'out of bin trajectory' is found?
-I think a  new bin should be created in this module.
 what happens if within the loop over the bins a new bin is created?
-
-#module: resort
-
-description:
-assumes that all new bins have been created and all RMSDs calculated.
-resorts all trajectories in the new corresponding bins, whether
-there are to many or less trajectories in one bin or not.
-saves 'where they come from'. as the history is saved, it does not matter 
-in which order they are resorted into the bins.
-
-options:
--debug
-
-stuff to discuss: None
 
 #module: split_and_merge
 
