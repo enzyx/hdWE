@@ -119,11 +119,12 @@ obvious
 ###################
 
 
-calculate Free Energy Landscape (for any coordinate), this is bin independent.
-calculate bin to bin rate Matrix (to get first order state to state rates, right now i dont
-remember why this does not generally give the correct rates), this is bin dependent.
-trace trajectories between defined states (with labelling) to get the rates. This is in principle bin independent.
-put together all completed trajectories between to states to get the pathways
+-calculate Free Energy Landscape (for any coordinate), this is bin independent.
+-calculate bin to bin rate Matrix (to get first order state to state rates, right now i dont
+-remember why this does not generally give the correct rates), this is bin dependent.
+-trace trajectories between defined states (with labelling) to get the rates. This is in principle bin independent.
+-put together all completed trajectories between to states to get the pathways and nice 
+state to state trajectories for visualisation.
 
 
 

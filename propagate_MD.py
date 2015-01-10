@@ -1,33 +1,51 @@
-import os
+class propagate:
+    """trajectory propagation via MD."""
+    
+    
+    def __init__(self,work_dir,MD_software='amber',MD_mode='pmemd',MD_n_parallel=1,MD_debug=False):
+        """sets general propagation variables"""  
+        
+        self.work_dir       =   work_dir         # working directory
+        self.MD_mode        =   MD_mode          # specifies whether to run the MD with cpu or cuda or ...
+        self.MD_n_parallel  =   MD_n_parallel       # speficies how many MD simulations to run in parallel 
+        self.MD_software    =   MD_software      # specifies which MD software is used.
+        self.MD_debug       =   MD_debug            # debug flag
 
-def propagate_AMBER(directory,IT,BIN,SEG,dir_infile,dir_topology,remove_nonobligatory_md_output):
-    """Propagates the trajectory corresponding to given iteration, bin and segment
-    with the pmemd module of AMBER."""
+    def run_MD(self,trajectory):
+        """runs the MD simulations."""
 
-       
-    string_trajectory_index =   'IT' + str(IT).zfill(4) + \
-                                '_BIN' + str(BIN).zfill(4) + \
-                                '_SEG' + str(SEG).zfill(4)
-                                
-    dir_start_coords        =   directory + '/' + string_trajectory_index+'.rst7'
-    dir_end_coords          =   directory + '/' + string_trajectory_index+'_end.rst7'
-    dir_trajectory_coords   =   directory + '/' + string_trajectory_index+'.nc'
-    dir_outfile             =   directory + '/' + string_trajectory_index+'.out'
+        #Load the MD module         
+        if self.MD_software=='amber':
+            import amber_module as MD_module
+        else:
+            print 'Error: MD software ' + self.MD_software + ' not known.' 
+
+                    
+        if self.n_parallel==1:
+            for trajectory_loop in trajectory:
+                MD_module.runMD(self.work_dir,self.MD_mode,self.debug,trajectory_loop_index,trajectory_loop_parent_index)
+                #here: print status of propagation to log file
+
+        elif  self.n_parallel>1:     
+            print 'Not yet implemented'                
+
+        else: 
+            print 'Error with n_parallel'                
+
+
+
+
+
+
+
+
+
+
+
+
+
     
-    exec_amber_string       =   'pmemd -O' + \
-                                ' -p ' + dir_topology + \
-                                ' -i ' + dir_infile + \
-                                ' -c ' + dir_start_coords + \
-                                ' -o ' + dir_outfile + \
-                                ' -x ' + dir_trajectory_coords + \
-                                ' -r ' + dir_end_coords
-    
-    os.system('echo ' + exec_amber_string + ' >> ' + directory + '/MD_AMBER_command_line.log')
-    os.system(exec_amber_string)
-    
-    if remove_nonobligatory_md_output==True:
-        os.remove(dir_trajectory_coords)
-        os.remove(dir_outfile)    
+
     
                             
     
