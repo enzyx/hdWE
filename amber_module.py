@@ -1,7 +1,7 @@
 import os
 
 def run_MD(work_dir,MD_mode,debug,trajectory_index,trajectory_parent_index):
-    """Propagates the trajectory corresponding to given index with the pmemd module of AMBER."""
+    """Propagates the trajectory corresponding to given index with AMBER."""
 
     sub_dir = 'propagation/'
     
