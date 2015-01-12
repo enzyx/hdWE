@@ -1,12 +1,12 @@
 ##################
 #  Basic classes #
 ##################
-type                	dev         	status
+type                    dev             status
 -------------------------------------------------
 class: Bin          
 class: Trajectory
 
-#module/class: propagate	(fabian)
+#module/class: propagate    (fabian)
 
 description:
 propagates the configurations in the updated bin/trajectory class
@@ -28,7 +28,7 @@ output:
 
 stuff to discuss: None
 
-#module: assign_bins	(fabian)
+#module: assign_bins    (fabian)
 
 description:
 checks whether the MD has run correctly and the output was produced.
@@ -115,17 +115,13 @@ obvious
 -put together all completed trajectories between to states to get the pathways and nice 
 state to state trajectories for visualisation.
 
-
-
-
-
-
 ##################
 # Conventions    #
 ##################
 
-#trajectory and MD data in subfolder '/workdir/propagation/'
+#trajectory and MD data in subfolder '/workdir/run/'
 filename conventions for AMBER propagation:
+00000_00000_00000.rst7 (Initial configuration, bin = 0, iteration = 0)
 XXXXX_XXXXX_XXXXX.rst7 (ITERATION_BIN_SEGMENT)
 ...
 
@@ -134,18 +130,10 @@ The starting coordinates of this propagation are saved as the end configuration 
 They are conneced via a 'history' attribute of the actual trajectory.
 
 
-
-#bin reference coordinates in '/workdir/bin_refcoords/'
-XXXXX.rst7
-
-#log databank per iteration in '/workdir/history/'
+# log databank per iteration in '/workdir/log/'
 XXXXX.log ?
 
-#any debugging output in '/workdir/debug/'
-
-
-
-
+# any debugging output in '/workdir/debug/'
 
 ##################
 #    Git Howto   #
