@@ -29,18 +29,23 @@ class Iteration(object):
     def getNumberOfSegments(self):
         pass
     
-    def newBin()
+    def generateBin(self, reference_iteration_id, 
+                    reference_bin_id, reference_segment_id)
         """
         Initialize a new instance of class Bin and append to bins
+        @return  bin_id returns the id of the created bin
         """
-        #tmp_bin = Bin(a,b,c,d)
-        #self.addBin(tmp_bin)
+        tmp_bin = Bin(self.getId(), len(self.bins), reference_iteration_id, 
+                      reference_bin_id, reference_segment_id)
+        self._addBin(tmp_bin)
+        return len(self.bins)
 
-    def addBin(self, _bin):
+    def _addBin(self, _bin):
         """
         Add the specified segments to this bin        
         @param
         """
         self.bins.append(_bin)
-
-
+    
+    def getId(self):
+        return self.iteration_id

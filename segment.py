@@ -28,3 +28,12 @@ class Segment()
         
     def getProbability(self):
         return self.probability
+
+    def getId(self):
+        return self.segment_id
+    
+    def getBinId(self):
+        return self.bin_id
+
+    def getIterationId(self):
+        return self.iteration_id

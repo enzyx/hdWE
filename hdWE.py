@@ -21,10 +21,10 @@ parser.add_argument('-c', '--conf', type=str, dest="input_md_conf",
 parser.add_argument('--trajectories-per-bin', type=int, dest="input_traj_per_bin", 
                     metavar="10", const=10, nargs='?',
                     help="Number of trajectories per bin")
-parser.add_argument('--iterations', type=int, dest="input_iterations", 
+parser.add_argument('--iterations', type=int, dest="max_iterations", 
                     metavar="50", const=50, nargs='?',
-                    help="Number of iterations")
-parser.add_argument('--threshold', type=float, dest="input_rmsd_threshold", 
+                    help="Maximum number of iterations")
+parser.add_argument('--threshold', type=float, dest="coordinate_threshold", 
                     metavar="0.1", const=0.1, nargs='?',
                     help="Defines the minimal RMSD of a trajectory to all other bins "
                          "after which a new bin is created")
@@ -39,3 +39,64 @@ print(args.workdir)
 print(args.input_md_topol)
 print(args.input_md_param)
 print(args.input_md_conf)
+
+#############################
+iterations = []
+
+initiate.prepare(work_dir, starting_sturcture, override,debug):
+iterations.append(initiate.create_initial_iteration())
+
+if("amber"):
+    if self.MD_software=='amber':
+        import amber_module as MD_module
+
+md_module = MD_module(infile)
+
+#~ logger.read(logfile)
+
+# Loop
+for iteration_counter in range(1, max_iterations):
+    iteration = Iteration(iteration_counter)
+    parent_iteration = iterations[iteration_counter - 1]
+    # Generate all previous bins for new iteration
+    for parent_bin in parent_iteration.bins:
+        iteration.generateBin(reference_iteration_id=parent_bin.getReferenceIterationId(),
+                              reference_bin_id=parent_bin.getReferenceBinId(),
+                              reference_segment_id=parent_bin.getReferenceSegmentId())
+    
+    coordinates = []
+    # Sort segments in bins. Generate new bin if required
+    for parent_bin in parent_iteration.bins:
+        for segment in parent_bin.segments:
+            coordinates = md_module.calculate_coordinate(segment, iteration.bins)
+            min_coordinate = min(coordinates)
+            # Sort Segment into appropriate bin
+            if (min_coordinate <= args.coordinate_threshold):
+                bin_id = coordinates.index(min_coordinate)
+                iteration.bins[bin_id].generateSegment(probability=segment.getProbability(),
+                                                  parent_bin_id=segment.getBinId(),
+                                                  parent_segment_id=segment.getId())
+            # If necessary create new bin
+            else:
+                bin_id = iteration.generateBin(reference_iteration_id=segment.getIterationId()
+                                      reference_bin_id=segment.getBinId()
+                                      reference_segment_id=segment.getId())
+                iteration.bins[bin_id].generateSegment(probability=segment.getProbability(),
+                                                  parent_bin_id=segment.getBinId(),
+                                                  parent_segment_id=segment.getId())
+                                                  
+    # Split and merge
+    for this_bin in iteration.bins:
+        this_bin.resampleSegments()
+                
+    # log iteration
+    logger.log(iteration)
+    
+    
+    
+    # Run MD
+    md_module.runMDs(iteration)
+    
+
+                                    
+    iterations.append(iteration)  

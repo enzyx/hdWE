@@ -2,7 +2,7 @@ class propagate:
     """trajectory propagation via MD."""
     
     
-    def __init__(self,work_dir,MD_software='amber',MD_mode='pmemd',MD_n_parallel=1,MD_debug=False):
+    def __init__(self, work_dir, MD_software='amber',MD_mode='pmemd',MD_n_parallel=1,MD_debug=False):
         """sets general propagation variables"""  
         
         self.work_dir       =   work_dir         # working directory
@@ -22,11 +22,11 @@ class propagate:
 
                     
         if self.n_parallel==1:
-	    for Bin_index in range(0,len(Bin)):
-            	for Tra_index in range(0,len(Bin[Bin_index].Trajectory)):
-                	MD_module.runMD(self.work_dir,self.MD_mode,self.debug, \ 
-					iteration,Bin_index,Tra_index,Bin[Bin_index].Trajectory[Tra_index].parent_bin,Bin[Bin_index].Trajectory[Tra_index].parent_trajectory)
-                	#here: print status of propagation to log file
+        for Bin_index in range(0,len(Bin)):
+                for Tra_index in range(0,len(Bin[Bin_index].Trajectory)):
+                    MD_module.runMD(self.work_dir,self.MD_mode,self.debug, \ 
+                    iteration,Bin_index,Tra_index,Bin[Bin_index].Trajectory[Tra_index].parent_bin,Bin[Bin_index].Trajectory[Tra_index].parent_trajectory)
+                    #here: print status of propagation to log file
 
         elif  self.n_parallel>1:     
             print 'Not yet implemented'                

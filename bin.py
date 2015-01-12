@@ -25,6 +25,19 @@ class Bin(object):
         self.reference_iteration_id = reference_iteration_id
         self.reference_bin_id       = reference_bin_id
         self.reference_segment_id   = reference_segment_id
+    
+    def generateSegment(self, probability, parent_bin_id, parent_segment_id):
+        """
+        @return segment_id of the created segment
+        """
+        tmp_segment = Segment(probability=probability,
+                              parent_bin_id=parent_bin_id, 
+                              parent_segment_id=parent_segment_id,
+                              iteration_id=self.getIterationId(),
+                              bin_id=self.getId(),
+                              segment_id=len(self.segments))
+        self._addSegment(tmp_segment)
+        return len(self.segments)
         
     def getProbability(self):
         """
@@ -44,7 +57,7 @@ class Bin(object):
         """
         pass
     
-    def deleteSegments(self, segment_index):
+    def _deleteSegments(self, segment_index):
         """
         If the number of trajectories is smaller then N
         then we want to duplicated some trajectories 
@@ -52,7 +65,7 @@ class Bin(object):
         """
         pass
     
-    def addSegment(self, segment):
+    def _addSegment(self, segment):
         """
         Add the specified segments to this bin        
         @param
@@ -61,3 +74,18 @@ class Bin(object):
 
     def getStringName(self):
         pass
+
+    def getId(self):
+        return self.bin_id
+
+    def getIterationId(self):
+        return self.iteration_id
+        
+    def getReferenceIterationId(self):
+        return self.reference_iteration_id
+    
+    def getReferenceBinId(self):
+        return self.reference_bin_id
+    
+    def getReferenceSegmentId(self):
+        return self.reference_segment_id
