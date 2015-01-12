@@ -34,7 +34,7 @@ def run_MD(work_dir,MD_mode,debug,trajectory_index,trajectory_parent_index):
                                 ' -x ' + dir_trajectory_coords + \
                                 ' -r ' + dir_end_coords
     
-    os.system('echo ' + exec_amber_string + ' >> ' + work_dir + 'debug/MD_AMBER_command_line.log')
+    os.system('echo ' + exec_amber_string + ' >> ' + work_dir + 'debug/MD_AMBER_command_lines.log')
     os.system(exec_amber_string)
     
     if debug==False:
