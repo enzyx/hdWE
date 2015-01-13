@@ -15,14 +15,16 @@ class Iteration(object):
         self.iteration_id = iteration_id
 
     def generateBin(self, reference_iteration_id, 
-                    reference_bin_id, reference_segment_id, target_number_of_segments)
+                    reference_bin_id, reference_segment_id,
+                    target_number_of_segments)
         """
         Initialize a new instance of class Bin and append to bins
         @return  bin_id returns the id of the created bin
         """
-        tmp_bin = Bin(self.getId(), len(self.bins), reference_iteration_id, 
-                      reference_bin_id, reference_segment_id, target_number_of_segments)
-        return self._addBin(tmp_bin)
+        __bin = Bin(self.getId(), len(self.bins), reference_iteration_id, 
+                      reference_bin_id, reference_segment_id,
+                      target_number_of_segments)
+        return self._addBin(__bin)
 
     def __addBin(self, _bin):
         """
@@ -50,5 +52,28 @@ class Iteration(object):
         """
         return len(segments)
     
-    def getNumberOfSegments(self):
-        pass
+    def getCurrentNumberOfSegments(self):
+        """
+        Returns the current number of segments
+        """
+        __number_of_segments = 0
+        for __bin in bins:
+            __number_of_segments += __bin.getCurrentNumberOfSegments()
+        return __number_of_segments
+        
+    def __iter__(self):
+        """
+        Defines the class as iterable.
+        """
+        self._iter_index = -1
+        return self
+
+    def next(self):
+        """
+        Returns the next element of the array self.bins
+        """
+        self._iter_index += 1
+        if self._iter_index >= len(self.bins):
+            raise StopIteration
+        else:
+            return self.bins[self._iter_index]

@@ -1,7 +1,5 @@
 #!/usr/bin/python3
 
-DEFAULT_TARGET_ID=10
-
 class Bin(object):
     """
     The bin class contains an array of segments (trajectories) and has a
@@ -21,7 +19,7 @@ class Bin(object):
     
     def __init__(self, iteration_id, bin_id, reference_iteration_id, 
                  reference_bin_id, reference_segment_id, 
-                 target_number_of_segments=DEFAULT_TARGET_ID):
+                 target_number_of_segments):
         """ 
         @param ref_coords the path to reference coordinates defining the bin
         @param trajectories single or list of trajectories to 
@@ -38,13 +36,13 @@ class Bin(object):
         """
         @return segment_id of the created segment
         """
-        tmp_segment = Segment(probability=probability,
+        __segment = Segment(probability=probability,
                               parent_bin_id=parent_bin_id,
                               parent_segment_id=parent_segment_id,
                               iteration_id=self.getIterationId(),
                               bin_id=self.getId(),
                               segment_id=len(self.segments))
-        return self.__addSegment(tmp_segment)
+        return self.__addSegment(__segment)
         
     def resampleSegments(self):
         """
@@ -128,3 +126,19 @@ class Bin(object):
         """
         return self.target_number_of_segments
     
+    def __iter__(self):
+        """
+        Defines the class as iterable.
+        """
+        self._iter_index = -1
+        return self
+
+    def next(self):
+        """
+        Returns the next element of the array self.segments
+        """
+        self._iter_index += 1
+        if self._iter_index >= len(self.segments):
+            raise StopIteration
+        else:
+            return self.segments[self._iter_index]
