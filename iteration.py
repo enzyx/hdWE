@@ -14,12 +14,36 @@ class Iteration(object):
         """
         self.iteration_id = iteration_id
 
+    def generateBin(self, reference_iteration_id, 
+                    reference_bin_id, reference_segment_id, target_number_of_segments)
+        """
+        Initialize a new instance of class Bin and append to bins
+        @return  bin_id returns the id of the created bin
+        """
+        tmp_bin = Bin(self.getId(), len(self.bins), reference_iteration_id, 
+                      reference_bin_id, reference_segment_id, target_number_of_segments)
+        return self._addBin(tmp_bin)
+
+    def __addBin(self, _bin):
+        """
+        Add the specified segments to this bin        
+        @param
+        """
+        self.bins.append(_bin)
+        return len(self.bins)
+    
+    def getId(self):
+        return self.iteration_id
+
     def getProbability(self):
         """
-        Returns the cumulative probability of all bin trajectories
+        @returns The cumulative probability of all bins
         """
-        pass
-    
+        probability = 0.0
+        for _bin in self.bins:
+            probability += _bin.getProbability()
+        return probability
+
     def getNumberOfBins(self):
         """
         Number of bins
@@ -28,24 +52,3 @@ class Iteration(object):
     
     def getNumberOfSegments(self):
         pass
-    
-    def generateBin(self, reference_iteration_id, 
-                    reference_bin_id, reference_segment_id)
-        """
-        Initialize a new instance of class Bin and append to bins
-        @return  bin_id returns the id of the created bin
-        """
-        tmp_bin = Bin(self.getId(), len(self.bins), reference_iteration_id, 
-                      reference_bin_id, reference_segment_id)
-        self._addBin(tmp_bin)
-        return len(self.bins)
-
-    def _addBin(self, _bin):
-        """
-        Add the specified segments to this bin        
-        @param
-        """
-        self.bins.append(_bin)
-    
-    def getId(self):
-        return self.iteration_id

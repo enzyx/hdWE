@@ -1,12 +1,18 @@
 #!/usr/bin/python3
 
+DEFAULT_TARGET_ID=10
+
 class Bin(object):
+    """
+    The bin class contains an array of segments (trajectories) and has a
+    overall probability which is the sum of all segments probabilities
+    """
     # points to the reference structure of this bin
-    iteration_id            = int(0)
-    bin_id                  = int(0)
-    reference_iteration_id  = int(0)
-    reference_bin_id        = int(0)
-    reference_segment_id    = int(0)
+    iteration_id              = int(0)
+    bin_id                    = int(0)
+    reference_iteration_id    = int(0)
+    reference_bin_id          = int(0)
+    reference_segment_id      = int(0)
     
     # the array of trajectories
     segments                  = []
@@ -14,78 +20,111 @@ class Bin(object):
     target_number_of_segments = int(0)
     
     def __init__(self, iteration_id, bin_id, reference_iteration_id, 
-                 reference_bin_id, reference_segment_id):
+                 reference_bin_id, reference_segment_id, 
+                 target_number_of_segments=DEFAULT_TARGET_ID):
         """ 
         @param ref_coords the path to reference coordinates defining the bin
         @param trajectories single or list of trajectories to 
                init the bin
         """
-        self.iteration_id           = iteration_id
-        self.bin_id                 = bin_id
-        self.reference_iteration_id = reference_iteration_id
-        self.reference_bin_id       = reference_bin_id
-        self.reference_segment_id   = reference_segment_id
+        self.iteration_id              = iteration_id
+        self.bin_id                    = bin_id
+        self.reference_iteration_id    = reference_iteration_id
+        self.reference_bin_id          = reference_bin_id
+        self.reference_segment_id      = reference_segment_id
+        self.target_number_of_segments = target_number_of_segments
     
     def generateSegment(self, probability, parent_bin_id, parent_segment_id):
         """
         @return segment_id of the created segment
         """
         tmp_segment = Segment(probability=probability,
-                              parent_bin_id=parent_bin_id, 
+                              parent_bin_id=parent_bin_id,
                               parent_segment_id=parent_segment_id,
                               iteration_id=self.getIterationId(),
                               bin_id=self.getId(),
                               segment_id=len(self.segments))
-        self._addSegment(tmp_segment)
-        return len(self.segments)
+        return self.__addSegment(tmp_segment)
         
-    def getProbability(self):
-        """
-        Returns the cumulative probability of all bin trajectories
-        """
-        pass
-    
-    def getNumberOfCurrentSegments(self):
-        """
-        Number of trajectories
-        """
-        return len(segments)
-    
     def resampleSegments(self):
         """
         Split or Merge segments to generate the target number of segments
         """
         pass
     
-    def _deleteSegments(self, segment_index):
+    def __deleteSegments(self, segment_index):
         """
+        @private should not be accessed from outside
         If the number of trajectories is smaller then N
         then we want to duplicated some trajectories 
         to fill the bin again
         """
         pass
     
-    def _addSegment(self, segment):
+    def __addSegment(self, segment):
         """
+        @private should not be accessed from outside
         Add the specified segments to this bin        
-        @param
+        @param segment to add to segments
+        @return the segment id of the added segment
         """
-        self.segments.append(segments)
+        self.segments.append(segment)
+        return len(self.segments)
 
     def getStringName(self):
         pass
 
     def getId(self):
+        """
+        @return The id of this bin
+        """
         return self.bin_id
 
     def getIterationId(self):
+        """
+        @return The iteration id this bin belongs to
+        """
         return self.iteration_id
         
     def getReferenceIterationId(self):
+        """
+        @return The reference iteration id which points to the reference
+                coordinates of this bin
+        """
         return self.reference_iteration_id
     
     def getReferenceBinId(self):
+        """
+        @return The reference bin id which points to the reference
+                coordinates of this bin
+        """
         return self.reference_bin_id
     
     def getReferenceSegmentId(self):
+        """
+        @return The reference segment id which points to the reference
+                coordinates of this bin
+        """
         return self.reference_segment_id
+
+    def getProbability(self):
+        """
+        Returns the cumulative probability of all bin trajectories
+        """
+        probability = 0.0
+        for segment in self.segments:
+            probability += segment.getProbability()
+        return probability
+    
+    def getCurrentNumberOfSegments(self):
+        """
+        @return Current number of segments
+        """
+        return len(self.segments)
+    
+    def getTargetNumberOfSegments(self):
+        """
+        @return Target number of segments
+        """
+        return self.target_number_of_segments
+    
