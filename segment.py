@@ -15,11 +15,14 @@ class Segment(object):
     def getNameString(self):
         """Returns the indices in a string following the scheme iteration_bin_segment
         """
-        name_string= str(self.iteration_id).zfill(5) + '_' +str(self.bin_id).zfill(5) + '_' + str(self.segment_id).zfill(5) 
-        return name_string
+        string= str(self.iteration_id).zfill(5) + '_' +str(self.bin_id).zfill(5) + '_' + str(self.segment_id).zfill(5) 
+        return string
     
     def getParentNameString(self):
-        pass
+        """Returns the indices in a string following the scheme iteration_bin_segment
+        """
+        string= str(self.parent_iteration_id).zfill(5) + '_' +str(self.parent_bin_id).zfill(5) + '_' + str(self.parent_segment_id).zfill(5) 
+        return string
         
     def getProbability(self):
         return self.probability
