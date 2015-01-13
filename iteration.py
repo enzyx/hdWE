@@ -13,9 +13,9 @@ class Iteration(object):
                init the bin
         """
         # points to the reference structure of this bin
-        self.iteration_id = iteration_id
+        self.iteration_id = iteration_id    # int
         # the array of segments
-        self.bins = []
+        self.bins = []                      
 
     def generateBin(self, reference_iteration_id, 
                     reference_bin_id, reference_segment_id,
