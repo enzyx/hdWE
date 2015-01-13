@@ -5,12 +5,12 @@ class Segment(object):
     def __init__(self, probability, parent_bin_id, parent_segment_id,
                  iteration_id, bin_id, segment_id):
         self.probability         = probability
+        self.parent_iteration_id = iteration_id - 1
         self.parent_bin_id       = parent_bin_id
         self.parent_segment_id   = parent_segment_id
         self.bin_id              = bin_id
         self.segment_id          = segment_id
         self.iteration_id        = iteration_id
-        self.parent_iteration_id = iteration_id - 1
 
     def getNameString(self):
         pass
@@ -29,3 +29,12 @@ class Segment(object):
 
     def getIterationId(self):
         return self.iteration_id
+    
+    def getParentIterationId(self):
+        return self.parent_iteration
+    
+    def getParentSegmentId(self):
+        return self.parent_segment_id
+    
+    def getParentBinId(self):
+        return self.parent_bin_id
