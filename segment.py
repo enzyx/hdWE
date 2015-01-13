@@ -13,7 +13,10 @@ class Segment(object):
         self.parent_iteration_id = iteration_id - 1
 
     def getNameString(self):
-        pass
+        """Returns the indices in a string following the scheme iteration_bin_segment
+        """
+        name_string= str(self.iteration_id).zfill(5) + '_' +str(self.bin_id).zfill(5) + '_' + str(self.segment_id).zfill(5) 
+        return name_string
     
     def getParentNameString(self):
         pass

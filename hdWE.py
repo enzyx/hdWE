@@ -52,7 +52,7 @@ if("amber"):
     if self.MD_software=='amber':
         import amber_module as MD_module
 
-md_module = MD_module(work_dir, debug, infile)
+md_module = MD_module(work_dir, debug, MD_configuration_file)
 
 #~ logger.read(logfile)
 

@@ -62,8 +62,17 @@ class Bin(object):
         self.segments.append(segment)
         return len(self.segments)-1
 
-    def getStringName(self):
-        pass
+    def getReferenceNameString(self):
+        """Returns the bin index as a string
+        """
+        name_string= str(self.reference_iteration_id).zfill(5) + '_' +str(self.reference_bin_id).zfill(5) + '_' + str(self.reference_segment_id).zfill(5) 
+        return name_string
+        
+    def getNameString(self):
+        """Returns reference segment index as a string
+        """
+        name_string = str(self.bin_id).zfill(5)
+        return name_string
 
     def getId(self):
         """

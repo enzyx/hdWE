@@ -12,16 +12,23 @@ class MD_module():
     amber_binary                = ''  # sander, pmemd, pmemd.cuda
     parallelization_mode        = ''  # serial_cpu, parallel_cpu, cuda, custom_cow, add a gusto
     
-    def __init__(self, configuration_file_path, work_dir):
+    def __init__(self, configuration_file_path, work_dir, debug):
         """Initializes the MD module and Reads the amber configuration file.
         """
         self.work_dir                 = work_dir
-        self.configuration_file_path   = configuration_file_path
+        self.configuration_file_path  = configuration_file_path
         
         #read in configuration file
         #TODO
+        configuration_file         =open(self.configuration_file_path,'r')
+        self.amber_topology_path   = configuration_file.readline().strip()
+        self.amber_infile_path     = configuration_file.readline().strip()
+        self.amber_coordinate_mask = configuration_file.readline().strip()
+        self.amber_binary          = configuration_file.readline().strip()
+        self.parallelization_mode  = configuration_file.readline().strip()
+        configuration_file.close()
     
-    def RunMDs(self, work_dir,MD_mode,debug,trajectory_index,trajectory_parent_index):
+    def RunMDs(self, iteration):
         """Propagates the trajectory corresponding to given index with AMBER."""
 
         sub_dir = 'propagation/'
@@ -70,32 +77,36 @@ class MD_module():
         segment_name_string=segment.getNameString() 
 
         #Write the cpptraj infile
-        cpptraj_infile=open(self.work_dir + 'cpptraj_' + segment_name_string + '.infile','w')
-        cpptraj_infile.write('trajin ' + segment_name_string + '.rst7')       
+        cpptraj_infile_path=self.work_dir + 'tmp/' + segment_name_string + '.cpptraj_in'
+        cpptraj_infile=open(cpptraj_infile_path,'w')
+        cpptraj_infile.write('trajin ' + self.work_dir + segment_name_string + '.rst7' + '\n')     
+        cpptraj_output_filename = self.work_dir + 'tmp/' + segment_name_string + '.cpptraj_output'
         for bin_loop in range(0,len(bins)):
+            reference_bin_name_string         = self.work_dir + 'run/' + bins[bin_loop].getReferenceNameString() + '.rst7 '
+            cpptraj_reference_id_name_string  = '[reference_id_' + str(bin_loop).zfill(5) + ']'
 
-            cpptraj_infile.write('reference ' + self.work_dir + 'run/' + bins[bin_loop].getNameString() + 
-                                '.rst7 reference_id_' + str(bin_loop).zfill(5) )
-            cpptraj_infile.write('rms  + reference_id_' + bins[bin_loop].getNameString() + ' ' + 
-                                self.coordinate_mask + ' out ' +  self._work_dir + 
-                                'cpptraj_'+segment_name_string + '.output' )
-        
+            cpptraj_infile.write('reference ' + reference_bin_name_string + cpptraj_reference_id_name_string + '\n')
+            cpptraj_infile.write('rms ' + 'bin_' + str(bin_loop).zfill(5) + ' ' + \
+                                 self.amber_coordinate_mask + ' out ' +  cpptraj_output_filename + \
+                                 ' ref ' + cpptraj_reference_id_name_string + '\n')
         cpptraj_infile.close()
+
+
         #Run cpptraj
-        cppraj_execute_string = ' -p ' + self.amber_topology_path + \
-                                ' -i ' + self.amber_topology_path + \
-                                ' -log ' + self.work_dir + '/debug/cpptraj_' + segment_name_string + '.log'
+        cpptraj_execute_string =' -p ' + self.amber_topology_path + \
+                                ' -i ' + cpptraj_infile_path
         os.system('cpptraj ' + cpptraj_execute_string)
       
         #Load cpptraj output as numpy array
         try:
-            coordinates = numpy.loadtxt(self.work_dir + 'cpptraj_' + segment_name_string + '.output') 
+            coordinates = numpy.loadtxt(cpptraj_output_filename) 
         except:
             print('cpptraj output can not be found or loaded.')
             #TODO what should happen then?
         
         #Check if cpptraj output is correct
         if not (len(coordinates)==len(bins)):
+            pass
             #TODO
         
         return coordinates    
