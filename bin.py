@@ -1,47 +1,40 @@
 #!/usr/bin/python3
+from segment import Segment
 
 class Bin(object):
     """
     The bin class contains an array of segments (trajectories) and has a
     overall probability which is the sum of all segments probabilities
     """
-    # points to the reference structure of this bin
-    iteration_id              = int(0)
-    bin_id                    = int(0)
-    reference_iteration_id    = int(0)
-    reference_bin_id          = int(0)
-    reference_segment_id      = int(0)
-    
-    # the array of trajectories
-    segments                  = []
-    # How many segments we want in this bin:
-    target_number_of_segments = int(0)
-    
     def __init__(self, iteration_id, bin_id, reference_iteration_id, 
                  reference_bin_id, reference_segment_id, 
                  target_number_of_segments):
-        """ 
+        """
         @param ref_coords the path to reference coordinates defining the bin
         @param trajectories single or list of trajectories to 
                init the bin
         """
-        self.iteration_id              = iteration_id
-        self.bin_id                    = bin_id
-        self.reference_iteration_id    = reference_iteration_id
-        self.reference_bin_id          = reference_bin_id
-        self.reference_segment_id      = reference_segment_id
-        self.target_number_of_segments = target_number_of_segments
-    
+        # points to the reference structure of this bin
+        self.iteration_id              = iteration_id               # int
+        self.bin_id                    = bin_id                     # int
+        self.reference_iteration_id    = reference_iteration_id     # int
+        self.reference_bin_id          = reference_bin_id           # int
+        self.reference_segment_id      = reference_segment_id       # int
+        # How many segments we want in this bin
+        self.target_number_of_segments = target_number_of_segments  # int
+        # The array of segments
+        self.segments = []
+
     def generateSegment(self, probability, parent_bin_id, parent_segment_id):
         """
         @return segment_id of the created segment
         """
         __segment = Segment(probability=probability,
-                              parent_bin_id=parent_bin_id,
-                              parent_segment_id=parent_segment_id,
-                              iteration_id=self.getIterationId(),
-                              bin_id=self.getId(),
-                              segment_id=len(self.segments))
+                            parent_bin_id=parent_bin_id,
+                            parent_segment_id=parent_segment_id,
+                            iteration_id=self.getIterationId(),
+                            bin_id=self.getId(),
+                            segment_id=len(self.segments))
         return self.__addSegment(__segment)
         
     def resampleSegments(self):
@@ -67,7 +60,7 @@ class Bin(object):
         @return the segment id of the added segment
         """
         self.segments.append(segment)
-        return len(self.segments)
+        return len(self.segments)-1
 
     def getStringName(self):
         pass
@@ -114,7 +107,7 @@ class Bin(object):
             probability += segment.getProbability()
         return probability
     
-    def getCurrentNumberOfSegments(self):
+    def getNumberOfSegments(self):
         """
         @return Current number of segments
         """
@@ -133,7 +126,7 @@ class Bin(object):
         self._iter_index = -1
         return self
 
-    def next(self):
+    def __next__(self):
         """
         Returns the next element of the array self.segments
         """

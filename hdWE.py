@@ -60,7 +60,7 @@ for iteration_counter in range(1, max_iterations):
     iteration = Iteration(iteration_counter)
     parent_iteration = iterations[iteration_counter - 1]
     # Generate all previous bins for new iteration
-    for parent_bin in parent_iteration.bins:
+    for parent_bin in parent_iteration:
         iteration.generateBin(reference_iteration_id=parent_bin.getReferenceIterationId(),
                               reference_bin_id=parent_bin.getReferenceBinId(),
                               reference_segment_id=parent_bin.getReferenceSegmentId(),
@@ -68,8 +68,8 @@ for iteration_counter in range(1, max_iterations):
     
     coordinates = []
     # Sort segments in bins. Generate new bin if required
-    for parent_bin in parent_iteration.bins:
-        for segment in parent_bin.segments:
+    for parent_bin in parent_iteration:
+        for segment in parent_bin:
             coordinates = md_module.calculate_coordinate(segment, iteration.bins)
             min_coordinate = min(coordinates)
             # Sort Segment into appropriate bin
@@ -89,8 +89,8 @@ for iteration_counter in range(1, max_iterations):
                                                   parent_segment_id=segment.getId())
                                                   
     # Split and merge
-    for this_bin in iteration.bins:
-        this_bin.resampleSegments()
+    for _bin in iteration:
+        _bin.resampleSegments()
                 
     # log iteration
     logger.log(iteration)
