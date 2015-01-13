@@ -19,7 +19,7 @@ parser.add_argument('-p', '--parm', type=str, dest="input_md_param",
 parser.add_argument('-c', '--conf', type=str, dest="input_md_conf", 
                     required=True, metavar="FILE",
                     help="The starting structure file")
-parser.add_argument('--trajectories-per-bin', type=int, dest="input_traj_per_bin", 
+parser.add_argument('--segments-per-bin', type=int, dest="segments_per_bin", 
                     metavar="10", const=10, nargs='?',
                     help="Number of trajectories per bin")
 parser.add_argument('--iterations', type=int, dest="max_iterations", 
@@ -42,10 +42,11 @@ print(args.input_md_param)
 print(args.input_md_conf)
 
 #############################
+# The global list of arrays
 iterations = []
 
 initiate.prepare(work_dir, starting_sturcture, override,debug):
-iterations.append(initiate.create_initial_iteration())
+iterations.append(initiate.create_initial_iteration(args.segments_per_bin))
 
 if("amber"):
     if self.MD_software=='amber':
@@ -60,10 +61,11 @@ for iteration_counter in range(1, max_iterations):
     iteration = Iteration(iteration_counter)
     parent_iteration = iterations[iteration_counter - 1]
     # Generate all previous bins for new iteration
-    for parent_bin in parent_iteration.bins:
+    for parent_bin in parent_iteration:
         iteration.generateBin(reference_iteration_id=parent_bin.getReferenceIterationId(),
                               reference_bin_id=parent_bin.getReferenceBinId(),
-                              reference_segment_id=parent_bin.getReferenceSegmentId())
+                              reference_segment_id=parent_bin.getReferenceSegmentId(),
+                              args.segments_per_bin)
     
     coordinates = [] # numpy array?
     # Sort segments in bins. Generate new bin if required
@@ -81,7 +83,8 @@ for iteration_counter in range(1, max_iterations):
             else:
                 bin_id = iteration.generateBin(reference_iteration_id=segment.getIterationId()
                                       reference_bin_id=segment.getBinId()
-                                      reference_segment_id=segment.getId())
+                                      reference_segment_id=segment.getId(),
+                                      args.segments_per_bin)
                 iteration.bins[bin_id].generateSegment(probability=segment.getProbability(),
                                                   parent_bin_id=segment.getBinId(),
                                                   parent_segment_id=segment.getId())
