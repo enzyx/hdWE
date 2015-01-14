@@ -21,6 +21,12 @@ class Segment(object):
     def getProbability(self):
         return self.probability
 
+    def addProbability(self, probability):
+        self.probability += probability
+
+    def subProbability(self, probability):
+        self.probability -= probability
+
     def getId(self):
         return self.segment_id
     
