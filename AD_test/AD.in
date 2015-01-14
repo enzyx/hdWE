@@ -1,0 +1,24 @@
+# AD/AD_equ/AD_equ9
+ &cntrl
+ nstlim=500,
+ gbsa=0,
+ temp0=298,
+ gamma_ln=5,
+ iwrap=0,
+ dt=0.002,
+ ig=-1,
+ cut=9999,
+ ntpr=50,
+ igb=8,
+ ntx=5,
+ ntp=0,
+ ntt=3,
+ ntc=2,
+ ntwx=50,
+ ntf=2,
+ irest=1,
+ nscm=50000,
+ ioutfm=1,
+ /
+ END
+eof

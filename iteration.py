@@ -39,6 +39,12 @@ class Iteration(object):
     
     def getId(self):
         return self.iteration_id
+        
+    def getNameString(self):
+        """Returns iteration index as a string
+        """
+        name_string = str(self.iteration_id).zfill(5)
+        return name_string
 
     def getProbability(self):
         """
