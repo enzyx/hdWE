@@ -1,5 +1,6 @@
 import os
 import numpy
+import multiprocessing as mp
 from datetime import datetime
 
 class MD_module():
@@ -22,18 +23,25 @@ class MD_module():
         self.configuration_file_path  = configuration_file_path
         
         #read in configuration file
-        #TODO config parser gescheit machen
-        configuration_file         =open(self.configuration_file_path,'r')
-        self.amber_topology_path   = configuration_file.readline().strip()
-        self.amber_infile_path     = configuration_file.readline().strip()
-        self.amber_coordinate_mask = configuration_file.readline().strip()
-        self.amber_binary          = configuration_file.readline().strip()
-        self.parallelization_mode  = configuration_file.readline().strip()
+        configuration_file = open(self.configuration_file_path,'r')
+        lines              = configuration_file.readlines()
+        for line in lines:
+            if line.split('=')[0].strip() == 'topology_path':
+                self.amber_topology_path   = line.split('=')[1].strip()
+            if line.split('=')[0].strip() == 'infile_path':
+                self.amber_infile_path   = line.split('=')[1].strip()
+            if line.split('=')[0].strip() == 'coordinate_mask':
+                self.amber_coordinate_mask   = line.split('=')[1].strip()
+            if line.split('=')[0].strip() == 'binary':
+                self.amber_binary   = line.split('=')[1].strip()
+            if line.split('=')[0].strip() == 'parallelization_mode':
+                self.parallelization_mode   = line.split('=')[1].strip()
         configuration_file.close()
     
     def RunMDs(self, iteration):
         """Propagates the trajectories corresponding to an iteration using amber."""
 
+ 
         def AmberCommandLineString(segment):
             """Returns the command line for an amber run corresponding to the 
             given indices and binary.
@@ -52,10 +60,26 @@ class MD_module():
                                         ' -r ' + amber_end_coords_path
                                         
             return amber_command_line
+        
+        def RunSegmentMD(segment, MD_run_count):
+            """Function that runs one single segment MD."""
+            MD_run_count = MD_run_count +1
+            command_line = AmberCommandLineString(segment)
+            #Command line for debugging
+            if self.debug==True:
+                    os.system('echo ' + command_line + \
+                              ' >> ' + self.work_dir + 'debug/amber_command_lines.log')
+            #Log and Run MD
+            logfile.write(MdLogString(segment, status = 0 ))
+            os.system(command_line)
+            logfile.write(MdLogString(segment, status = 1 ))
+            print writeMdStatus(segment, MD_run_count)
 
-        def MdLogString(segment,start):
+
+
+        def MdLogString(segment,status):
             """Returns a string containing system time for MD run logging."""
-            if start==True:
+            if status==0:
                 string = 'MD run ' + segment.getNameString() + ' start: ' + str(datetime.now()) + '\n'    
             else:
                 string = 'MD run ' + segment.getNameString() + ' end:   ' + str(datetime.now()) + '\n'     
@@ -70,23 +94,25 @@ class MD_module():
 
         logfile = open(self.work_dir + 'log/' + iteration.getNameString() + '.MD_log','w')
 
-        #Serial           
+        #Serial Run
         if self.parallelization_mode=='serial':
             MD_run_count = 0
             for bin_loop in iteration.bins:
                 for segment_loop in bin_loop.segments:
                     MD_run_count = MD_run_count +1
-                    command_line = AmberCommandLineString(segment_loop)
-                    #Command line for debugging
-                    if self.debug==True:
-                         os.system('echo ' + command_line + \
-                                   ' >> ' + self.work_dir + 'debug/amber_command_lines.log')
-                    #Log and Run MD
-                    logfile.write(MdLogString(segment_loop,True))
-                    os.system(command_line)
-                    logfile.write(MdLogString(segment_loop,False))
-                    print writeMdStatus(segment_loop, MD_run_count)
-        #Parallel    
+                    RunSegmentMD(segment_loop, MD_run_count)
+                    
+        #Parallel Run   
+        if self.parallelization_mode=='parallel':
+            MD_run_count = 0
+            for bin_loop in iteration.bins:
+                #for segment_loop in bin_loop.segments: 
+                    MD_run_count = MD_run_count +1
+                    mp0=mp.Process(target = RunSegmentMD(bin_loop.segments[0], MD_run_count))
+                    mp1=mp.Process(target = RunSegmentMD(bin_loop.segments[1], MD_run_count))
+                    mp0.start()
+                    mp1.start()
+
     
         logfile.close()
         
@@ -126,10 +152,12 @@ class MD_module():
             #Delete the first entry which refers to the frame index
             coordinates = numpy.delete(coordinates, 0)
         except:
+            #TODO What should happen then?
             print('amber_module error: cpptraj output ' + cpptraj_output_path + ' can not be found or loaded.')
         
         #Check if cpptraj output is correct
         if not (len(coordinates)==len(bins)):
+            #TODO What should happen then?
             print('amber_module error: cpptraj output ' + cpptraj_output_path + ' does not have the correct number of entries.' )
 
         #Remove temporary files
