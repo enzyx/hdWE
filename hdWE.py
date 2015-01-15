@@ -15,12 +15,6 @@ parser = argparse.ArgumentParser(description=
 parser.add_argument('-d', '--dir', type=str, 
                     dest="work_dir", required=True, metavar="DIR",
                     help="The working direcory")
-#~ parser.add_argument('-t', '--top', type=str, dest="input_md_topol", 
-                    #~ required=True, metavar="FILE",
-                    #~ help="System topology file")
-#~ parser.add_argument('-p', '--parm', type=str, dest="input_md_param", 
-                    #~ required=True, metavar="FILE",
-                    #~ help="MD paramter file")
 parser.add_argument('-c', '--conf', type=str, dest="input_md_conf", 
                     required=True, metavar="FILE",
                     help="The starting structure file")
@@ -38,6 +32,9 @@ parser.add_argument('--minimal-probability', type=float, dest="input_minimal_pro
                     metavar="0.01", default=0.01, nargs='?',
                     help="Minimal probability a trajectory must have to"
                     " allow forking a new bin")
+parser.add_argument('--debug', dest="debug", action="store_true",
+                    default=False,
+                    help="Turn debugging on")
 args = parser.parse_args()
 #############################
 
@@ -48,7 +45,7 @@ iterations = []
 # Initialize the logger
 logger = Logger("logfile.log")
 
-initiate.prepare(args.work_dir, starting_sturcture="", override="", debug="")
+initiate.prepare(args.work_dir, starting_sturcture="", override="", debug)
 iterations.append(initiate.create_initial_iteration(args.segments_per_bin))
 
 #~ if("amber"):
@@ -57,7 +54,7 @@ from amber_module import MD_module
 
 md_module = MD_module(args.work_dir, args.input_md_conf, debug=False)
 
-#~ logger.read(logfile)
+logger.read_iterations()
 
 # Loop
 for iteration_counter in range(1, args.max_iterations):
@@ -91,13 +88,11 @@ for iteration_counter in range(1, args.max_iterations):
                 iteration.bins[bin_id].generateSegment(probability=segment.getProbability(),
                                                   parent_bin_id=segment.getBinId(),
                                                   parent_segment_id=segment.getId())
-                                                  
     # Split and merge (Manu)
     for this_bin in iteration:
         this_bin.resampleSegments()
                 
-    # log iteration (Rainer)
-    logger.log_iterations(iterations[-1:])
+
     
     
     
@@ -106,6 +101,9 @@ for iteration_counter in range(1, args.max_iterations):
     
 
                                     
-    iterations.append(iteration)  
+    iterations.append(iteration) 
+    
+    # log iteration (Rainer)
+    logger.log_iterations(iterations[-1:]) 
     
 logger.close()
