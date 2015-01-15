@@ -1,5 +1,6 @@
 #!/usr/bin/python3
 from segment import Segment
+import random as rnd
 
 class Bin(object):
     """
@@ -41,8 +42,87 @@ class Bin(object):
         """
         Split or Merge segments to generate the target number of segments
         """
-        pass
-    
+        if len(self.segments) == 0:
+            return 
+        # Too many bins -> merge
+        prob_tot = self.getProbability()
+        if len(self.segments) > self.target_number_of_segments:
+            for c in range(len(self.segments) - self.target_number_of_segments):
+                # Get the extinction index
+                ext_index = 0
+                merge_index = 0
+                inv_weights = []
+                inv_weights_tot = 0.0
+                for segment in self.segments:
+                    inv_weights_tot += prob_tot/segment.getProbability()
+                    inv_weights.append(prob_tot/segment.getProbability())
+                extinction_probabilities = []
+                for inv_weight in inv_weights:
+                    extinction_probabilities.append(inv_weight/inv_weights_tot)
+                rand = rnd.random()
+                cumulated_probability = 0.0
+                for index in range(len(extinction_probabilities)):
+                    cumulated_probability += extinction_probabilities[index]
+                    if cumulated_probability >= rand:
+                        ext_index = index
+                        break
+                # Get now the merge index 
+                inv_weights = []
+                inv_weights_tot = 0.0
+                for index in range(len(self.segments)):
+                    if index == ext_index:
+                        inv_weights.append(0.0)
+                        continue
+                    inv_weights_tot += prob_tot/self.segments[index].getProbability()
+                    inv_weights.append(prob_tot/self.segments[index].getProbability())
+                extinction_probabilities = []
+                for inv_weight in inv_weights:
+                    extinction_probabilities.append(inv_weight/inv_weights_tot)
+                rand = rnd.random()
+                cumulated_probability = 0.0
+                for index in range(len(extinction_probabilities)):
+                    cumulated_probability += extinction_probabilities[index]
+                    if cumulated_probability >= rand:
+                        merge_index = index
+                        break
+                # Pew, now we have to indices, a merge and a extinction index
+                # Do the merging stuff now.
+                shift_prob = self.segments[ext_index].getProbability()
+                self.segments[merge_index].addProbability(shift_prob)
+                del self.segments[ext_index]
+            return
+
+        # Not enough bins -> split
+        if len(self.segments) < self.target_number_of_segments:
+            for c in range(self.target_number_of_segments - len(self.segments)):
+                split_index = 0
+                split_probabilities = []
+                for segment in self.segments:
+                    split_probabilities.append(segment.getProbability()/prob_tot)
+                rand = rnd.random()
+                cumulated_probability = 0.0
+                for index in range(len(split_probabilities)):
+                    cumulated_probability += split_probabilities[index]
+                    if cumulated_probability >= rand:
+                        split_index = index
+                        break
+                # We have a split index so do splitting now
+                split_segment = self.segments[split_index]
+                split_prob = split_segment.getProbability()/2.0
+                self.segments[split_index].subProbability(split_prob)
+                __segment = Segment(probability=split_prob,
+                                    parent_bin_id=split_segment.getParentBinId(),
+                                    parent_segment_id=split_segment.getParentSegmentId(),
+                                    iteration_id=split_segment.getIterationId(),
+                                    bin_id=split_segment.getBinId(),
+                                    segment_id=len(self.segments))
+                self.__addSegment(__segment)
+            return
+
+
+
+
+
     def __deleteSegments(self, segment_index):
         """
         @private should not be accessed from outside
