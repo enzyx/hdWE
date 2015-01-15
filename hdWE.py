@@ -45,7 +45,7 @@ print(args.input_md_conf)
 # The global list of arrays
 iterations = []
 
-initiate.prepare(work_dir, starting_sturcture, override,debug):
+initiate.prepare(work_dir, starting_sturcture, override,debug)
 iterations.append(initiate.create_initial_iteration(args.segments_per_bin))
 
 if("amber"):
@@ -81,9 +81,9 @@ for iteration_counter in range(1, max_iterations):
                                                   parent_segment_id=segment.getId())
             # If necessary create new bin
             else:
-                bin_id = iteration.generateBin(reference_iteration_id=segment.getIterationId()
-                                      reference_bin_id=segment.getBinId()
-                                      reference_segment_id=segment.getId(),
+                bin_id = iteration.generateBin(reference_iteration_id=segment.getIterationId(),
+                                      reference_bin_id = segment.getBinId(),
+                                      reference_segment_id = segment.getId(),
                                       args.segments_per_bin)
                 iteration.bins[bin_id].generateSegment(probability=segment.getProbability(),
                                                   parent_bin_id=segment.getBinId(),

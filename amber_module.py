@@ -102,7 +102,7 @@ class MD_module():
                     MD_run_count = MD_run_count +1
                     RunSegmentMD(segment_loop, MD_run_count)
                     
-        #Parallel Run   
+        #TODO Parallel Run   
         if self.parallelization_mode=='parallel':
             MD_run_count = 0
             for bin_loop in iteration.bins:
