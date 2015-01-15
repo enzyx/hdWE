@@ -12,17 +12,30 @@ class Segment(object):
         self.segment_id          = segment_id           # int
         self.iteration_id        = iteration_id         # int
 
-    def getNameString(self):
-        """Returns the indices in a string following the scheme iteration_bin_segment
+    def __getNameString(self, iteration_id, bin_id, segment_id):
         """
-        string= str(self.iteration_id).zfill(5) + '_' +str(self.bin_id).zfill(5) + '_' + str(self.segment_id).zfill(5) 
-        return string
+        @return Formated segment file name string
+        """
+        return "{iteration:05d}_{_bin:05d}_{segment:05d}"\
+                .format(iteration=iteration_id,
+                       _bin=bin_id,
+                       segment=segment_id)
+
+    def getNameString(self):
+        """
+        @return the indices in a string following the scheme iteration_bin_segment
+        """
+        return self.__getNameString(iteration_id=self.iteration_id,
+                                    bin_id=self.bin_id,
+                                    segment_id=self.segment_id)
     
     def getParentNameString(self):
-        """Returns the indices in a string following the scheme iteration_bin_segment
         """
-        string= str(self.parent_iteration_id).zfill(5) + '_' +str(self.parent_bin_id).zfill(5) + '_' + str(self.parent_segment_id).zfill(5) 
-        return string
+        @return the indices in a string following the scheme iteration_bin_segment
+        """
+        return self.__getNameString(iteration_id=self.parent_iteration_id,
+                                    bin_id=self.parent_bin_id,
+                                    segment_id=self.parent_segment_id)
         
     def getProbability(self):
         return self.probability
@@ -41,12 +54,13 @@ class Segment(object):
 
     def getIterationId(self):
         return self.iteration_id
-    
+
     def getParentIterationId(self):
-        return self.parent_iteration
-    
+        return self.parent_iteration_id   
+                
+    def getParentBinId(self):
+        return self.parent_bin_id
+        
     def getParentSegmentId(self):
         return self.parent_segment_id
     
-    def getParentBinId(self):
-        return self.parent_bin_id

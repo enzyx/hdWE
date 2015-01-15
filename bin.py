@@ -90,6 +90,7 @@ class Bin(object):
                 shift_prob = self.segments[ext_index].getProbability()
                 self.segments[merge_index].addProbability(shift_prob)
                 del self.segments[ext_index]
+                #TODO reset the indices 
             return
 
         # Not enough bins -> split
@@ -186,6 +187,15 @@ class Bin(object):
                 coordinates of this bin
         """
         return self.reference_segment_id
+        
+    def getReferenceSegmentName(self):
+        """
+        @return The reference segment name (XXXXX-XXXXX-XXXXX)
+        """
+        return "{iteration:05d}-{_bin:05d}-{segment:05d}"\
+        .format(iteration=self.reference_iteration_id,
+                _bin=self.reference_bin_id,
+                segment=self.reference_segment_id)
 
     def getProbability(self):
         """
