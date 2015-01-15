@@ -90,6 +90,8 @@ class Bin(object):
                 shift_prob = self.segments[ext_index].getProbability()
                 self.segments[merge_index].addProbability(shift_prob)
                 del self.segments[ext_index]
+                # Reorder segment ids after deletion 
+                self.__fixSegmentIds()
                 #TODO reset the indices 
             return
 
@@ -143,6 +145,15 @@ class Bin(object):
         self.segments.append(segment)
         return len(self.segments)-1
 
+    def __fixSegmentIds(self):
+        """
+        After deletion of trajectories some segment_ids need to be fixed.
+        Call this whenever a segment is deleted from self.segments. This
+        should only happen during resampling
+        """
+        for index in range(len(self.segments)):
+            self.segments[index].__setSegmentId(index)
+    
     def getReferenceNameString(self):
         """
         @return bin reference as a string
