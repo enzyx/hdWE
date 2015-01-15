@@ -5,17 +5,17 @@ from datetime import datetime
 
 class MD_module():
     
-    work_dir                    = ''
-    debug                       = False
-    configuration_file          = ''  # path to the amer configuration file that contains the 
-                                      # following entries:
-    amber_topology_path         = ''  # path to the amber topology file
-    amber_infile_path           = ''  # path to the amber in file
-    amber_coordinate_mask       = ''  # for example for RMSD calculation. Example ':1-3@CA'
-    amber_binary                = ''  # sander, pmemd, pmemd.cuda
-    parallelization_mode        = ''  # serial, parallel, custom_cow
+    #~ work_dir                    = ''
+    #~ debug                       = False
+    #~ configuration_file          = ''  # path to the amer configuration file that contains the 
+                                      #~ # following entries:
+    #~ amber_topology_path         = ''  # path to the amber topology file
+    #~ amber_infile_path           = ''  # path to the amber in file
+    #~ amber_coordinate_mask       = ''  # for example for RMSD calculation. Example ':1-3@CA'
+    #~ amber_binary                = ''  # sander, pmemd, pmemd.cuda
+    #~ parallelization_mode        = ''  # serial, parallel, custom_cow
     
-    def __init__(self, configuration_file_path, work_dir, debug):
+    def __init__(self, work_dir, configuration_file_path, debug):
         """Initializes the MD module and Reads the amber configuration file.
         """
         self.work_dir                 = work_dir
@@ -63,7 +63,7 @@ class MD_module():
         
         def RunSegmentMD(segment, MD_run_count):
             """Function that runs one single segment MD."""
-            MD_run_count = MD_run_count +1
+            MD_run_count = MD_run_count + 1
             command_line = AmberCommandLineString(segment)
             #Command line for debugging
             if self.debug==True:
@@ -99,7 +99,7 @@ class MD_module():
             MD_run_count = 0
             for bin_loop in iteration.bins:
                 for segment_loop in bin_loop.segments:
-                    MD_run_count = MD_run_count +1
+                    MD_run_count = MD_run_count + 1
                     RunSegmentMD(segment_loop, MD_run_count)
                     
         #Parallel Run   

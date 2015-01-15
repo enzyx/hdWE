@@ -90,6 +90,7 @@ class Bin(object):
                 shift_prob = self.segments[ext_index].getProbability()
                 self.segments[merge_index].addProbability(shift_prob)
                 del self.segments[ext_index]
+                #TODO reset the indices 
             return
 
         # Not enough bins -> split

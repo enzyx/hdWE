@@ -12,21 +12,30 @@ class Segment(object):
         self.segment_id          = segment_id           # int
         self.iteration_id        = iteration_id         # int
 
-    def getNameString(self):
-        """Returns the indices in a string following the scheme iteration_bin_segment
+    def __getNameString(self, iteration_id, bin_id, segment_id):
         """
-        return "{iteration:05d}-{_bin:05d}-{segment:05d}"\
-        .format(iteration=self.iteration_id,
-                _bin=self.bin_id,
-                segment=self.segment_id)
+        @return Formated segment file name string
+        """
+        return "{iteration:05d}_{_bin:05d}_{segment:05d}"\
+                .format(iteration=iteration_id,
+                       _bin=bin_id,
+                       segment=segment_id)
+
+    def getNameString(self):
+        """
+        @return the indices in a string following the scheme iteration_bin_segment
+        """
+        return self.__getNameString(iteration_id=self.iteration_id,
+                                    bin_id=self.bin_id,
+                                    segment_id=self.segment_id)
     
     def getParentNameString(self):
-        """Returns the indices in a string following the scheme iteration_bin_segment
         """
-        return "{iteration:05d}-{_bin:05d}-{segment:05d}"\
-                .format(iteration=self.parent_iteration_id,
-                        _bin=self.parent_bin_id,
-                        segment=self.parent_segment_id)
+        @return the indices in a string following the scheme iteration_bin_segment
+        """
+        return self.__getNameString(iteration_id=self.parent_iteration_id,
+                                    bin_id=self.parent_bin_id,
+                                    segment_id=self.parent_segment_id)
         
     def getProbability(self):
         return self.probability
