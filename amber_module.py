@@ -73,7 +73,7 @@ class MD_module():
             logfile.write(MdLogString(segment, status = 0 ))
             os.system(command_line)
             logfile.write(MdLogString(segment, status = 1 ))
-            print writeMdStatus(segment, MD_run_count)
+            print(writeMdStatus(segment, MD_run_count))
 
 
 

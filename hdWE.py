@@ -2,20 +2,24 @@
 
 import argparse
 import numpy
+import initiate
+from iteration import Iteration
+from bin import Bin
+from segment import Segment
 
 #############################
 # parsing the commandline
 parser = argparse.ArgumentParser(description=
     'hdWE is a hyperdimensional weighted ensemble simulation implementation.')
 parser.add_argument('-d', '--dir', type=str, 
-                    dest="workdir", required=True, metavar="DIR",
+                    dest="work_dir", required=True, metavar="DIR",
                     help="The working direcory")
-parser.add_argument('-t', '--top', type=str, dest="input_md_topol", 
-                    required=True, metavar="FILE",
-                    help="System topology file")
-parser.add_argument('-p', '--parm', type=str, dest="input_md_param", 
-                    required=True, metavar="FILE",
-                    help="MD paramter file")
+#~ parser.add_argument('-t', '--top', type=str, dest="input_md_topol", 
+                    #~ required=True, metavar="FILE",
+                    #~ help="System topology file")
+#~ parser.add_argument('-p', '--parm', type=str, dest="input_md_param", 
+                    #~ required=True, metavar="FILE",
+                    #~ help="MD paramter file")
 parser.add_argument('-c', '--conf', type=str, dest="input_md_conf", 
                     required=True, metavar="FILE",
                     help="The starting structure file")
@@ -36,23 +40,18 @@ parser.add_argument('--minimal-probability', type=float, dest="input_minimal_pro
 args = parser.parse_args()
 #############################
 
-print(args.workdir)
-print(args.input_md_topol)
-print(args.input_md_param)
-print(args.input_md_conf)
-
 #############################
 # The global list of arrays
 iterations = []
 
-initiate.prepare(work_dir, starting_sturcture, override,debug):
+initiate.prepare(args.work_dir, starting_sturcture="", override="", debug="")
 iterations.append(initiate.create_initial_iteration(args.segments_per_bin))
 
-if("amber"):
-    if self.MD_software=='amber':
-        import amber_module as MD_module
+#~ if("amber"):
+    #~ if self.MD_software=='amber':
+import amber_module as MD_module
 
-md_module = MD_module(work_dir, debug, MD_configuration_file)
+md_module = MD_module(args.work_dir, debug, MD_configuration_file)
 
 #~ logger.read(logfile)
 
@@ -65,7 +64,7 @@ for iteration_counter in range(1, max_iterations):
         iteration.generateBin(reference_iteration_id=parent_bin.getReferenceIterationId(),
                               reference_bin_id=parent_bin.getReferenceBinId(),
                               reference_segment_id=parent_bin.getReferenceSegmentId(),
-                              args.segments_per_bin)
+                              target_number_of_segments=args.segments_per_bin)
     
     coordinates = [] # numpy array?
     # Sort segments in bins. Generate new bin if required
@@ -81,10 +80,10 @@ for iteration_counter in range(1, max_iterations):
                                                   parent_segment_id=segment.getId())
             # If necessary create new bin
             else:
-                bin_id = iteration.generateBin(reference_iteration_id=segment.getIterationId()
-                                      reference_bin_id=segment.getBinId()
+                bin_id = iteration.generateBin(reference_iteration_id=segment.getIterationId(),
+                                      reference_bin_id=segment.getBinId(),
                                       reference_segment_id=segment.getId(),
-                                      args.segments_per_bin)
+                                      target_number_of_segments=args.segments_per_bin)
                 iteration.bins[bin_id].generateSegment(probability=segment.getProbability(),
                                                   parent_bin_id=segment.getBinId(),
                                                   parent_segment_id=segment.getId())
