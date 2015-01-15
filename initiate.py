@@ -2,7 +2,7 @@ from iteration import Iteration
 from bin import Bin
 from segment import Segment
 
-def prepare(work_dir, starting_sturcture, override, debug):
+def prepare(work_dir, starting_structure, override, debug):
     """
     Creates the directory structure. Copies the starting configuration
     into the bin_refcoords folder as the first bin.

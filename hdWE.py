@@ -1,5 +1,6 @@
 #!/usr/bin/python3
 
+import sys
 import argparse
 import numpy
 import initiate
@@ -33,8 +34,12 @@ parser.add_argument('--minimal-probability', type=float, dest="input_minimal_pro
                     help="Minimal probability a trajectory must have to"
                     " allow forking a new bin")
 parser.add_argument('--debug', dest="debug", action="store_true",
-                    default=False,
-                    help="Turn debugging on")
+                    default=False, help="Turn debugging on")
+parser_mdgroup = parser.add_mutually_exclusive_group(required=True)
+parser_mdgroup.add_argument("--amber", dest="amber", action="store_true",
+                    default=False)
+parser_mdgroup.add_argument("--gromacs", dest="gromacs", action="store_true",
+                    default=False)
 args = parser.parse_args()
 #############################
 
@@ -45,14 +50,16 @@ iterations = []
 # Initialize the logger
 logger = Logger("logfile.log")
 
-initiate.prepare(args.work_dir, starting_sturcture="", override="", debug)
+initiate.prepare(args.work_dir, starting_structure="", override="", debug=args.debug)
 iterations.append(initiate.create_initial_iteration(args.segments_per_bin))
 
-#~ if("amber"):
-    #~ if self.MD_software=='amber':
-from amber_module import MD_module
+if(args.amber):
+    from amber_module import MD_module
+if(args.gromacs):
+    print("Sorry, support for gromacs is not implemented yet.")
+    sys.exit(-1)
 
-md_module = MD_module(args.work_dir, args.input_md_conf, debug=False)
+md_module = MD_module(args.work_dir, args.input_md_conf, debug=args.debug)
 
 logger.read_iterations()
 
@@ -92,18 +99,15 @@ for iteration_counter in range(1, args.max_iterations):
     for this_bin in iteration:
         this_bin.resampleSegments()
                 
-
-    
-    
+    if debug: 
+        print("The overall probabiliy is at {0:05f}".format(iteration.getProbability()))
     
     # Run MD
     md_module.RunMDs(iteration)
     
-
-                                    
     iterations.append(iteration) 
     
     # log iteration (Rainer)
-    logger.log_iterations(iterations[-1:]) 
+    logger.log_iterations([iteration]) 
     
 logger.close()
