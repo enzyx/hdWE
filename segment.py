@@ -13,10 +13,16 @@ class Segment(object):
         self.parent_iteration_id = iteration_id - 1
 
     def getNameString(self):
-        pass
+        return "{iteration:05d}-{_bin:05d}-{segment:05d}"\
+        .format(iteration=self.iteration_id,
+                _bin=self.bin_id,
+                segment=self.segment_id)
     
     def getParentNameString(self):
-        pass
+        return "{iteration:05d}-{_bin:05d}-{segment:05d}"\
+                .format(iteration=self.parent_iteration_id,
+                        _bin=self.parent_bin_id,
+                        segment=self.parent_segment_id)
         
     def getProbability(self):
         return self.probability
@@ -29,3 +35,13 @@ class Segment(object):
 
     def getIterationId(self):
         return self.iteration_id
+
+    def getParentIterationId(self):
+        return self.parent_iteration_id   
+                
+    def getParentBinId(self):
+        return self.parent_bin_id
+        
+    def getParentSegmentId(self):
+        return self.parent_segment_id
+    
