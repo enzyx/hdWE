@@ -15,14 +15,18 @@ class Segment(object):
     def getNameString(self):
         """Returns the indices in a string following the scheme iteration_bin_segment
         """
-        string= str(self.iteration_id).zfill(5) + '_' +str(self.bin_id).zfill(5) + '_' + str(self.segment_id).zfill(5) 
-        return string
+        return "{iteration:05d}-{_bin:05d}-{segment:05d}"\
+        .format(iteration=self.iteration_id,
+                _bin=self.bin_id,
+                segment=self.segment_id)
     
     def getParentNameString(self):
         """Returns the indices in a string following the scheme iteration_bin_segment
         """
-        string= str(self.parent_iteration_id).zfill(5) + '_' +str(self.parent_bin_id).zfill(5) + '_' + str(self.parent_segment_id).zfill(5) 
-        return string
+        return "{iteration:05d}-{_bin:05d}-{segment:05d}"\
+                .format(iteration=self.parent_iteration_id,
+                        _bin=self.parent_bin_id,
+                        segment=self.parent_segment_id)
         
     def getProbability(self):
         return self.probability
@@ -41,12 +45,13 @@ class Segment(object):
 
     def getIterationId(self):
         return self.iteration_id
-    
+
     def getParentIterationId(self):
-        return self.parent_iteration
-    
+        return self.parent_iteration_id   
+                
+    def getParentBinId(self):
+        return self.parent_bin_id
+        
     def getParentSegmentId(self):
         return self.parent_segment_id
     
-    def getParentBinId(self):
-        return self.parent_bin_id
