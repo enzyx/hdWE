@@ -1,6 +1,7 @@
 #!/usr/bin/python3
 
 import argparse
+import numpy
 
 #############################
 # parsing the commandline
@@ -51,7 +52,7 @@ if("amber"):
     if self.MD_software=='amber':
         import amber_module as MD_module
 
-md_module = MD_module(infile)
+md_module = MD_module(work_dir, debug, MD_configuration_file)
 
 #~ logger.read(logfile)
 
@@ -66,11 +67,11 @@ for iteration_counter in range(1, max_iterations):
                               reference_segment_id=parent_bin.getReferenceSegmentId(),
                               args.segments_per_bin)
     
-    coordinates = []
+    coordinates = [] # numpy array?
     # Sort segments in bins. Generate new bin if required
-    for parent_bin in parent_iteration:
-        for segment in parent_bin:
-            coordinates = md_module.calculate_coordinate(segment, iteration.bins)
+    for parent_bin in parent_iteration.bins:
+        for segment in parent_bin.segments:
+            coordinates = md_module.CalculateCoordinate(work_dir,segment, iteration.bins)
             min_coordinate = min(coordinates)
             # Sort Segment into appropriate bin
             if (min_coordinate <= args.coordinate_threshold):
@@ -88,17 +89,17 @@ for iteration_counter in range(1, max_iterations):
                                                   parent_bin_id=segment.getBinId(),
                                                   parent_segment_id=segment.getId())
                                                   
-    # Split and merge
-    for _bin in iteration:
-        _bin.resampleSegments()
+    # Split and merge (Manu)
+    for this_bin in iteration.bins:
+        this_bin.resampleSegments()
                 
-    # log iteration
+    # log iteration (Rainer)
     logger.log(iteration)
     
     
     
     # Run MD
-    md_module.runMDs(iteration)
+    md_module.RunMDs(iteration)
     
 
                                     

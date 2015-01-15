@@ -13,9 +13,9 @@ class Iteration(object):
                init the bin
         """
         # points to the reference structure of this bin
-        self.iteration_id = iteration_id
+        self.iteration_id = iteration_id    # int
         # the array of segments
-        self.bins = []
+        self.bins = []                      
 
     def generateBin(self, reference_iteration_id, 
                     reference_bin_id, reference_segment_id,
@@ -39,6 +39,12 @@ class Iteration(object):
     
     def getId(self):
         return self.iteration_id
+        
+    def getNameString(self):
+        """Returns iteration index as a string
+        """
+        name_string = str(self.iteration_id).zfill(5)
+        return name_string
 
     def getProbability(self):
         """
