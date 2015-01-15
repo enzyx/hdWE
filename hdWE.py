@@ -23,7 +23,7 @@ parser.add_argument('-d', '--dir', type=str,
                     #~ help="MD paramter file")
 parser.add_argument('-c', '--conf', type=str, dest="input_md_conf", 
                     required=True, metavar="FILE",
-                    help="The starting structure file")
+                    help="MD Software configuration file")
 parser.add_argument('--segments-per-bin', type=int, dest="segments_per_bin", 
                     metavar="10", default=10, nargs='?',
                     help="Number of trajectories per bin")

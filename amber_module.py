@@ -166,5 +166,42 @@ class MD_module():
             os.remove(cpptraj_output_path)
             os.remove(self.work_dir + 'debug/cpptraj.log')
         
-        return coordinates    
+        return coordinates
         
+    def ana_calculatePMF_getCoordinate(self, segment, cpptraj_lines):
+        """
+        Calculates the value of a coordinate corresponding to a segment and defined
+        in cpptraj_line via cpptraj.
+        """
+        
+        #Write the cpptraj infile
+        segment_name_string=segment.getNameString() 
+        cpptraj_infile_path=self.work_dir + segment_name_string + '.ana_calculatePMF_cpptraj_in'
+        cpptraj_output_path = self.work_dir + segment_name_string + '.ana_calculatePMF_cpptraj_output'
+        cpptraj_infile=open(cpptraj_infile_path,'w')
+        cpptraj_infile.write('trajin ' + self.work_dir + 'run/' + segment_name_string + '.rst7' + '\n')
+        cpptraj_infile.writelines(cpptraj_lines + ' out ' + cpptraj_output_path)
+        cpptraj_infile.close()
+        
+        #Execute cpptraj
+        cpptraj_execute_string =' -p ' + self.amber_topology_path + \
+                                ' -i ' + cpptraj_infile_path + \
+                                ' >> ' + self.work_dir + 'debug/ana_calculatePMF_cpptraj.log' 
+        os.system('cpptraj ' + cpptraj_execute_string )        
+        
+        #Load cpptraj output as numpy array
+        try:
+            coordinates = numpy.loadtxt(cpptraj_output_path) 
+        except:
+            #TODO What should happen then?
+            print('amber_module error: cpptraj output ' + cpptraj_output_path + ' can not be found or loaded.')
+            
+        #Remove temporary files
+        if (self.debug==False):
+            os.remove(cpptraj_infile_path)
+            os.remove(cpptraj_output_path)
+            os.remove(self.work_dir + 'debug/ana_calculatePMF_cpptraj.log' )
+            
+        coordinate_value = coordinates[1]
+        
+        return coordinate_value
