@@ -1,5 +1,6 @@
 #!/usr/bin/python3
 
+import os
 import argparse
 import numpy
 import initiate
@@ -24,6 +25,9 @@ parser.add_argument('-d', '--dir', type=str,
 parser.add_argument('-c', '--conf', type=str, dest="input_md_conf", 
                     required=True, metavar="FILE",
                     help="The starting structure file")
+parser.add_argument('-l', '--log', type=str, dest="logfile", 
+                    default="logfile.log", metavar="FILE",
+                    help="The logfile for reading and writing")                   
 parser.add_argument('--segments-per-bin', type=int, dest="segments_per_bin", 
                     metavar="10", default=10, nargs='?',
                     help="Number of trajectories per bin")
@@ -39,6 +43,10 @@ parser.add_argument('--minimal-probability', type=float, dest="input_minimal_pro
                     help="Minimal probability a trajectory must have to"
                     " allow forking a new bin")
 args = parser.parse_args()
+# guarantee a working work_dir variable
+if args.work_dir[-1] != "/":
+    args.work_dir +="/"
+print (args.work_dir)
 #############################
 
 #############################
@@ -46,7 +54,7 @@ args = parser.parse_args()
 iterations = []
 
 # Initialize the logger
-logger = Logger("logfile.log")
+logger = Logger(args.work_dir+args.logfile)
 
 initiate.prepare(args.work_dir, starting_sturcture="", override="", debug="")
 iterations.append(initiate.create_initial_iteration(args.segments_per_bin))
@@ -57,7 +65,9 @@ from amber_module import MD_module
 
 md_module = MD_module(args.work_dir, args.input_md_conf, debug=False)
 
-#~ logger.read(logfile)
+# read previous log
+if os.path.isfile(args.logfile):
+    logger.load_iterations()
 
 # Loop
 for iteration_counter in range(1, args.max_iterations):
@@ -95,17 +105,17 @@ for iteration_counter in range(1, args.max_iterations):
     # Split and merge (Manu)
     for this_bin in iteration:
         this_bin.resampleSegments()
-                
-    # log iteration (Rainer)
-    logger.log_iterations(iterations[-1:])
-    
-    
+   
     
     # Run MD
     md_module.RunMDs(iteration)
     
-
+                    
+    # log iteration (Rainer)
+    logger.log_iteration(iteration)
+    
                                     
     iterations.append(iteration)  
     
 logger.close()
+
