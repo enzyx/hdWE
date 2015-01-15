@@ -20,6 +20,13 @@ class Segment(object):
                 .format(iteration=iteration_id,
                        _bin=bin_id,
                        segment=segment_id)
+    
+    def __setSegmentId(self, segment_id):
+        """
+        required for resampling function to reorder the segment ids. 
+        Should not be used from outside Bins class
+        """
+        self.segment_id = segment_id
 
     def getNameString(self):
         """
