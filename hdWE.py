@@ -58,7 +58,7 @@ iterations = []
 
 logger = Logger(args.work_dir + args.logfile)
 # Read previous log
-print(os.stat(args.logfile).st_size)
+#~ print(os.stat(args.logfile).st_size)
 if os.stat(args.logfile).st_size != 31133:
     iterations = logger.load_iterations()
 
