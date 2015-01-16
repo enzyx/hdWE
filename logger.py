@@ -138,31 +138,33 @@ class Logger():
         """
             reads a given bin line
         """
-        sline = line.split("|")
-        bin_string = sline[0]
-        segments_string = sline[1]
+        splitline = line.split("|")
         
         # read bin data
+        bin_string = splitline[0]
         self.newbin = json.loads(bin_string, object_hook=self._reconvert_bin)
         
         
         # read segment data
-        segment_list = json.loads(segments_string)
-        for segment_dictionary in segment_list:        
-            if set(('p', 'i', 'b', 's')) <= set(segment_dictionary):
-
-                # check for consistency: note that segment_dictionary.get('i') is the parent iteration!
-                if int(self.newbin.getIterationId()) != int(segment_dictionary.get('i')+1):
-                    raise Exception("Iteration_Ids of segment ({seg}) and bin ({bin}) mismatch!".\
-                                    format(seg=int(segment_dictionary.get('i')+1),
-                                    bin=int(self.newbin.getIterationId())))
-
-                self.newbin.generateSegment(\
-                    probability = segment_dictionary.get('p'),
-                    parent_bin_id = segment_dictionary.get('b'),
-                    parent_segment_id = segment_dictionary.get('s'))            
-            else:
-                raise Exception("Non-segment or insufficient data parsed as segment:\n" + segment_dictionary)
+        print("segment_data:\n",splitline[1])
+        if splitline[1][0] == "[":
+            segments_string = splitline[1]
+            segment_list = json.loads(segments_string)
+            for segment_dictionary in segment_list:        
+                if set(('p', 'i', 'b', 's')) <= set(segment_dictionary):
+    
+                    # check for consistency: note that segment_dictionary.get('i') is the parent iteration!
+                    if int(self.newbin.getIterationId()) != int(segment_dictionary.get('i')+1):
+                        raise Exception("Iteration_Ids of segment ({seg}) and bin ({bin}) mismatch!".\
+                                        format(seg=int(segment_dictionary.get('i')+1),
+                                        bin=int(self.newbin.getIterationId())))
+    
+                    self.newbin.generateSegment(\
+                        probability = segment_dictionary.get('p'),
+                        parent_bin_id = segment_dictionary.get('b'),
+                        parent_segment_id = segment_dictionary.get('s'))            
+                else:
+                    raise Exception("Non-segment or insufficient data parsed as segment:\n" + segment_dictionary)
                 
         return self.newbin
         
