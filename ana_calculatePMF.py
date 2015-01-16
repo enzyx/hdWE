@@ -1,3 +1,4 @@
+#!/usr/bin/python3
 import argparse
 import numpy
 import iteration
@@ -14,28 +15,39 @@ parser.add_argument('-d', '--dir', type=str,
 parser.add_argument('-c', '--conf', dest="input_md_conf", 
                     required=True, type=str,
                     help="MD-Software configuration file")
-parser.add_argument('-f', '--first_it', dest="first_iteration",
+parser.add_argument('-b', '--first_it', dest="first_iteration",
                     required=False, type=int, default=0,
                     help="First iteration to use for PMF calculation.")                    
-parser.add_argument('-l', '--last_it', dest="last_iteration",
-                    required=False, type=int, default=1,
+parser.add_argument('-e', '--last_it', dest="last_iteration",
+                    required=False, type=int, default=0,
                     help="Last iteration to to use for PMF calculation.")  
 parser.add_argument('-o', '--output', dest="output_path", 
                     required=False, type=str, default='ana_calculatePMF.output',
                     help="Output filename")  
-parser.add_argument('-b', '--number_of_bins', dest="number_of_bins",
+parser.add_argument('-N', '--number_of_bins', dest="number_of_bins",
                     required=False, type=int, default=100, 
                     help="Number of bins used to calculate the probability histogram.")  
 parser.add_argument('-i', '--cpptraj_lines_file', dest="cpptraj_lines_file_path", 
                     required=True, type=str, 
                     help="File containig cpptraj syntax that defines the reaction coordinate.")
+parser.add_argument('-l', '--log', type=str, dest="logfile", 
+                    default="logfile.log", metavar="FILE",
+                    help="The logfile for reading and writing")
 # Debug default False
 # Free Energy unit default kcal/mol               
                
 # Initialize
 args = parser.parse_args()
-md_module = MD_module(args.work_dir, args.input_md_conf, debug=False)
+md_module = MD_module(args.work_dir, args.input_md_conf, debug=True)
 kT = 0.598 # at 298K in kcal/mol 
+
+#get the actual Iteration from logger module
+logger = Logger(args.work_dir+args.logfile)
+iterations = logger.load_iterations()
+logger.close()
+#set default last_iteration value
+if args.last_iteration == 0:
+    args.last_iteration = len(iterations) - 1
 
 # Load cpptraj input file as one string with linebreaks and delete the last line break
 try:
@@ -49,16 +61,13 @@ cpptraj_lines = cpptraj_lines[0:-1]
 cpptraj_lines_file.close()
 
 
-#get the actual Iteration from logger module
-logger = Logger(args.work_dir+args.logfile)
-iterations = logger.load_iterations()
-logger.close()
+
 
 #Calculate the coordinate values and store them together with
 #the trajectory probability into coordinates 
 coordinates     = numpy.zeros([0,2])
 coordinates_tmp = numpy.zeros([1,2]) 
-for iteration_loop in iteration:
+for iteration_loop in iterations[args.first_iteration:args.last_iteration]:
     for bin_loop in iteration_loop.bins:
         for segment_loop in bin_loop.segments:
             coordinates_tmp[0,0] = md_module.ana_calculatePMF_getCoordinate(segment_loop, cpptraj_lines)

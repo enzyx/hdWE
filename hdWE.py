@@ -10,7 +10,8 @@ from bin import Bin
 from segment import Segment
 from logger import Logger
 
-###########################
+#############################
+# parsing the commandline
 parser = argparse.ArgumentParser(description=
     'hdWE is a hyperdimensional weighted ensemble simulation implementation.')
 parser.add_argument('-d', '--dir', type=str, 
@@ -19,6 +20,9 @@ parser.add_argument('-d', '--dir', type=str,
 parser.add_argument('-c', '--conf', type=str, dest="input_md_conf", 
                     required=True, metavar="FILE",
                     help="The starting structure file")
+parser.add_argument('-l', '--log', type=str, dest="logfile", 
+                    default="logfile.log", metavar="FILE",
+                    help="The logfile for reading and writing")                   
 parser.add_argument('--segments-per-bin', type=int, dest="segments_per_bin", 
                     metavar="10", default=10, nargs='?',
                     help="Number of trajectories per bin")
@@ -26,7 +30,7 @@ parser.add_argument('--iterations', type=int, dest="max_iterations",
                     metavar="50", default=50, nargs='?',
                     help="Maximum number of iterations")
 parser.add_argument('--threshold', type=float, dest="coordinate_threshold", 
-                    metavar="1", default=1, nargs='?',
+                    metavar="0.1", default=0.1, nargs='?',
                     help="Defines the minimal RMSD of a trajectory to all other bins "
                          "after which a new bin is created")
 parser.add_argument('--minimal-probability', type=float, dest="input_minimal_probability", 
@@ -41,16 +45,21 @@ parser_mdgroup.add_argument("--amber", dest="amber", action="store_true",
 parser_mdgroup.add_argument("--gromacs", dest="gromacs", action="store_true",
                     default=False)
 args = parser.parse_args()
-##########################  
+# guarantee a working work_dir variable
+if args.work_dir[-1] != "/":
+    args.work_dir +="/"
+print (args.work_dir)
+#############################
     
 # The global list of arrays
 iterations = [] 
 
 # Initialize the logger
 
-logger = Logger(args.work_dir+args.logfile)
+logger = Logger(args.work_dir + args.logfile)
 # Read previous log
-if if os.stat(logfile).st_size != 0:
+#~ print(os.stat(args.logfile).st_size)
+if os.stat(args.logfile).st_size != 31133:
     iterations = logger.load_iterations()
 
 # Setup the work_dir and initiate iterations

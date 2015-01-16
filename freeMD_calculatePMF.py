@@ -1,3 +1,4 @@
+#!/usr/bin/python3
 import argparse
 import numpy
 import iteration
@@ -29,21 +30,21 @@ kT = 0.598 # at 298K in kcal/mol
 
 # Load coordinates
 coordinates_tmp = numpy.loadtxt(args.input_path, usecols=(1,) )
-print len(coordinates_tmp)
+print(len(coordinates_tmp))
 if args.last_frame==0:
     args.last_frame = len(coordinates_tmp) - 1
 
 coordinates = numpy.zeros([args.last_frame - args.first_frame])
 coordinates = coordinates_tmp[args.first_frame:args.last_frame]
-print coordinates
+print(coordinates)
 
 #Calculate the weighted histogram and PMF     
 #Setup variables
 hist_min =  min(coordinates)
 hist_max =  max(coordinates)
-print hist_max
+print(hist_max)
 dcoord   =  1.0 * (hist_max - hist_min ) / args.number_of_bins
-hist     =  numpy.zeros([args.number_of_bins,2], float)
+hist     =  numpy.zeros([args.number_of_bins,3], float)
 #Sort coords into histogramm
 for i in range(0,len(coordinates)):
     index       = int( (coordinates[i] - hist_min) / dcoord )
@@ -55,14 +56,14 @@ for i in range(0,len(coordinates)):
 for i in range(0,args.number_of_bins):
     hist[i,0] = hist_min + i * dcoord
     if hist[i,1]>0:
-        hist[i,1]  = - kT * log(hist[i,1])
+        hist[i,2]  = - kT * log(hist[i,1])
     else:
-        hist[i,1]  = 0
+        hist[i,2]  = 'NaN'
 
 #Shift minimum to zero        
-pmf_min = min(hist[:,1])
+pmf_min = min(hist[:,2])
 for i in range(0,args.number_of_bins):
-    hist[i,1] = hist[i,1] - pmf_min
+    hist[i,2] = hist[i,2] - pmf_min
 
 #Save PMF to file
 header_line = 'Coordinate Value, Free energy'
