@@ -57,7 +57,6 @@ class Logger():
             """
             @return True if iteration is complete (all bins and 1.0 Probability)
             """
-            print("checking iteration", iteration.getId())
             bNbins = False
             bProbability = False
             # check iteration number of bins
@@ -76,33 +75,32 @@ class Logger():
                                 prob = iteration.getProbability())) 
             # append iteration
             if bNbins and bProbability:
-                print("probability: {prob}".format(prob=iteration.getProbability()))
                 return True
             return False
         
         
         self.iterations = []
         with open(self.logfilename, "r") as readfile:
-            for self.line in readfile:
-                print("reading line ", self.line)
-                if self.line[0:9].lower() == "iteration":
+            for line in readfile:
+				if line.strip() == "":
+					continue
+                if line[0:9].lower() == "iteration":
                     # check and append previous iteration if it exists
                     try:
                         self.iteration
                     except:
                         pass
                     else:
-                        print("adding iteration")
                         if check_iteration(self.iteration, self.target_number_of_read_bins):
                             self.iterations.append(self.iteration)
                     # parse iteration line    
-                    self.iteration_line = self.line.split()
+                    self.iteration_line = line.split()
                     self.iteration=Iteration(int(self.iteration_line[1]))
                     self.target_number_of_read_bins = int(self.iteration_line[3])
 
                 else:
                     # read bin data
-                    self.read_bin = self._load_bin(self.line)
+                    self.read_bin = self._load_bin(line)
                     # check for iteration_id consistency
                     if self.read_bin.getIterationId() != self.iteration.getId():
                         raise Exception("Iteration mismatch: Iteration: {it_id},"+
@@ -130,8 +128,8 @@ class Logger():
                                    default=self._convert_segment,
                                    sort_keys=True, separators=(',',':'))
 
-        self.line = self.bin_part+"|"+self.segments_part+"\n"
-        self.logfile.write(self.line)
+        line = self.bin_part+"|"+self.segments_part+"\n"
+        self.logfile.write(line)
         self.logfile.flush()     
     
     def _load_bin(self, line):
@@ -146,7 +144,6 @@ class Logger():
         
         
         # read segment data
-        print("segment_data:\n",splitline[1])
         if splitline[1][0] == "[":
             segments_string = splitline[1]
             segment_list = json.loads(segments_string)
