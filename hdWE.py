@@ -1,6 +1,7 @@
 #!/usr/bin/python3
 
 import sys
+import os
 import argparse
 import numpy
 import initiate
@@ -43,13 +44,19 @@ args = parser.parse_args()
 ##########################  
     
 # The global list of arrays
-iterations = []
+iterations = [] 
 
 # Initialize the logger
-#logger = Logger("logfile.log")
 
+logger = Logger(args.work_dir+args.logfile)
+# Read previous log
+if if os.stat(logfile).st_size != 0:
+    iterations = logger.load_iterations()
+
+# Setup the work_dir and initiate iterations
 initiate.prepare(args.work_dir, starting_structure="", override="", debug=args.debug)
-iterations.append(initiate.create_initial_iteration(args.segments_per_bin))
+if len(iterations)==0:
+    iterations.append(initiate.create_initial_iteration(args.segments_per_bin))
 
 # Check MD suite
 if(args.amber):
@@ -59,11 +66,9 @@ if(args.gromacs):
     print("Sorry, support for gromacs is not implemented yet.")
     sys.exit(-1)
 
-# Logger load
-#logger.read_iterations()
 
 # Loop
-for iteration_counter in range(1, args.max_iterations):
+for iteration_counter in range(len(iterations), args.max_iterations):
     iteration = Iteration(iteration_counter)
     parent_iteration = iterations[iteration_counter - 1]
     # Generate all previous bins for new iteration
@@ -107,7 +112,7 @@ for iteration_counter in range(1, args.max_iterations):
     iterations.append(iteration) 
     
     # log iteration (Rainer)
-    #logger.log_iterations([iteration]) 
+    logger.log_iteration(iteration)
     
 #logger.close()
 print('hdWE sucessfully completed.                                           ')

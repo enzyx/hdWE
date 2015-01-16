@@ -156,14 +156,18 @@ class Bin(object):
     
     def getReferenceNameString(self):
         """
-        @return the bin index as a string
+        @return bin reference as a string
         """
-        name_string= str(self.reference_iteration_id).zfill(5) + '_' +str(self.reference_bin_id).zfill(5) + '_' + str(self.reference_segment_id).zfill(5) 
-        return name_string
+        # clumsy construct to use segments own naming method and format
+        segment = Segment(probability=0, parent_bin_id=0, parent_segment_id=0,
+                          iteration_id = self.reference_iteration_id,
+                          bin_id       = self.reference_bin_id,
+                          segment_id   = self.reference_segment_id)
+        return segment.getNameString()
         
     def getNameString(self):
         """
-        @return reference segment index as a string
+        @return bin index as a string
         """
         name_string = str(self.bin_id).zfill(5)
         return name_string
@@ -200,15 +204,6 @@ class Bin(object):
                 coordinates of this bin
         """
         return self.reference_segment_id
-        
-    def getReferenceSegmentName(self):
-        """
-        @return The reference segment name (XXXXX-XXXXX-XXXXX)
-        """
-        return "{iteration:05d}-{_bin:05d}-{segment:05d}"\
-        .format(iteration=self.reference_iteration_id,
-                _bin=self.reference_bin_id,
-                segment=self.reference_segment_id)
 
     def getProbability(self):
         """

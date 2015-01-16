@@ -54,6 +54,14 @@ class Iteration(object):
         for _bin in self.bins:
             probability += _bin.getProbability()
         return probability
+        
+    def checkProbability(self):
+        """
+        @returns boolean: True if probability sums to 1
+        """
+        if self.getProbability() == 1.0:
+            return True
+        return False
 
     def getNumberOfBins(self):
         """

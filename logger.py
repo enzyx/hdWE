@@ -13,52 +13,163 @@ class Logger():
         
         HOWTO:
         # start a logger:
-        logger = Logger(write_filename = "test.log", read_filename = "test.log")
+        logger = Logger(logfilename = "test.log", read_filename = "test.log")
         
         # log an array of iterations
         logger.log_iterations(iterations)
         
+        # log a single iteration
+        logger.log_iteration(iteration)
+        
         # read a (correctly) logged file
-        read_iterations = logger.read_iterations()
+        read_iterations = logger.load_iterations()
         
         # close the logger(!):
         logger.close()
     
     """
-    def __init__(self, write_filename = "hdWE.log", read_filename = "hdWE.log"):
-        self.write_filename = write_filename
-        self.read_filename = read_filename
-        self.logfile = open(self.write_filename, "a+", encoding='utf-8')
-        #~ if os.path.isfile(self.read_filename):
-            #~ self.readfile = open(self.read_filename, "r")
-
-    
-    def log_iteration(iteration):
+    def __init__(self, filename):
+        self.logfilename = filename
+        self.logfile = open(self.logfilename, "a+")
+            
+    def log_iteration(self, iteration):
         """
-        writes a single iteration to the logfile
+        appends a single iteration to the logfile
         """
-        self.logfile = open(self.write_filename,"a")
-        json.dump(iteration, self.logfile)
-        self.logfile.flush()
+        self.logfile.write("Iteration {it:05d} - {nbins} bins\n".format(\
+            it    = iteration.getId(),
+            nbins = iteration.getNumberOfBins()))
+        for _bin in iteration.bins:
+            self._log_bin(_bin)
         
-    def log_all_iterations(self, iteration_array):
+    def log_iterations(self, iterations):
         """
         writes all interations to the logfile
         """
-        for iteration in iteration_array:
-            log_iteration(iteration)
-
+        for iteration in iterations:
+            self.log_iteration(iteration)
+            
     def load_iterations(self):
         """
-            returns a read in iteration
+            @return read-in iteration
         """
-        iteration = Iteration()
-        return iteration
+        def check_iteration(iteration, target_number_of_read_bins):
+            """
+            @return True if iteration is complete (all bins and 1.0 Probability)
+            """
+            print("checking iteration", iteration.getId())
+            bNbins = False
+            bProbability = False
+            # check iteration number of bins
+            if iteration.getNumberOfBins() == target_number_of_read_bins:
+                bNbins = True
+            else:
+                raise Exception("Bin number mismatch: Iteration had: {target},".format(\
+                            target = target_number_of_read_bins)+
+                            " read {nbins} bins".format(\
+                                nbins = iteration.getNumberOfBins()))
+            # check iteration probability
+            if iteration.checkProbability():
+                bProbability = True
+            else:
+                raise Exception("Wrong total Iteration probability: {prob}".format(\
+                                prob = iteration.getProbability())) 
+            # append iteration
+            if bNbins and bProbability:
+                print("probability: {prob}".format(prob=iteration.getProbability()))
+                return True
+            return False
+        
+        
+        self.iterations = []
+        with open(self.logfilename, "r") as readfile:
+            for self.line in readfile:
+                print("reading line ", self.line)
+                if self.line[0:9].lower() == "iteration":
+                    # check and append previous iteration if it exists
+                    try:
+                        self.iteration
+                    except:
+                        pass
+                    else:
+                        print("adding iteration")
+                        if check_iteration(self.iteration, self.target_number_of_read_bins):
+                            self.iterations.append(self.iteration)
+                    # parse iteration line    
+                    self.iteration_line = self.line.split()
+                    self.iteration=Iteration(int(self.iteration_line[1]))
+                    self.target_number_of_read_bins = int(self.iteration_line[3])
 
+                else:
+                    # read bin data
+                    self.read_bin = self._load_bin(self.line)
+                    # check for iteration_id consistency
+                    if self.read_bin.getIterationId() != self.iteration.getId():
+                        raise Exception("Iteration mismatch: Iteration: {it_id},"+
+                                        "Bin: {bin_it_it}".format(\
+                                            it_id=self.iteration.getId(),
+                                            bin_it_id = self.read_bin.getIterationId()))
+                    # append bin
+                    self.iteration.bins.append(self.read_bin)
+
+            # append last iteration
+            if check_iteration(self.iteration, self.target_number_of_read_bins):
+                self.iterations.append(self.iteration)
+            
+        return self.iterations
+       
+    def _log_bin(self, _bin):
+        """
+            writes a bin line to the logfile
+        """
+        self.bin_part = json.dumps(_bin, default=self._convert_bin,
+                             sort_keys=True, separators=(',',':'))
+        self.segments_part = ""
+        for segment in _bin:
+            self.segments_part = json.dumps(_bin.segments,
+                                   default=self._convert_segment,
+                                   sort_keys=True, separators=(',',':'))
+
+        self.line = self.bin_part+"|"+self.segments_part+"\n"
+        self.logfile.write(self.line)
+        self.logfile.flush()     
+    
+    def _load_bin(self, line):
+        """
+            reads a given bin line
+        """
+        sline = line.split("|")
+        bin_string = sline[0]
+        segments_string = sline[1]
+        
+        # read bin data
+        self.newbin = json.loads(bin_string, object_hook=self._reconvert_bin)
+        
+        
+        # read segment data
+        segment_list = json.loads(segments_string)
+        for segment_dictionary in segment_list:        
+            if set(('p', 'i', 'b', 's')) <= set(segment_dictionary):
+
+                # check for consistency: note that segment_dictionary.get('i') is the parent iteration!
+                if int(self.newbin.getIterationId()) != int(segment_dictionary.get('i')+1):
+                    raise Exception("Iteration_Ids of segment ({seg}) and bin ({bin}) mismatch!".\
+                                    format(seg=int(segment_dictionary.get('i')+1),
+                                    bin=int(self.newbin.getIterationId())))
+
+                self.newbin.generateSegment(\
+                    probability = segment_dictionary.get('p'),
+                    parent_bin_id = segment_dictionary.get('b'),
+                    parent_segment_id = segment_dictionary.get('s'))            
+            else:
+                raise Exception("Non-segment or insufficient data parsed as segment:\n" + segment_dictionary)
+                
+        return self.newbin
+        
     def _convert_segment(self, segment):
         """
             converts parent data and probability to built-in format
-            @return dictionary of data to save
+            @return dictionary of segment data to save
         """
         self.dictionary = {'p':segment.getProbability(),
             'i':segment.getParentIterationId(),
@@ -68,6 +179,7 @@ class Logger():
     
     def _reconvert_segment(self, dictionary, iteration_id, bin_id, segment_id):
         """
+            reads stored segment data
             @return segment from saved data
         """
         if set(('p', 'i', 'b', 's')) <= set(dictionary):
@@ -80,140 +192,72 @@ class Logger():
                               iteration_id=iteration_id,
                               bin_id=bin_id,
                               segment_id=segment_id)
-            return segment
         else:
             raise Exception("{module}: No Segment given for reconversion.".\
                              format(module=self))
-        
-    def log_segment(self, segment):
-        json.dump(segment, self.logfile,
-                  default=self._convert_segment, 
-                  separators=(',',':'),
-                  sort_keys = True)
-           
-    def read_segment(self):
-        segment = json.load(self.logfile, object_hook=self._reconvert_segment)
         return segment
-        
-    def print_segment(self, segment):
-        print ( "segment:", segment.getNameString() )
-        print ( "probability =", segment.getProbability() )
-        print ( "parent =", segment.getParentNameString() )
 
     def _convert_bin(self, _bin):
         """
-        Convert bin to built-in types
+        Convert bin data (except segments) to built-in types
         @return list of dictionaries with bindata
         """
-        self.bin_content = []
-        self.dictionary = {\
+        self.bin_dictionary = {\
             'i':_bin.getIterationId(),
             'b':_bin.getId(),
-            'r':_bin.getReferenceSegmentName(),
+            'r':_bin.getReferenceNameString(),
             'n':_bin.getTargetNumberOfSegments()}
-        self.bin_content.append(self.dictionary)
-        for segment in _bin.segments:
-            self.bin_content.append(self._convert_segment(segment))
-        return self.bin_content
         
-    def _reconvert_bin(self, read_dictionary):
+        return self.bin_dictionary
+    
+    def _reconvert_bin(self, bin_dictionary):
         """
-            @return returns a bin from saved data
+            @return returns a bin without segments from saved data
         """
         # read bin data
-        if set(('i', 'b', 'r', 'n')) <= set(read_dictionary):
-            self.reference_name           = read_dictionary.get('r').split("-")
+        if set(('i', 'b', 'r', 'n')) <= set(bin_dictionary):
+            self.reference_name           = bin_dictionary.get('r').split("_")
             self.newbin = Bin(\
-                iteration_id              = int(read_dictionary.get('i')), 
-                bin_id                    = int(read_dictionary.get('b')), 
+                iteration_id              = int(bin_dictionary.get('i')), 
+                bin_id                    = int(bin_dictionary.get('b')), 
                 reference_iteration_id    = int(self.reference_name[0]), 
                 reference_bin_id          = int(self.reference_name[1]),
                 reference_segment_id      = int(self.reference_name[2]),
-                target_number_of_segments = int(read_dictionary.get('n')) )
-        
-        # read segment data        
-        elif set(('p', 'i', 'b', 's')) <= set(read_dictionary):
-            self.newbin.generateSegment(\
-                probability = read_dictionary.get('p'),
-                parent_bin_id = read_dictionary.get('b'),
-                parent_segment_id = read_dictionary.get('s'))            
+                target_number_of_segments = int(bin_dictionary.get('n')) )
         else:
-            raise Exception("Not a bin or segment given for reconversion.")
+            raise Exception("Non-bin or insufficient data parsed as bin.")
 
         return self.newbin
         
-    def log_bin(self, _bin):
-        json.dump(_bin, self.logfile, default=self._convert_bin,
-                          sort_keys=True, separators=(',',':'))
-        self.logfile.write("\n")
-        self.logfile.flush()
-    
-    def read_bin(self, line):
-        _bin = json.loads(line, object_hook=self._reconvert_bin)
-        #~ print("json returns:\n", _bin)
-        #~ print ("newly read bin: ")
-        #~ self.print_bin(_bin)
-        #~ print ()
-        return self.newbin
-    
-    def read_bins(self):
-        bins = []
-        for line in self.readfile:
-            print (line)
-            _bin = json.loads(line, object_hook=self._reconvert_bin)
-            bins.append(_bin)
-        return bins
-        
-            
+    def print_iteration(self, iteration):
+        """
+            prints a human (barely) readable iteration
+        """
+        for _bin in iteration.bins:
+            self.print_bin(_bin)     
+
     def print_bin(self, _bin):
+        """
+            prints bin data
+        """
         print ("____Bin:____")
-        print ("Bin {i:05d}-{b:05d}".format(i=_bin.getIterationId(), b=_bin.getId()))
-        print ("Reference: {ref}".format(ref=_bin.getReferenceSegmentName()))
+        print ("Bin {i:05d}_{b:05d}".format(i=_bin.getIterationId(), b=_bin.getId()))
+        print ("Reference: {ref}".format(ref=_bin.getReferenceNameString()))
         print ("Target number of segments: {t}".format(t=_bin.getTargetNumberOfSegments()))
         print ("____Segments____:")
         for segment in _bin.segments:
-            self.print_segment(segment)
-            
-    def _convert_iteration(self):
-        pass
-        
-    def _reconvert_iteration(self):
-        pass
-        
-    def log_iterations(self, iterations):
-        for iteration in iterations:
-            for _bin in iteration.bins:
-                self.log_bin(_bin)
-    
-    def read_iterations(self):
-        self.iterations = []
-        with open(self.read_filename, "r") as readfile:
-            self.firstline = readfile.readline()
-            self.firstbin = json.loads(self.firstline, object_hook=self._reconvert_bin)
-            self.iteration_id = self.newbin.getIterationId()
-            self.iteration = Iteration(self.iteration_id)
-            readfile.seek(0)
-            for self.line in readfile:
-                """
-                 for now json basically just starts self._reconvert_bin where a
-                 self.newbin is created
-                """
-                json.loads(self.line, object_hook=self._reconvert_bin)
-                # create new iteration if necessary
-                if self.newbin.getIterationId() != self.iteration_id:
-                    self.iterations.append(self.iteration)
-                    self.iteration_id = self.newbin.getIterationId()
-                    self.iteration = Iteration(self.iteration_id)
-                    
-                self.iteration.bins.append(self.newbin)
-            self.iterations.append(self.iteration)
-        return self.iterations
+            self.print_segment(segment)            
 
-    def print_iteration(self, iteration):
-        for _bin in iteration.bins:
-            self.print_bin(_bin)
-        
+    def print_segment(self, segment):
+        """
+            prints segment data
+        """
+        print ( "segment:", segment.getNameString() )
+        print ( "probability =", segment.getProbability() )
+        print ( "parent =", segment.getParentNameString() )
+                
     def close(self):
+        """
+            closes the logfile
+        """
         self.logfile.close()
-        #~ if os.path.isfile(self.read_filename):
-            #~ self.readfile.close()
