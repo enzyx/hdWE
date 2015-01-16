@@ -1,6 +1,7 @@
 import os
 import numpy
-import multiprocessing as mp
+#~ import multiprocessing as mp
+import threading
 import sys
 from datetime import datetime
 
@@ -38,6 +39,8 @@ class MD_module():
                 self.amber_binary   = line.split('=')[1].strip()
             if line.split('=')[0].strip() == 'parallelization_mode':
                 self.parallelization_mode   = line.split('=')[1].strip()
+            if line.split('=')[0].strip() == 'number_of_threads':
+                self.number_of_threads   = int(line.split('=')[1].strip())
         configuration_file.close()
     
     def RunMDs(self, iteration):
@@ -110,22 +113,35 @@ class MD_module():
         #Serial Run
         if self.parallelization_mode=='serial':
             MD_run_count = 0
-            for bin_loop in iteration.bins:
-                for segment_loop in bin_loop.segments:
+            for bin_loop in iteration:
+                for segment_loop in bin_loop:
                     MD_run_count = MD_run_count + 1
                     RunSegmentMD(segment_loop, MD_run_count)
                     
         #TODO Parallel Run   
         if self.parallelization_mode=='parallel':
             MD_run_count = 0
-            for bin_loop in iteration.bins:
-                #for segment_loop in bin_loop.segments: 
-                    MD_run_count = MD_run_count +1
-                    mp0=mp.Process(target = RunSegmentMD(bin_loop.segments[0], MD_run_count))
-                    mp1=mp.Process(target = RunSegmentMD(bin_loop.segments[1], MD_run_count))
-                    mp0.start()
-                    mp1.start()
-
+            parallel_jobs = []
+            for mBin in iteration:
+                for mSegment in mBin:
+                    MD_run_count = MD_run_count + 1
+                    thread = threading.Thread(target=RunSegmentMD, args=(mSegment, MD_run_count, ))
+                    parallel_jobs.append(thread)
+                    # TODO 
+                    if len(parallel_jobs) >= self.number_of_threads:
+                        for job in parallel_jobs:
+                            job.start()
+                        # Wait until threads are finished
+                        for job in parallel_jobs:
+                            job.join()
+                        # Reset the job list to fill it with next bunch of work
+                        parallel_jobs = []
+            for job in parallel_jobs:
+                job.start()
+            # Wait until threads are finished
+            for job in parallel_jobs:
+                job.join()
+            parallel_jobs = []
     
         
     def CalculateCoordinate(self, segment, bins):
