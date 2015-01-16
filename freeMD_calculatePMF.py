@@ -11,7 +11,7 @@ parser.add_argument('-f', '--first_frame', dest="first_frame",
                     required=False, type=int, default=0,
                     help="First frame to use for PMF calculation.")                    
 parser.add_argument('-l', '--last_frame', dest="last_frame",
-                    required=False, type=int, default=1,
+                    required=False, type=int, default=0,
                     help="Last frame to to use for PMF calculation.")  
 parser.add_argument('-i', '--input', dest="input_path", 
                     required=True, type=str,
@@ -30,6 +30,9 @@ kT = 0.598 # at 298K in kcal/mol
 # Load coordinates
 coordinates_tmp = numpy.loadtxt(args.input_path, usecols=(1,) )
 print len(coordinates_tmp)
+if args.last_frame==0:
+    args.last_frame = len(coordinates_tmp) - 1
+
 coordinates = numpy.zeros([args.last_frame - args.first_frame])
 coordinates = coordinates_tmp[args.first_frame:args.last_frame]
 print coordinates
