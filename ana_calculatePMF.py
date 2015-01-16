@@ -38,7 +38,7 @@ parser.add_argument('-l', '--log', type=str, dest="logfile",
                
 # Initialize
 args = parser.parse_args()
-md_module = MD_module(args.work_dir, args.input_md_conf, debug=True)
+md_module = MD_module(args.work_dir, args.input_md_conf, debug=False)
 kT = 0.598 # at 298K in kcal/mol 
 
 #get the actual Iteration from logger module
@@ -62,18 +62,18 @@ cpptraj_lines_file.close()
 
 
 
-
 #Calculate the coordinate values and store them together with
 #the trajectory probability into coordinates 
 coordinates     = numpy.zeros([0,2])
 coordinates_tmp = numpy.zeros([1,2]) 
 for iteration_loop in iterations[args.first_iteration:args.last_iteration]:
-    for bin_loop in iteration_loop.bins:
-        for segment_loop in bin_loop.segments:
+    for bin_loop in iteration_loop:
+        for segment_loop in bin_loop:
             coordinates_tmp[0,0] = md_module.ana_calculatePMF_getCoordinate(segment_loop, cpptraj_lines)
             coordinates_tmp[0,1] = segment_loop.getProbability()  
             coordinates          = numpy.append(coordinates, coordinates_tmp, axis=0)
  
+
 
 #Calculate the weighted histogram and PMF     
 #Setup variables

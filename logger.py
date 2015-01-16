@@ -58,7 +58,7 @@ class Logger():
             @return True if iteration is complete (all bins and 1.0 Probability)
             """
             bNbins = False
-            bProbability = False
+            bProbability = True
             # check iteration number of bins
             if iteration.getNumberOfBins() == target_number_of_read_bins:
                 bNbins = True
@@ -71,7 +71,7 @@ class Logger():
             if iteration.checkProbability():
                 bProbability = True
             else:
-                raise Exception("Wrong total Iteration probability: {prob}".format(\
+                print ("Wrong total Iteration probability: {prob}".format(\
                                 prob = iteration.getProbability())) 
             # append iteration
             if bNbins and bProbability:
@@ -82,8 +82,8 @@ class Logger():
         self.iterations = []
         with open(self.logfilename, "r") as readfile:
             for line in readfile:
-				if line.strip() == "":
-					continue
+                if line.strip() == "":
+                    continue
                 if line[0:9].lower() == "iteration":
                     # check and append previous iteration if it exists
                     try:

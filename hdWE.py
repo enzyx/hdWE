@@ -22,9 +22,9 @@ parser.add_argument('-c', '--conf', type=str, dest="input_md_conf",
                     help="The starting structure file")
 parser.add_argument('-l', '--log', type=str, dest="logfile", 
                     default="logfile.log", metavar="FILE",
-                    help="The logfile for reading and writing")                   
+                    help="The logfile for reading and writing")                     
 parser.add_argument('--segments-per-bin', type=int, dest="segments_per_bin", 
-                    metavar="10", default=10, nargs='?',
+                    metavar="50", default=10, nargs='?',
                     help="Number of trajectories per bin")
 parser.add_argument('--iterations', type=int, dest="max_iterations", 
                     metavar="50", default=50, nargs='?',
@@ -59,8 +59,8 @@ iterations = []
 logger = Logger(args.work_dir + args.logfile)
 # Read previous log
 #~ print(os.stat(args.logfile).st_size)
-if os.stat(args.logfile).st_size != 31133:
-    iterations = logger.load_iterations()
+#~ if os.stat(args.logfile).st_size != 31133:
+    #~ iterations = logger.load_iterations()
 
 # Setup the work_dir and initiate iterations
 initiate.prepare(args.work_dir, starting_structure="", override="", debug=args.debug)
