@@ -21,7 +21,7 @@ class Segment(object):
                        _bin=bin_id,
                        segment=segment_id)
     
-    def __setSegmentId(self, segment_id):
+    def setSegmentId(self, segment_id):
         """
         required for resampling function to reorder the segment ids. 
         Should not be used from outside Bins class

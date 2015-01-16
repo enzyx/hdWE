@@ -1,7 +1,9 @@
 import os
 import numpy
 import multiprocessing as mp
+import sys
 from datetime import datetime
+
 
 class MD_module():
     
@@ -40,8 +42,25 @@ class MD_module():
     
     def RunMDs(self, iteration):
         """Propagates the trajectories corresponding to an iteration using amber."""
+        
+        def RunSegmentMD(segment, MD_run_count):
+            """Function that runs one single segment MD."""
+            command_line = AmberCommandLineString(segment)
+            #Command line for debugging
+            if self.debug==True:
+                    os.system('echo ' + command_line + \
+                              ' >> ' + self.work_dir + 'debug/amber_command_lines.log')
+            #Log and Run MD
+            logfile = open(self.work_dir + 'log/' + iteration.getNameString() + '.MD_log','w')
+            logfile.write(MdLogString(segment, status = 0 ))
+            os.system(command_line)
+            logfile.write(MdLogString(segment, status = 1 ))
+            logfile.close()
+            sys.stdout.write(writeMdStatus(segment, MD_run_count))
+            sys.stdout.flush()
+            if self.debug==False:
+                RemoveMdOutput(segment)
 
- 
         def AmberCommandLineString(segment):
             """Returns the command line for an amber run corresponding to the 
             given indices and binary.
@@ -60,22 +79,17 @@ class MD_module():
                                         ' -r ' + amber_end_coords_path
                                         
             return amber_command_line
-        
-        def RunSegmentMD(segment, MD_run_count):
-            """Function that runs one single segment MD."""
-            MD_run_count = MD_run_count + 1
-            command_line = AmberCommandLineString(segment)
-            #Command line for debugging
-            if self.debug==True:
-                    os.system('echo ' + command_line + \
-                              ' >> ' + self.work_dir + 'debug/amber_command_lines.log')
-            #Log and Run MD
-            logfile.write(MdLogString(segment, status = 0 ))
-            os.system(command_line)
-            logfile.write(MdLogString(segment, status = 1 ))
-            print(writeMdStatus(segment, MD_run_count))
-
-
+            
+        def RemoveMdOutput(segment):
+            """Removes unnecessary MD output files.
+            """
+            amber_outfile_path      =  self.work_dir + 'run/' + segment.getNameString()       + '.out'
+            amber_trajectory_path   =  self.work_dir + 'run/' + segment.getNameString()       + '.nc'
+            os.remove(amber_outfile_path)
+            os.remove(amber_trajectory_path)
+ 
+            
+            
 
         def MdLogString(segment,status):
             """Returns a string containing system time for MD run logging."""
@@ -89,11 +103,10 @@ class MD_module():
             """Writes the actual WE run status in a string."""
             number_MD_runs = iteration.getNumberOfSegments()
             string = 'hdWE Status: ' + 'Iteration ' + iteration.getNameString() + ' ' + \
-                     'Segment ' + str(MD_run_count).zfill(5) + '/' + str(number_MD_runs).zfill(5)
+                     'Segment ' + str(MD_run_count).zfill(5) + '/' + str(number_MD_runs).zfill(5) + '\r'
             return string
 
-        logfile = open(self.work_dir + 'log/' + iteration.getNameString() + '.MD_log','w')
-
+        
         #Serial Run
         if self.parallelization_mode=='serial':
             MD_run_count = 0
@@ -114,7 +127,6 @@ class MD_module():
                     mp1.start()
 
     
-        logfile.close()
         
     def CalculateCoordinate(self, segment, bins):
         """Calculates the coordinate values of a segment with respect to all
@@ -180,7 +192,7 @@ class MD_module():
         cpptraj_output_path = self.work_dir + segment_name_string + '.ana_calculatePMF_cpptraj_output'
         cpptraj_infile=open(cpptraj_infile_path,'w')
         cpptraj_infile.write('trajin ' + self.work_dir + 'run/' + segment_name_string + '.rst7' + '\n')
-        cpptraj_infile.writelines(cpptraj_lines + ' out ' + cpptraj_output_path)
+        cpptraj_infile.writelines(cpptraj_lines + ' out ' + cpptraj_output_path )
         cpptraj_infile.close()
         
         #Execute cpptraj

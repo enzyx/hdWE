@@ -152,7 +152,7 @@ class Bin(object):
         should only happen during resampling
         """
         for index in range(len(self.segments)):
-            self.segments[index].__setSegmentId(index)
+            self.segments[index].setSegmentId(index)
     
     def getReferenceNameString(self):
         """
