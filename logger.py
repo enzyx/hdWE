@@ -87,17 +87,13 @@ class Logger():
                 print("reading line ", self.line)
                 if self.line[0:9].lower() == "iteration":
                     # check and append previous iteration if it exists
-                    try:
-                        self.iteration
-                    except:
-                        pass
-                    else:
+                    if self.iteration == None:
                         print("adding iteration")
                         if check_iteration(self.iteration, self.target_number_of_read_bins):
                             self.iterations.append(self.iteration)
                     # parse iteration line    
                     self.iteration_line = self.line.split()
-                    self.iteration=Iteration(int(self.iteration_line[1]))
+                    self.iteration = Iteration(int(self.iteration_line[1]))
                     self.target_number_of_read_bins = int(self.iteration_line[3])
 
                 else:
