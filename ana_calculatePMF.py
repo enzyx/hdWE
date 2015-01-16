@@ -1,6 +1,7 @@
 import argparse
 import numpy
 import iteration
+from logger import Logger
 from math import log
 from amber_module import MD_module
 
@@ -49,30 +50,9 @@ cpptraj_lines_file.close()
 
 
 #get the actual Iteration from logger module
-#iteration =
-### SETUP TEST ITERATION
-iteration = [iteration.Iteration(0), iteration.Iteration(1), iteration.Iteration(2)]
-iteration[0].generateBin(reference_iteration_id=0, 
-                 reference_bin_id=0, reference_segment_id=0, 
-                 target_number_of_segments=5)
-iteration[0].bins[0].generateSegment(probability=1, parent_bin_id=0, parent_segment_id=0)
-iteration[0].bins[0].segments[0].parent_iteration_id=0
-iteration[1].generateBin(reference_iteration_id=0, 
-                 reference_bin_id=0, reference_segment_id=0, 
-                 target_number_of_segments=5)
-iteration[1].bins[0].generateSegment(probability=0.1, parent_bin_id=0, parent_segment_id=0)
-iteration[1].bins[0].generateSegment(probability=1, parent_bin_id=0, parent_segment_id=0)
-iteration[1].bins[0].segments[0].parent_iteration_id=0
-iteration[1].bins[0].segments[1].parent_iteration_id=0
-
-iteration[2].generateBin(reference_iteration_id=1, 
-                 reference_bin_id=0, reference_segment_id=0, 
-                 target_number_of_segments=5)
-iteration[2].bins[0].generateSegment(probability=0.1, parent_bin_id=0, parent_segment_id=0)
-iteration[2].bins[0].generateSegment(probability=1, parent_bin_id=0, parent_segment_id=0)
-iteration[2].bins[0].segments[0].parent_iteration_id=0
-iteration[2].bins[0].segments[1].parent_iteration_id=0
-### 
+logger = Logger(args.work_dir+args.logfile)
+iterations = logger.load_iterations()
+logger.close()
 
 #Calculate the coordinate values and store them together with
 #the trajectory probability into coordinates 
