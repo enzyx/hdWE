@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 import argparse
 import numpy
-import iteration
+import constants
 from logger import Logger
 from math import log
 from amber_module import MD_module
@@ -31,20 +31,21 @@ parser.add_argument('-i', '--cpptraj_lines_file', dest="cpptraj_lines_file_path"
                     required=True, type=str, 
                     help="File containig cpptraj syntax that defines the reaction coordinate.")
 parser.add_argument('-l', '--log', type=str, dest="logfile", 
-                    default="logfile.log", metavar="FILE",
+                    required=True, default="logfile.log", metavar="FILE",
                     help="The logfile for reading and writing")
+                    
 # Debug default False
 # Free Energy unit default kcal/mol               
                
 # Initialize
 args = parser.parse_args()
 md_module = MD_module(args.work_dir, args.input_md_conf, debug=False)
-kT = 0.598 # at 298K in kcal/mol 
 
 #get the actual Iteration from logger module
 logger = Logger(args.work_dir+args.logfile)
 iterations = logger.load_iterations()
 logger.close()
+
 #set default last_iteration value
 if args.last_iteration == 0:
     args.last_iteration = len(iterations) - 1
@@ -66,7 +67,10 @@ cpptraj_lines_file.close()
 #the trajectory probability into coordinates 
 coordinates     = numpy.zeros([0,2])
 coordinates_tmp = numpy.zeros([1,2]) 
+count = 0
 for iteration_loop in iterations[args.first_iteration:args.last_iteration]:
+    count += 1
+    print(count)
     for bin_loop in iteration_loop:
         for segment_loop in bin_loop:
             coordinates_tmp[0,0] = md_module.ana_calculatePMF_getCoordinate(segment_loop, cpptraj_lines)
@@ -92,7 +96,7 @@ for i in range(0,len(coordinates[:,0])):
 for i in range(0,args.number_of_bins):
     hist[i,0] = hist_min + i * dcoord
     if hist[i,1]>0:
-        hist[i,2]  = - kT * log(hist[i,1])
+        hist[i,2]  = - constants.kT * log(hist[i,1])
     else:
         hist[i,2]  = 'NaN'
         

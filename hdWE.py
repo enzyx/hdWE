@@ -5,10 +5,12 @@ import os
 import argparse
 import numpy
 import initiate
+import analysis_operations
 from iteration import Iteration
 from bin import Bin
 from segment import Segment
 from logger import Logger
+
 
 #############################
 # parsing the commandline
@@ -118,8 +120,22 @@ for iteration_counter in range(len(iterations), args.max_iterations):
     # Run MD
     md_module.RunMDs(iteration)
     
-    iterations.append(iteration) 
+    iterations.append(iteration)
     
+    #test: print rate matrix, bin probabilities from rates and actual bin probabilities
+    if iteration_counter > 15:
+        mean_rate_matrix= analysis_operations.meanRateMatrix(iterations, iteration_counter -10, iteration_counter)
+        print('')
+        try:
+            print('Bin probabilities from Rate Matrix:')
+            print(analysis_operations.BinProbabilitiesFromRates(mean_rate_matrix)) 
+        except:
+
+            print('Singular rate matrix')
+        print('Actual Bin probabilities:')
+        print(analysis_operations.meanBinProbabilities(iterations, iteration_counter -10, iteration_counter))         
+
+        
     # log iteration (Rainer)
     logger.log_iteration(iteration)
     

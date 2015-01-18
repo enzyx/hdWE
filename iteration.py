@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 from bin import Bin
-from segment import Segment
+import numpy
 
 class Iteration(object):
     """
@@ -103,3 +103,35 @@ class Iteration(object):
             raise StopIteration
         else:
             return self.bins[self._iter_index]
+            
+    def FluxMatrix(self):
+        """
+        Calculates the Flux Matrix of the given iteration.
+        """
+        # Initialize array for flux matrix
+        flux_matrix = numpy.zeros([self.getNumberOfBins(), self.getNumberOfBins()], float)
+        # Sum all probability that enters a bin from the parent bins
+        for bin_l in self.bins:
+            for segment_l in bin_l.segments:
+                if self.bins[segment_l.getParentBinId()].getProbability() != 0:
+                    flux_matrix[segment_l.getParentBinId(), bin_l.getId()] += \
+                    segment_l.getProbability()
+        return flux_matrix
+        
+    def RateMatrix(self):
+        """
+        Calculates the Rate Matrix for the given iteration.
+        """
+        # Initialize array for rate matrix
+        rate_matrix = numpy.zeros([self.getNumberOfBins(), self.getNumberOfBins()], float)
+        # Sum all probability that enters a bin from the parent bins,
+        # diveded by the parent bin total probability
+        for bin_l in self.bins:
+            for segment_l in bin_l.segments:
+                if self.bins[segment_l.getParentBinId()].getProbability() != 0:
+                    rate_matrix[segment_l.getParentBinId(), bin_l.getId()] += \
+                    segment_l.getProbability() / self.bins[segment_l.getParentBinId()].getProbability()
+        return rate_matrix
+        
+        
+        

@@ -8,15 +8,16 @@ from datetime import datetime
 
 class MD_module():
     
-    #~ work_dir                    = ''
-    #~ debug                       = False
-    #~ configuration_file          = ''  # path to the amer configuration file that contains the 
-                                      #~ # following entries:
-    #~ amber_topology_path         = ''  # path to the amber topology file
-    #~ amber_infile_path           = ''  # path to the amber in file
-    #~ amber_coordinate_mask       = ''  # for example for RMSD calculation. Example ':1-3@CA'
-    #~ amber_binary                = ''  # sander, pmemd, pmemd.cuda
-    #~ parallelization_mode        = ''  # serial, parallel, custom_cow
+    # work_dir                    = ''
+    # debug                       = False
+    # configuration_file          = ''   path to the amer configuration file that contains the 
+    #                                    following entries:
+    # amber_topology_path         = ''   path to the amber topology file
+    # amber_infile_path           = ''   path to the amber in file
+    # amber_coordinate_mask       = ''   for example for RMSD calculation. Example ':1-3@CA'
+    # amber_binary                = ''   sander, pmemd, pmemd.cuda
+    # parallelization_mode        = ''   serial, parallel, custom_cow
+    # number of threads           = ''   number of threads in parallel mode
     
     def __init__(self, work_dir, configuration_file_path, debug):
         """Initializes the MD module and Reads the amber configuration file.
@@ -56,11 +57,11 @@ class MD_module():
             #Log and Run MD
             logfile = open(self.work_dir + 'log/' + iteration.getNameString() + '.MD_log','w')
             logfile.write(MdLogString(segment, status = 0 ))
+            sys.stdout.write(writeMdStatus(segment, MD_run_count))
+            sys.stdout.flush()
             os.system(command_line)
             logfile.write(MdLogString(segment, status = 1 ))
             logfile.close()
-            sys.stdout.write(writeMdStatus(segment, MD_run_count))
-            sys.stdout.flush()
             if self.debug==False:
                 RemoveMdOutput(segment)
 
@@ -105,8 +106,9 @@ class MD_module():
         def writeMdStatus(segment, MD_run_count):
             """Writes the actual WE run status in a string."""
             number_MD_runs = iteration.getNumberOfSegments()
-            string = 'hdWE Status: ' + 'Iteration ' + iteration.getNameString() + ' ' + \
-                     'Segment ' + str(MD_run_count).zfill(5) + '/' + str(number_MD_runs).zfill(5) + '\r'
+            string = 'hdWE Status: ' + 'Iteration ' + iteration.getNameString() + \
+                     ' Number of bins: ' + str(iteration.getNumberOfBins()) + \
+                     ' Segment ' + str(MD_run_count).zfill(5) + '/' + str(number_MD_runs).zfill(5) + '\r'
             return string
 
         
@@ -118,7 +120,7 @@ class MD_module():
                     MD_run_count = MD_run_count + 1
                     RunSegmentMD(segment_loop, MD_run_count)
                     
-        #TODO Parallel Run   
+        #Parallel Run   
         if self.parallelization_mode=='parallel':
             MD_run_count = 0
             parallel_jobs = []
