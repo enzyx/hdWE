@@ -106,16 +106,15 @@ class Iteration(object):
             
     def FluxMatrix(self):
         """
-        Calculates the Flux Matrix of the given iteration.
+        Calculates the Flux Matrix for the given iteration.
         """
         # Initialize array for flux matrix
         flux_matrix = numpy.zeros([self.getNumberOfBins(), self.getNumberOfBins()], float)
         # Sum all probability that enters a bin from the parent bins
         for bin_l in self.bins:
             for segment_l in bin_l.segments:
-                if self.bins[segment_l.getParentBinId()].getProbability() != 0:
-                    flux_matrix[segment_l.getParentBinId(), bin_l.getId()] += \
-                    segment_l.getProbability()
+                flux_matrix[segment_l.getParentBinId(), bin_l.getId()] += \
+                segment_l.getProbability()
         return flux_matrix
         
     def RateMatrix(self):

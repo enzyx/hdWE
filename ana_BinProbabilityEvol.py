@@ -1,6 +1,7 @@
 #!/usr/bin/python3
 import argparse
 import numpy
+import sys
 from logger import Logger
 from math import log
 import matplotlib.pyplot as plt
@@ -26,7 +27,9 @@ parser.add_argument('-l', '--log', type=str, dest="logfile",
                     help="The logfile for reading and writing")#
 parser.add_argument("--probability", dest="probability", action="store_true",
                     default=False)
-                    
+
+print('\033[1mCalculating Bin Free Energies\033[0m (Free Energy is given in kcal/mol at 298K).')   
+                  
 args = parser.parse_args()
 
 #get the actual Iteration from logger module
@@ -34,8 +37,14 @@ logger = Logger(args.work_dir+args.logfile)
 iterations = logger.load_iterations()
 logger.close()
 
-if args.last_iteration == 0:
-    args.last_iteration = len(iterations) - 1 
+#iteration I = iterations[I - 1]
+args.first_iteration -= 1
+args.last_iteration  -= 1
+
+#set default last_iteration value
+if args.last_iteration < 1:
+    args.last_iteration = len(iterations) - 1
+
 
 #initialize bin probability evolution array with size of last frame number_of_bins
 n_iterations = args.last_iteration - args.first_iteration + 1
@@ -46,6 +55,8 @@ for i in range(0,len(bin_probabilities[:,0,0])):
             bin_probabilities[i,j,k] = 'NaN'
 
 for i in range(args.first_iteration,args.last_iteration + 1):
+    sys.stdout.write(' Processing iteration ' + str(iterations[i].getId()).zfill(5) +  \
+                     ' / ' + str(args.first_iteration+1).zfill(5) + '-' + str(args.last_iteration+1).zfill(5) + '\r')
     for j in range(0,iterations[i].getNumberOfBins()):
         bin_probabilities[i,j,0] = iterations[i].bins[j].getProbability()
         if bin_probabilities[i,j,0] > 0.0:
@@ -71,7 +82,9 @@ else:
     cbar=plt.colorbar()
     plt.jet()
     cbar.set_label('Free Energy in kT')
-plt.savefig(args.work_dir+args.output_path,format='png',dpi=300)     
+plt.savefig(args.work_dir+args.output_path,format='png',dpi=300)   
+
+print('\n Output written to: ' + args.output_path)  
 
 
             
