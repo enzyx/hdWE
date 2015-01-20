@@ -20,7 +20,7 @@ parser.add_argument('-e', '--last_it', dest="last_iteration",
                     required=False, type=int, default=0,
                     help="Last iteration to to use for PMF calculation.")  
 parser.add_argument('-o', '--output', dest="output_path", 
-                    required=False, type=str, default='BinProbabilityEvolution.png',
+                    required=False, type=str, default='BinProbabilityEvolution',
                     help="Output filename")  
 parser.add_argument('-l', '--log', type=str, dest="logfile", 
                     required=True, default="logfile.log", metavar="FILE",
@@ -67,8 +67,15 @@ for i in range(args.first_iteration,args.last_iteration + 1):
     for j in range(0,iterations[i].getNumberOfBins()):
         bin_probabilities[i,j,1] -= minimum_free_energy        
         
-            
-
+#Save to file
+if args.probability == True:
+    header_line = 'Probability at: Bin, Iteration'            
+    numpy.savetxt(args.work_dir+args.output_path, bin_probabilities[:,:,0], header = header_line)
+else:
+    header_line = 'Free Energy at: Bin, Iteration'            
+    numpy.savetxt(args.work_dir+args.output_path, bin_probabilities[:,:,1], header = header_line)
+    
+#Plot as png
 fig=plt.figure(figsize=(5,5))
 plt.xlabel('# bin')
 plt.ylabel('# iteration')
@@ -82,7 +89,7 @@ else:
     cbar=plt.colorbar()
     plt.jet()
     cbar.set_label('Free Energy in kT')
-plt.savefig(args.work_dir+args.output_path,format='png',dpi=300)   
+plt.savefig(args.work_dir+args.output_path+'.png',format='png',dpi=300)   
 
 print('\n Output written to: ' + args.output_path)  
 
