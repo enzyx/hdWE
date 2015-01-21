@@ -103,7 +103,7 @@ if(args.gromacs):
 
 
 # Loop
-for iteration_counter in range(len(iterations), args.max_iterations):
+for iteration_counter in range(len(iterations), args.max_iterations + 1):
     iteration = Iteration(iteration_counter)
     parent_iteration = iterations[iteration_counter - 1]
     # Generate all previous bins for new iteration
