@@ -106,8 +106,8 @@ class MD_module():
         def writeMdStatus(segment, MD_run_count):
             """Writes the actual WE run status in a string."""
             number_MD_runs = iteration.getNumberOfSegments()
-            string = 'hdWE Status: ' + 'Iteration ' + iteration.getNameString() + \
-                     ' Number of bins: ' + str(iteration.getNumberOfBins()) + \
+            string = '\033[1mhdWE Status:\033[0m ' + 'Iteration ' + iteration.getNameString() + \
+                     ' Number of bins ' + str(iteration.getNumberOfBins()) + \
                      ' Segment ' + str(MD_run_count).zfill(5) + '/' + str(number_MD_runs).zfill(5) + '\r'
             return string
 

@@ -26,7 +26,7 @@ parser.add_argument('-l', '--log', type=str, dest="logfile",
                     default="logfile.log", metavar="FILE",
                     help="The logfile for reading and writing")                     
 parser.add_argument('--segments-per-bin', type=int, dest="segments_per_bin", 
-                    metavar="50", default=10, nargs='?',
+                    metavar="50", default=50, nargs='?',
                     help="Number of trajectories per bin")
 parser.add_argument('--iterations', type=int, dest="max_iterations", 
                     metavar="50", default=50, nargs='?',
@@ -35,7 +35,7 @@ parser.add_argument('--threshold', type=float, dest="coordinate_threshold",
                     metavar="0.1", default=0.1, nargs='?',
                     help="Defines the minimal RMSD of a trajectory to all other bins "
                          "after which a new bin is created")
-parser.add_argument('--minimal-probability', type=float, dest="input_minimal_probability", 
+parser.add_argument('--minimal-probability', type=float, dest="minimal_probability", 
                     metavar="0.01", default=0.01, nargs='?',
                     help="Minimal probability a trajectory must have to"
                     " allow forking a new bin")
@@ -96,7 +96,7 @@ for iteration_counter in range(len(iterations), args.max_iterations + 1):
             coordinates = md_module.CalculateCoordinate(segment, iteration.bins)
             min_coordinate = numpy.min(coordinates)
             # Sort Segment into appropriate bin
-            if (min_coordinate <= args.coordinate_threshold):
+            if (min_coordinate <= args.coordinate_threshold or segment.getProbability() < args.minimal_probability):
                 bin_id = numpy.argmin(coordinates)
                 iteration.bins[bin_id].generateSegment(probability=segment.getProbability(),
                                                   parent_bin_id=segment.getBinId(),
@@ -140,4 +140,10 @@ for iteration_counter in range(len(iterations), args.max_iterations + 1):
     logger.log_iteration(iteration)
     
 #logger.close()
-print('hdWE sucessfully completed.                                           ')
+
+#count total n of segments
+n_segments = 0
+for iteration_loop in iterations:
+     n_segments += iteration_loop.getNumberOfSegments()
+    
+print('hdWE completed. Total number of propagated segments: ' + str(n_segments) + '            ')
