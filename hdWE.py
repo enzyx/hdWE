@@ -10,7 +10,8 @@ from iteration import Iteration
 from bin import Bin
 from segment import Segment
 from logger import Logger
-
+import threading
+from thread_container import ThreadContainer
 
 #############################
 # parsing the commandline
@@ -41,6 +42,9 @@ parser.add_argument('--minimal-probability', type=float, dest="input_minimal_pro
                     " allow forking a new bin")
 parser.add_argument('--debug', dest="debug", action="store_true",
                     default=False, help="Turn debugging on")
+parser.add_argument('-nt', '--number-of-threads', type=int, dest="number_of_threads", 
+                    metavar="1", default=1, nargs='?',
+                    help="Number of threads for script parallelization")
 parser_mdgroup = parser.add_mutually_exclusive_group(required=True)
 parser_mdgroup.add_argument("--amber", dest="amber", action="store_true",
                     default=False)
@@ -51,8 +55,28 @@ args = parser.parse_args()
 if args.work_dir[-1] != "/":
     args.work_dir +="/"
 print (args.work_dir)
+
 #############################
-    
+# Functions
+#############################
+def run_parallel_jobs(job_list):
+    """
+    Run a list of jobs in parallel
+    @param job_list of jobs to run
+    @return a new empty job_list
+    """
+    for job in parallel_jobs:
+       job.start()
+    # Wait until threads are finished
+    for job in parallel_jobs:
+        job.join()
+    # Reset the job list to fill it with next bunch of work
+    return []
+
+#############################
+# Main
+#############################
+
 # The global list of arrays
 iterations = [] 
 
@@ -111,12 +135,23 @@ for iteration_counter in range(len(iterations), args.max_iterations):
                                                   parent_bin_id=segment.getBinId(),
                                                   parent_segment_id=segment.getId())
     # Split and merge (Manu)
-    for this_bin in iteration:
-        this_bin.resampleSegments()
-                
+    # Parallel
+    if args.number_of_threads > 1:
+        thread_container = ThreadContainer()
+        for this_bin in iteration:
+            thread_container.appendJob(threading.Thread(target=this_bin.resampleSegments))
+            if thread_container.getNumberOfJobs() >= args.number_of_threads:
+                thread_container.runJobs()
+        # Run remaining jobs
+        thread_container.runJobs()
+    # Serial
+    else:
+        for this_bin in iteration:
+            this_bin.resampleSegments()
+
     if args.debug: 
         print("The overall probabiliy is at {0:05f}".format(iteration.getProbability()))
-    
+
     # Run MD
     md_module.RunMDs(iteration)
     
