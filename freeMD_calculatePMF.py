@@ -30,7 +30,6 @@ kT = 0.0019872041 * 298 # k in kcal/mol
 
 # Load coordinates
 coordinates_tmp = numpy.loadtxt(args.input_path, usecols=(1,) )
-print(len(coordinates_tmp))
 if args.end_frame==0:
     args.end_frame = len(coordinates_tmp) - 1
 
@@ -50,22 +49,22 @@ for i in range(0,len(coordinates)):
     #maximum coord entry shall not be in an extra bin:
     if index==args.number_of_bins:
         index = index - 1
-    hist[index,1] = hist[index,1] + 1
+    hist[index,2] = hist[index,2] + 1
 #Assign the bin positions and calculate free energy:
 for i in range(0,args.number_of_bins):
     hist[i,0] = hist_min + i * dcoord
-    if hist[i,1]>0:
-        hist[i,2]  = - kT * log(hist[i,1])
+    if hist[i,2]>0:
+        hist[i,1]  = - kT * log(hist[i,2])
     else:
-        hist[i,2]  = 'NaN'
+        hist[i,1]  = 'NaN'
 
 #Shift minimum to zero        
-pmf_min = min(hist[:,2])
+pmf_min = min(hist[:,1])
 for i in range(0,args.number_of_bins):
-    hist[i,2] = hist[i,2] - pmf_min
+    hist[i,1] = hist[i,1] - pmf_min
 
 #Save PMF to file
-header_line = 'Coordinate Value, Free energy'
+header_line = 'Coordinate Value, Free energy, Probability'
 numpy.savetxt(args.output_path, hist, header = header_line)
 
 

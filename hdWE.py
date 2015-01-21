@@ -10,7 +10,8 @@ from iteration import Iteration
 from bin import Bin
 from segment import Segment
 from logger import Logger
-
+import threading
+from thread_container import ThreadContainer
 
 #############################
 # parsing the commandline
@@ -21,7 +22,7 @@ parser.add_argument('-d', '--dir', type=str,
                     help="The working direcory")
 parser.add_argument('-c', '--conf', type=str, dest="input_md_conf", 
                     required=True, metavar="FILE",
-                    help="The starting structure file")    
+                    help="The starting structure file")
 parser.add_argument('-l', '--log', type=str, dest="logfile", 
                     default="logfile.log", metavar="FILE",
                     help="The logfile for reading and writing")          
@@ -32,7 +33,7 @@ parser.add_argument("--continue", dest="_continue", action='store_true',
 					default=False,
                     help="continue previous run with parameters from logfile.")                                                                      
 parser.add_argument('--segments-per-bin', type=int, dest="segments_per_bin", 
-                    metavar="50", default=10, nargs='?',
+                    metavar="50", default=50, nargs='?',
                     help="Number of trajectories per bin")
 parser.add_argument('--iterations', type=int, dest="max_iterations", 
                     metavar="50", default=50, nargs='?',
@@ -40,31 +41,46 @@ parser.add_argument('--iterations', type=int, dest="max_iterations",
 parser.add_argument('--threshold', type=float, dest="coordinate_threshold", 
                     metavar="0.1", default=0.1, nargs='?',
                     help="Defines the minimal RMSD of a trajectory to all other bins "
-                         "after which a new bin is created")                     
-parser.add_argument('--minimal-probability', type=float, dest="input_minimal_probability", 
+                         "after which a new bin is created")
+parser.add_argument('--minimal-probability', type=float, dest="minimal_probability", 
                     metavar="0.01", default=0.01, nargs='?',
                     help="Minimal probability a trajectory must have to"
                     " allow forking a new bin")
 parser.add_argument('--debug', dest="debug", action="store_true",
-                    default=False, help="Turn debugging on")                                                      
-                         
-# MD package                                
+                    default=False, help="Turn debugging on")
+parser.add_argument('-nt', '--number-of-threads', type=int, dest="number_of_threads", 
+                    metavar="1", default=1, nargs='?',
+                    help="Number of threads for script parallelization")
 parser_mdgroup = parser.add_mutually_exclusive_group(required=True)
 parser_mdgroup.add_argument("--amber", dest="amber", action="store_true",
                     default=False)
 parser_mdgroup.add_argument("--gromacs", dest="gromacs", action="store_true",
                     default=False)
-                    
-# test argument for testing purposes, this is a test.
-parser.add_argument('--new-arg', type=float, dest="new_arg", 
-                    metavar="0.01", default=0.01, nargs='?',
-                    help="test")                
 args = parser.parse_args()
 # guarantee a working work_dir variable
 if args.work_dir[-1] != "/":
     args.work_dir +="/"
 #############################
-    
+# Functions
+#############################
+def run_parallel_jobs(job_list):
+    """
+    Run a list of jobs in parallel
+    @param job_list of jobs to run
+    @return a new empty job_list
+    """
+    for job in parallel_jobs:
+       job.start()
+    # Wait until threads are finished
+    for job in parallel_jobs:
+        job.join()
+    # Reset the job list to fill it with next bunch of work
+    return []
+
+#############################
+# Main
+#############################
+
 # The global list of arrays
 iterations = [] 
 
@@ -80,16 +96,11 @@ elif args._continue:
 else:
     logger.log_arguments(args)
 
-print(os.stat(args.logfile).st_size)
-if os.stat(args.logfile).st_size != 31133:
-    iterations = logger.load_iterations()
-#~ 
-#~ # Setup the work_dir and initiate iterations
+# Setup the work_dir and initiate iterations
 initiate.prepare(args.work_dir, starting_structure="", override="", debug=args.debug)
 if len(iterations)==0:
     iterations.append(initiate.create_initial_iteration(args.segments_per_bin))
     logger.log_iteration(iterations[0])
-#~ 
 
 # Check MD suite
 if(args.amber):
@@ -101,7 +112,7 @@ if(args.gromacs):
 
 
 # Loop
-for iteration_counter in range(len(iterations), args.max_iterations):
+for iteration_counter in range(len(iterations), args.max_iterations + 1):
     iteration = Iteration(iteration_counter)
     parent_iteration = iterations[iteration_counter - 1]
     # Generate all previous bins for new iteration
@@ -118,7 +129,7 @@ for iteration_counter in range(len(iterations), args.max_iterations):
             coordinates = md_module.CalculateCoordinate(segment, iteration.bins)
             min_coordinate = numpy.min(coordinates)
             # Sort Segment into appropriate bin
-            if (min_coordinate <= args.coordinate_threshold):
+            if (min_coordinate <= args.coordinate_threshold or segment.getProbability() < args.minimal_probability):
                 bin_id = numpy.argmin(coordinates)
                 iteration.bins[bin_id].generateSegment(probability=segment.getProbability(),
                                                   parent_bin_id=segment.getBinId(),
@@ -133,12 +144,23 @@ for iteration_counter in range(len(iterations), args.max_iterations):
                                                   parent_bin_id=segment.getBinId(),
                                                   parent_segment_id=segment.getId())
     # Split and merge (Manu)
-    for this_bin in iteration:
-        this_bin.resampleSegments()
-                
+    # Parallel
+    if args.number_of_threads > 1:
+        thread_container = ThreadContainer()
+        for this_bin in iteration:
+            thread_container.appendJob(threading.Thread(target=this_bin.resampleSegments))
+            if thread_container.getNumberOfJobs() >= args.number_of_threads:
+                thread_container.runJobs()
+        # Run remaining jobs
+        thread_container.runJobs()
+    # Serial
+    else:
+        for this_bin in iteration:
+            this_bin.resampleSegments()
+
     if args.debug: 
         print("The overall probabiliy is at {0:05f}".format(iteration.getProbability()))
-    
+
     # Run MD
     md_module.RunMDs(iteration)
     
@@ -161,5 +183,11 @@ for iteration_counter in range(len(iterations), args.max_iterations):
     # log iteration (Rainer)
     logger.log_iteration(iteration)
     
-logger.close()
-print('hdWE sucessfully completed.                                           ')
+#logger.close()
+
+#count total n of segments
+n_segments = 0
+for iteration_loop in iterations:
+     n_segments += iteration_loop.getNumberOfSegments()
+    
+print('hdWE completed. Total number of propagated segments: ' + str(n_segments) + '            ')

@@ -4,6 +4,7 @@ import numpy
 import threading
 import sys
 from datetime import datetime
+from thread_container import ThreadContainer
 
 
 class MD_module():
@@ -106,8 +107,8 @@ class MD_module():
         def writeMdStatus(segment, MD_run_count):
             """Writes the actual WE run status in a string."""
             number_MD_runs = iteration.getNumberOfSegments()
-            string = 'hdWE Status: ' + 'Iteration ' + iteration.getNameString() + \
-                     ' Number of bins: ' + str(iteration.getNumberOfBins()) + \
+            string = '\033[1mhdWE Status:\033[0m ' + 'Iteration ' + iteration.getNameString() + \
+                     ' Number of bins ' + str(iteration.getNumberOfBins()) + \
                      ' Segment ' + str(MD_run_count).zfill(5) + '/' + str(number_MD_runs).zfill(5) + '\r'
             return string
 
@@ -123,27 +124,15 @@ class MD_module():
         #Parallel Run   
         if self.parallelization_mode=='parallel':
             MD_run_count = 0
-            parallel_jobs = []
+            thread_container = ThreadContainer()
             for mBin in iteration:
                 for mSegment in mBin:
                     MD_run_count = MD_run_count + 1
-                    thread = threading.Thread(target=RunSegmentMD, args=(mSegment, MD_run_count, ))
-                    parallel_jobs.append(thread)
-                    # TODO 
-                    if len(parallel_jobs) >= self.number_of_threads:
-                        for job in parallel_jobs:
-                            job.start()
-                        # Wait until threads are finished
-                        for job in parallel_jobs:
-                            job.join()
-                        # Reset the job list to fill it with next bunch of work
-                        parallel_jobs = []
-            for job in parallel_jobs:
-                job.start()
-            # Wait until threads are finished
-            for job in parallel_jobs:
-                job.join()
-            parallel_jobs = []
+                    thread_container.appendJob(threading.Thread(target=RunSegmentMD, args=(mSegment, MD_run_count, )))
+                    if thread_container.getNumberOfJobs() >= self.number_of_threads:
+                        thread_container.runJobs()
+            # Finish jobs in queue
+            thread_container.runJobs()
     
         
     def CalculateCoordinate(self, segment, bins):

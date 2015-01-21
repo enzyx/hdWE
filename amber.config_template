@@ -1,0 +1,7 @@
+#amber_module configuration file
+topology_path         = /full/path 
+infile_path           = /full/path
+coordinate_mask       = amber atom mask (':1-2' for all atoms of residues 1-2)
+binary                = pmemd
+parallelization_mode  = parallel
+number_of_threads     = 4
