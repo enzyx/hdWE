@@ -30,7 +30,7 @@ args = parser.parse_args()
 
 # Get the actual Iteration from logger module
 logger = Logger(args.logfile)
-iterations = logger.load_iterations(first = args.first_iteration, 
+iterations = logger.loadIterations(first = args.first_iteration, 
                                     last = args.last_iteration)
 logger.close()
 
