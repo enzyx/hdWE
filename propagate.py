@@ -1,19 +1,21 @@
 class propagate:
-    """trajectory propagation via MD."""
-    
-    
+    """
+    trajectory propagation via MD.
+    """
     def __init__(self, work_dir, MD_software='amber',MD_mode='pmemd',MD_n_parallel=1,MD_debug=False):
-        """sets general propagation variables"""  
-        
+        """
+        sets general propagation variables
+        """
         self.work_dir       =   work_dir         # working directory
         self.MD_mode        =   MD_mode          # specifies whether to run the MD with cpu or cuda or ...
-        self.MD_n_parallel  =   MD_n_parallel       # speficies how many MD simulations to run in parallel 
+        self.MD_n_parallel  =   MD_n_parallel    # speficies how many MD simulations to run in parallel 
         self.MD_software    =   MD_software      # specifies which MD software is used.
-        self.MD_debug       =   MD_debug            # debug flag
+        self.MD_debug       =   MD_debug         # debug flag
 
     def run_MD(self,trajectory):
-        """runs the MD simulations."""
-
+        """
+        runs the MD simulations.
+        """
         #Load the MD module         
         if self.MD_software=='amber':
             import amber_module as MD_module
