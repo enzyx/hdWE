@@ -25,7 +25,13 @@ parser.add_argument('-c', '--conf', type=str, dest="input_md_conf",
                     help="The starting structure file")
 parser.add_argument('-l', '--log', type=str, dest="logfile", 
                     default="logfile.log", metavar="FILE",
-                    help="The logfile for reading and writing")                     
+                    help="The logfile for reading and writing")          
+parser.add_argument("--append", dest="append", action='store_true', 
+					default=False,
+                    help="continue previous iterations from logfile with new parameters.") 
+parser.add_argument("--continue", dest="_continue", action='store_true', 
+					default=False,
+                    help="continue previous run with parameters from logfile.")                                                                      
 parser.add_argument('--segments-per-bin', type=int, dest="segments_per_bin", 
                     metavar="50", default=50, nargs='?',
                     help="Number of trajectories per bin")
@@ -54,8 +60,6 @@ args = parser.parse_args()
 # guarantee a working work_dir variable
 if args.work_dir[-1] != "/":
     args.work_dir +="/"
-print (args.work_dir)
-
 #############################
 # Functions
 #############################
@@ -81,17 +85,22 @@ def run_parallel_jobs(job_list):
 iterations = [] 
 
 # Initialize the logger
-
-logger = Logger(args.work_dir + args.logfile)
+logger = Logger(args.logfile)
 # Read previous log
-#~ print(os.stat(args.logfile).st_size)
-#~ if os.stat(args.logfile).st_size != 31133:
-    #~ iterations = logger.load_iterations()
+if args.append:
+    logger.log_arguments(args)
+    iterations = logger.load_iterations() 
+elif args._continue:
+    args = logger.load_arguments(args)
+    iterations = logger.load_iterations()   
+else:
+    logger.log_arguments(args)
 
 # Setup the work_dir and initiate iterations
 initiate.prepare(args.work_dir, starting_structure="", override="", debug=args.debug)
 if len(iterations)==0:
     iterations.append(initiate.create_initial_iteration(args.segments_per_bin))
+    logger.log_iteration(iterations[0])
 
 # Check MD suite
 if(args.amber):

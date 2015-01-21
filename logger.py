@@ -13,7 +13,10 @@ class Logger():
         
         HOWTO:
         # start a logger:
-        logger = Logger(logfilename = "test.log", read_filename = "test.log")
+        logger = Logger(logfilename = "logfile.log")
+        
+        # log a set of command line arguments
+        logger.log_arguments(args)
         
         # log an array of iterations
         logger.log_iterations(iterations)
@@ -21,16 +24,24 @@ class Logger():
         # log a single iteration
         logger.log_iteration(iteration)
         
-        # read a (correctly) logged file
+        # load arguments from the logfile:
+        logger.load_arguments(args)
+        
+        # load (correctly) logged iterations
         read_iterations = logger.load_iterations()
         
         # close the logger(!):
         logger.close()
     
     """
-    def __init__(self, filename):
+    def __init__(self, filename = "logfile.log"):
         self.logfilename = filename
         self.logfile = open(self.logfilename, "a+")
+    
+    def log_arguments(self, args):
+        argline = json.dumps(vars(args), self.logfile, sort_keys=True)
+        self.logfile.write(argline + "\n")
+        self.logfile.flush()
             
     def log_iteration(self, iteration):
         """
@@ -44,77 +55,97 @@ class Logger():
         
     def log_iterations(self, iterations):
         """
-        writes all interations to the logfile
+        writes all interations within [first, last] to the logfile
         """
         for iteration in iterations:
             self.log_iteration(iteration)
             
-    def load_iterations(self):
+    def load_arguments(self, args):
         """
-            @return read-in iteration
+        @return read in arguments
         """
-        def check_iteration(iteration, target_number_of_read_bins):
-            """
-            @return True if iteration is complete (all bins and 1.0 Probability)
-            """
-            bNbins = False
-            bProbability = True
-            # check iteration number of bins
-            if iteration.getNumberOfBins() == target_number_of_read_bins:
-                bNbins = True
-            else:
-                raise Exception("Bin number mismatch: Iteration had: {target},".format(\
-                            target = target_number_of_read_bins)+
-                            " read {nbins} bins".format(\
-                                nbins = iteration.getNumberOfBins()))
-            # check iteration probability
-            if iteration.checkProbability():
-                bProbability = True
-            else:
-                print ("Wrong total Iteration probability: {prob}".format(\
-                                prob = iteration.getProbability())) 
-            # append iteration
-            if bNbins and bProbability:
-                return True
-            return False
+        # read in crucial arguments from logfile
+        for line in reversed(open(self.logfilename).readlines()):
+            if "coordinate_threshold" in line:
+                read_args = json.loads(line)
+                break
         
+        # tell the user what we're doing
+        sys.stderr.write("WARNING: overwriting input arguments with last logged ones:\n")
+        sys.stderr.write("amber = {}\n".format(str(read_args.get("amber"))))
+        sys.stderr.write("gromacs = {}\n".format(read_args.get("gromacs")))
+        sys.stderr.write("coordinate_threshold = {}\n".format(read_args.get("coordinate_threshold")))
+        sys.stderr.write("input_minimal_probability = {}\n".format(read_args.get("input_minimal_probability")))
+        sys.stderr.write("segments_per_bin = {}\n".format(read_args.get("segments_per_bin")))
+        sys.stderr.write("input_md_conf = {}\n".format(read_args.get("input_md_conf")))
+        sys.stderr.write("work_dir = {}\n".format(read_args.get("work_dir")))
         
-        self.iterations = []
+        args.amber = read_args.get("amber")
+        args.gromacs = read_args.get("gromacs")
+        args.coordinate_threshold = read_args.get("coordinate_threshold")
+        args.input_minimal_probability = read_args.get("input_minimal_probability")
+        args.segments_per_bin = read_args.get("segments_per_bin") 
+        args.input_md_conf = read_args.get("input_md_conf")
+        args.work_dir = read_args.get("work_dir")
+                
+        return args
+            
+    def load_iterations(self, first=0, last=-1):
+        """
+            @return read-in iterations
+        """
+        iterations = []
+        iteration = Iteration(-1)
+        number_of_iterations_read = 0
         with open(self.logfilename, "r") as readfile:
-            for line in readfile:
-                if line.strip() == "":
-                    continue
-                if line[0:9].lower() == "iteration":
-                    # check and append previous iteration if it exists
-                    try:
-                        self.iteration
-                    except:
-                        pass
-                    else:
-                        if check_iteration(self.iteration, self.target_number_of_read_bins):
-                            self.iterations.append(self.iteration)
-                    # parse iteration line    
-                    self.iteration_line = line.split()
-                    self.iteration=Iteration(int(self.iteration_line[1]))
-                    self.target_number_of_read_bins = int(self.iteration_line[3])
+            file_lines = readfile.readlines()
+            # compare arguments, suspended for now because the logger
+            # normally doesn't know all arguments
+            #~ argsline = file_lines[0]
+            #~ self.__check_arguments(json.loads(argsline))
 
-                else:
-                    # read bin data
-                    self.read_bin = self._load_bin(line)
+            for line in file_lines:
+                #~ print ("len(iterations):",len(iterations))
+                #~ print("number of iterations read: ", number_of_iterations_read)
+                if line.strip().startswith(("@","#")):
+                    continue
+                if line.strip()== "":
+                    continue
+                if "coordinate_threshold" in line:
+                    continue
+                
+                # read iterations
+                if line[0:9].lower() == "iteration":
+                    # check and append previous iteration if it's not the first one
+                    if number_of_iterations_read > 0:
+                        if self.__check_iteration(iteration,
+                                                  target_number_of_read_bins,
+                                                  first,
+                                                  last):
+                            iterations.append(iteration)
+                    # parse iteration line    
+                    iteration_line = line.split()
+                    iteration=Iteration(int(iteration_line[1]))
+                    target_number_of_read_bins = int(iteration_line[3])
+                    number_of_iterations_read += 1
+
+                # read bin data
+                if line[:5] == "{\"b\":":
+                    read_bin = self._load_bin(line)
                     # check for iteration_id consistency
-                    if self.read_bin.getIterationId() != self.iteration.getId():
+                    if read_bin.getIterationId() != iteration.getId():
                         raise Exception("Iteration mismatch: Iteration: {it_id},"+
                                         "Bin: {bin_it_it}".format(\
                                             it_id=self.iteration.getId(),
-                                            bin_it_id = self.read_bin.getIterationId()))
+                                            bin_it_id = read_bin.getIterationId()))
                     # append bin
-                    self.iteration.bins.append(self.read_bin)
+                    iteration.bins.append(read_bin)
 
             # append last iteration
-            if check_iteration(self.iteration, self.target_number_of_read_bins):
-                self.iterations.append(self.iteration)
-            
-        return self.iterations
+            if self.__check_iteration(iteration, target_number_of_read_bins, first, last):
+                iterations.append(iteration)
+                
+        return iterations
        
     def _log_bin(self, _bin):
         """
@@ -260,3 +291,80 @@ class Logger():
             closes the logfile
         """
         self.logfile.close()
+        
+    def __check_arguments(self, read_args):
+        """
+        checks if the arguments of the logfile match the input arguments
+        @ return True if arguments match
+        """
+        bCheck = True
+        if self.args.amber != read_args.get("amber") or self.args.gromacs != read_args.get("gromacs"):
+            # find out what the arguments and the logfile want to use
+            if self.args.amber:
+                arg_package = "amber"
+            elif self.args.gromacs:
+                arg_package = "gromacs"
+            else:
+                arg_package = "none"
+            if read_args.get("amber") == "true":
+                log_package = "amber"
+            elif read_args.get("gromacs") == "true":
+                log_package = "gromacs"
+            else:
+                log_package = "none"            
+            sys.stderr.write("WARNING: Simulation package (amber/gromacs)" +
+                                " of logfile ({log})".format(\
+                                log = log_package) +
+                                " and arguments ({arg}) don't match.\n".format(\
+                                arg = arg_package))
+            bCheck = False                  
+        if self.args.coordinate_threshold != read_args.get("coordinate_threshold"):
+            sys.stderr.write("WARNING: threshold" +
+                                " of logfile ({log}) and arguments ({arg}) don't match.\n".format(\
+                                log = read_args.get("coordinate_threshold"),
+                                arg = self.args.coordinate_threshold ))                
+            bCheck = False                
+        if self.args.input_minimal_probability != read_args.get("input_minimal_probability"):
+            sys.stderr.write("WARNING: minimal probability" +
+                                " of logfile ({log}) and arguments ({arg}) don't match.\n".format(\
+                                log = read_args.get("input_minimal_probability"),
+                                arg =  self.args.input_minimal_probability ))                
+            bCheck = False                
+        if self.args.segments_per_bin != read_args.get("segments_per_bin"):
+            sys.stderr.write("WARNING: segments_per_bin" +
+                                " of logfile ({log}) and arguments ({arg}) don't match.\n".format(\
+                                log = read_args.get("segments_per_bin"),
+                                arg =  self.args.segments_per_bin ))                
+            #~ bCheck = False
+            
+        return bCheck
+    def __check_iteration(self, iteration, target_number_of_read_bins, first, last):
+        """
+        @return True if iteration is complete (all bins and 1.0 Probability)
+        """
+        bNbins = False
+        bProbability = True
+        bRange = True
+        # check iteration number of bins
+        if iteration.getNumberOfBins() == target_number_of_read_bins:
+            bNbins = True
+        else:
+            raise Exception("Bin number mismatch: Iteration had: {target},".format(\
+                        target = target_number_of_read_bins)+
+                        " read {nbins} bins".format(\
+                            nbins = iteration.getNumberOfBins()))
+        # check iteration probability
+        if iteration.checkProbability():
+            bProbability = True
+        else:
+            sys.stderr.write("Wrong total Iteration probability: {prob}\n".format(\
+                            prob = iteration.getProbability())) 
+        # check if iteration is in range
+        if iteration.getId() < first:
+                bRange = False
+        elif last != -1 and iteration.getId() > last:
+                bRange = False
+        # append iteration
+        if bNbins and bProbability and bRange:
+            return True
+        return False
