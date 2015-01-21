@@ -56,7 +56,7 @@ for i in range(0,args.number_of_bins):
     if hist[i,2]>0:
         hist[i,1]  = - kT * log(hist[i,2])
     else:
-        hist[i,1]  = 'NaN'
+        hist[i,1]  = 'Inf'
 
 #Shift minimum to zero        
 pmf_min = min(hist[:,1])

@@ -52,7 +52,7 @@ bin_probabilities = numpy.zeros([n_iterations, iterations[args.last_iteration].g
 for i in range(0,len(bin_probabilities[:,0,0])):
     for j in range(0,len(bin_probabilities[0,:,0])):
         for k in range(0,2):
-            bin_probabilities[i,j,k] = 'NaN'
+            bin_probabilities[i,j,k] = 'Inf'
 
 for i in range(args.first_iteration,args.last_iteration + 1):
     sys.stdout.write(' Processing iteration ' + str(iterations[i].getId()).zfill(5) +  \
@@ -62,7 +62,7 @@ for i in range(args.first_iteration,args.last_iteration + 1):
         if bin_probabilities[i,j,0] > 0.0:
             bin_probabilities[i,j,1] = - constants.kT * log(bin_probabilities[i,j,0]) 
         else:
-            bin_probabilities[i,j,1] = 'NaN'
+            bin_probabilities[i,j,1] = 'Inf'
     minimum_free_energy = min(bin_probabilities[i,:,1])
     for j in range(0,iterations[i].getNumberOfBins()):
         bin_probabilities[i,j,1] -= minimum_free_energy        

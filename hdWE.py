@@ -37,7 +37,7 @@ parser.add_argument('--threshold', type=float, dest="coordinate_threshold",
                     help="Defines the minimal RMSD of a trajectory to all other bins "
                          "after which a new bin is created")
 parser.add_argument('--minimal-probability', type=float, dest="minimal_probability", 
-                    metavar="0.01", default=0.01, nargs='?',
+                    metavar="0.0", default=0.0, nargs='?',
                     help="Minimal probability a trajectory must have to"
                     " allow forking a new bin")
 parser.add_argument('--debug', dest="debug", action="store_true",
