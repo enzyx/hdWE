@@ -34,16 +34,17 @@ class Logger():
         logger.close()
     
     """
-    def __init__(self, filename = "logfile.log"):
+    def __init__(self, filename, debug = False):
         self.logfilename = filename
         self.logfile = open(self.logfilename, "a+")
+        self.debug = debug
     
-    def log_arguments(self, args):
-        argline = json.dumps(vars(args), self.logfile, sort_keys=True)
-        self.logfile.write(argline + "\n")
+    def logParameters(self, hdWE_parameters):
+        paramline = hdWE_parameters.getLogString()
+        self.logfile.write("hdWE_parameters|"+paramline + "\n")
         self.logfile.flush()
             
-    def log_iteration(self, iteration):
+    def logIteration(self, iteration):
         """
         appends a single iteration to the logfile
         """
@@ -51,46 +52,28 @@ class Logger():
             it    = iteration.getId(),
             nbins = iteration.getNumberOfBins()))
         for _bin in iteration.bins:
-            self._log_bin(_bin)
+            self._logBin(_bin)
         
-    def log_iterations(self, iterations):
+    def logIterations(self, iterations):
         """
         writes all interations within [first, last] to the logfile
         """
         for iteration in iterations:
             self.log_iteration(iteration)
             
-    def load_arguments(self, args):
+    def getHdWEParameterString(self):
         """
         @return read in arguments
         """
         # read in crucial arguments from logfile
         for line in reversed(open(self.logfilename).readlines()):
-            if "coordinate_threshold" in line:
-                read_args = json.loads(line)
+            if "hdWE_parameters" in line:
+                param_line = line.split("|")[1]
                 break
-        
-        # tell the user what we're doing
-        sys.stderr.write("WARNING: overwriting input arguments with last logged ones:\n")
-        sys.stderr.write("amber = {}\n".format(str(read_args.get("amber"))))
-        sys.stderr.write("gromacs = {}\n".format(read_args.get("gromacs")))
-        sys.stderr.write("coordinate_threshold = {}\n".format(read_args.get("coordinate_threshold")))
-        sys.stderr.write("input_minimal_probability = {}\n".format(read_args.get("input_minimal_probability")))
-        sys.stderr.write("segments_per_bin = {}\n".format(read_args.get("segments_per_bin")))
-        sys.stderr.write("input_md_conf = {}\n".format(read_args.get("input_md_conf")))
-        sys.stderr.write("work_dir = {}\n".format(read_args.get("work_dir")))
-        
-        args.amber = read_args.get("amber")
-        args.gromacs = read_args.get("gromacs")
-        args.coordinate_threshold = read_args.get("coordinate_threshold")
-        args.input_minimal_probability = read_args.get("input_minimal_probability")
-        args.segments_per_bin = read_args.get("segments_per_bin") 
-        args.input_md_conf = read_args.get("input_md_conf")
-        args.work_dir = read_args.get("work_dir")
                 
-        return args
+        return param_line
             
-    def load_iterations(self, first=0, last=-1):
+    def loadIterations(self, first=0, last=-1):
         """
             @return read-in iterations
         """
@@ -102,7 +85,7 @@ class Logger():
             # compare arguments, suspended for now because the logger
             # normally doesn't know all arguments
             #~ argsline = file_lines[0]
-            #~ self.__check_arguments(json.loads(argsline))
+            #~ self.__checkArguments(json.loads(argsline))
 
             for line in file_lines:
                 #~ print ("len(iterations):",len(iterations))
@@ -111,14 +94,14 @@ class Logger():
                     continue
                 if line.strip()== "":
                     continue
-                if "coordinate_threshold" in line:
+                if "hdWE_parameters" in line:
                     continue
                 
                 # read iterations
                 if line[0:9].lower() == "iteration":
                     # check and append previous iteration if it's not the first one
                     if number_of_iterations_read > 0:
-                        if self.__check_iteration(iteration,
+                        if self.__checkIteration(iteration,
                                                   target_number_of_read_bins,
                                                   first,
                                                   last):
@@ -131,7 +114,7 @@ class Logger():
 
                 # read bin data
                 if line[:5] == "{\"b\":":
-                    read_bin = self._load_bin(line)
+                    read_bin = self._loadBin(line)
                     # check for iteration_id consistency
                     if read_bin.getIterationId() != iteration.getId():
                         raise Exception("Iteration mismatch: Iteration: {it_id},"+
@@ -142,28 +125,29 @@ class Logger():
                     iteration.bins.append(read_bin)
 
             # append last iteration
-            if self.__check_iteration(iteration, target_number_of_read_bins, first, last):
-                iterations.append(iteration)
+            if iteration.getId() != -1:
+                if self.__checkIteration(iteration, target_number_of_read_bins, first, last):
+                    iterations.append(iteration)
                 
         return iterations
        
-    def _log_bin(self, _bin):
+    def _logBin(self, _bin):
         """
             writes a bin line to the logfile
         """
-        self.bin_part = json.dumps(_bin, default=self._convert_bin,
+        self.bin_part = json.dumps(_bin, default=self._convertBin,
                              sort_keys=True, separators=(',',':'))
         self.segments_part = ""
         for segment in _bin:
             self.segments_part = json.dumps(_bin.segments,
-                                   default=self._convert_segment,
+                                   default=self._convertSegment,
                                    sort_keys=True, separators=(',',':'))
 
         line = self.bin_part+"|"+self.segments_part+"\n"
         self.logfile.write(line)
         self.logfile.flush()     
     
-    def _load_bin(self, line):
+    def _loadBin(self, line):
         """
             reads a given bin line
         """
@@ -171,7 +155,7 @@ class Logger():
         
         # read bin data
         bin_string = splitline[0]
-        self.newbin = json.loads(bin_string, object_hook=self._reconvert_bin)
+        self.newbin = json.loads(bin_string, object_hook=self._reconvertBin)
         
         
         # read segment data
@@ -196,7 +180,7 @@ class Logger():
                 
         return self.newbin
         
-    def _convert_segment(self, segment):
+    def _convertSegment(self, segment):
         """
             converts parent data and probability to built-in format
             @return dictionary of segment data to save
@@ -207,7 +191,7 @@ class Logger():
             's':segment.getParentSegmentId()}
         return self.dictionary
     
-    def _reconvert_segment(self, dictionary, iteration_id, bin_id, segment_id):
+    def _reconvertSegment(self, dictionary, iteration_id, bin_id, segment_id):
         """
             reads stored segment data
             @return segment from saved data
@@ -227,7 +211,7 @@ class Logger():
                              format(module=self))
         return segment
 
-    def _convert_bin(self, _bin):
+    def _convertBin(self, _bin):
         """
         Convert bin data (except segments) to built-in types
         @return list of dictionaries with bindata
@@ -240,7 +224,7 @@ class Logger():
         
         return self.bin_dictionary
     
-    def _reconvert_bin(self, bin_dictionary):
+    def _reconvertBin(self, bin_dictionary):
         """
             @return returns a bin without segments from saved data
         """
@@ -259,14 +243,14 @@ class Logger():
 
         return self.newbin
         
-    def print_iteration(self, iteration):
+    def printIteration(self, iteration):
         """
             prints a human (barely) readable iteration
         """
         for _bin in iteration.bins:
-            self.print_bin(_bin)     
+            self.printBin(_bin)     
 
-    def print_bin(self, _bin):
+    def printBin(self, _bin):
         """
             prints bin data
         """
@@ -292,7 +276,7 @@ class Logger():
         """
         self.logfile.close()
         
-    def __check_arguments(self, read_args):
+    def __checkArguments(self, read_args):
         """
         checks if the arguments of the logfile match the input arguments
         @ return True if arguments match
@@ -338,7 +322,7 @@ class Logger():
             #~ bCheck = False
             
         return bCheck
-    def __check_iteration(self, iteration, target_number_of_read_bins, first, last):
+    def __checkIteration(self, iteration, target_number_of_read_bins, first, last):
         """
         @return True if iteration is complete (all bins and 1.0 Probability)
         """
@@ -354,11 +338,12 @@ class Logger():
                         " read {nbins} bins".format(\
                             nbins = iteration.getNumberOfBins()))
         # check iteration probability
-        if iteration.checkProbability():
-            bProbability = True
-        else:
-            sys.stderr.write("Wrong total Iteration probability: {prob}\n".format(\
-                            prob = iteration.getProbability())) 
+        if self.debug:
+            if iteration.checkProbability():
+                bProbability = True
+            else:
+                sys.stderr.write("Wrong total Iteration probability: {prob}\n".format(\
+                                prob = iteration.getProbability())) 
         # check if iteration is in range
         if iteration.getId() < first:
                 bRange = False
