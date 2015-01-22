@@ -45,7 +45,7 @@ md_module = MD_module(args.work_dir, args.input_md_conf, debug=False)
 
 #get the actual Iteration from logger module
 logger = Logger(args.work_dir+args.logfile)
-iterations = logger.load_iterations()
+iterations = logger.loadIterations()
 logger.close()
 
 #iteration I = iterations[I - 1]
