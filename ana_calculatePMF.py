@@ -1,5 +1,8 @@
-#!/usr/bin/python3
-import argparse
+#!/usr/bin/python2
+"""
+Calculates the PMF along an arbitrary coordinate 
+from the data of a hdWE run.
+"""
 import numpy
 import constants
 import sys
@@ -7,9 +10,21 @@ from logger import Logger
 from math import log
 from amber_module import MD_module
 
-# Parse command line
-parser = argparse.ArgumentParser(description=
-    'Calculates the PMF along an arbitrary coordinate from the data of a hdWE run.')
+# Compatibility mode for python2.6
+has_argparse = False
+try:
+    import argparse  
+    has_argparse = True  
+except ImportError:
+    import optparse  #Python 2.6
+
+###### Parse command line ###### 
+if has_argparse:
+    parser =argparse.ArgumentParser(description=__doc__,
+                            formatter_class=argparse.RawDescriptionHelpFormatter)
+else:
+    parser = optparse.OptionParser()
+    parser.add_argument = parser.add_option
 parser.add_argument('-d', '--dir', type=str, 
                     dest="work_dir", required=True, metavar="DIR",
                     help="The working direcory")
