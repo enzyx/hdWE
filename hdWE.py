@@ -18,10 +18,10 @@ from hdWE_parameters import HdWEParameters
 parser = argparse.ArgumentParser(description=
     'hdWE is a hyperdimensional weighted ensemble simulation implementation.')
 parser.add_argument('-d', '--dir', type=str, 
-                    dest="work_dir", required=False, metavar="DIR",
+                    dest="work_dir", metavar="DIR",
                     help="The working direcory")
 parser.add_argument('-c', '--conf', type=str, dest="md_conf", 
-                    required=False, metavar="FILE",
+                    metavar="FILE",
                     help="The starting structure file")
 parser.add_argument('-l', '--log', type=str, dest="logfile", 
                     default="logfile.log", metavar="FILE",
@@ -54,12 +54,18 @@ parser.add_argument('--debug', dest="debug", action="store_true",
 parser.add_argument('-nt', '--number-of-threads', type=int, dest="number_of_threads", 
                     metavar="1", default=1, nargs='?',
                     help="Number of threads for script parallelization")
-parser_mdgroup = parser.add_mutually_exclusive_group(required=False)
+parser_mdgroup = parser.add_mutually_exclusive_group()
 parser_mdgroup.add_argument("--amber", dest="amber", action="store_true",
                     default=False)
 parser_mdgroup.add_argument("--gromacs", dest="gromacs", action="store_true",
                     default=False)
 args = parser.parse_args()
+if not ( args.logfile and args.resume\
+    or \
+    ((args.amber or args.gromacs) and args.work_dir and args.md_conf) ):
+    parser.print_help()
+    raise ValueError("\nMissing either\n --log and --resume \nor\n"
+                     " - (--gromacs/--amber), --work_dir and --conf")
 # guarantee a working work_dir variable
 if args.work_dir and args.work_dir[-1] != "/":
     args.work_dir +="/"
@@ -68,6 +74,8 @@ if args.amber:
     md_package = "amber"
 elif args.gromacs:
     md_package = "gromacs"
+else:
+    md_package = None
 # backup log file
 if not (args.append or args.resume):
     if os.path.isfile(args.logfile):

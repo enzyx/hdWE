@@ -70,4 +70,15 @@ class Segment(object):
         
     def getParentSegmentId(self):
         return self.parent_segment_id
+        
+    def __eq__(self, other_segment): 
+        return self.__dict__ == other_segment.__dict__
+    
+    def isParent(self, segment):
+        if segment.getParentIterationId() == self.getIterationId() and\
+           segment.getParentBinId() == self.getBinId() and\
+           segment.getParentSegmentId() == self.getId():
+            return True
+        return False
+
     
