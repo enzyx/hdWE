@@ -53,7 +53,7 @@ sys.stderr.write('\033[1m' + 'Fitting logistic function...' + '\033[0m\n')
 ## Fit using startvalue p0 = [A0,B0,C0] and 
 ## equal uncertainties for data (sigma = None)
 p0 = [1.5, 1.0]
-popt, pcov = curve_fit(logistic_curve, xdata, ydata, sigma=None, p0=p0)
+popt, pcov = curve_fit(logistic_curve, xdata, ydata, sigma=None, p0=p0, maxfev= 10000)
 
 sys.stderr.write('\033[1m' + 'Fit results:' + '\033[0m\n')
 sys.stderr.write('\033[1m' + "G = {0:.0f} ".format(popt[0]) 
