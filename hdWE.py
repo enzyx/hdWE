@@ -5,6 +5,7 @@ hdWE is a hyperdimensional weighted ensemble simulation implementation.
 from __future__ import print_function
 import sys
 import os
+import ConfigParser
 import glob
 import numpy
 import initiate
@@ -30,70 +31,44 @@ if has_argparse:
 else:
     parser = optparse.OptionParser()
     parser.add_argument = parser.add_option
-
-parser.add_argument('-d', '--dir', type=str, 
-                    dest="work_dir", metavar="DIR",
-                    help="The working direcory")
-parser.add_argument('-c', '--conf', type=str, dest="md_conf", 
+parser.add_argument('-c', '--conf', type=str, dest="configfile", 
                     metavar="FILE",
-                    help="The starting structure file")
-parser.add_argument('-l', '--log', type=str, dest="logfile", 
-                    default="logfile.log", metavar="FILE",
-                    help="The logfile for reading and writing")          
+                    help="The hdWE configuration file")      
 parser.add_argument("--append", dest="append", action='store_true', 
                     default=False,
-                    help="continue previous iterations from logfile with new parameters.") 
-parser.add_argument("--resume", dest="resume", action='store_true', 
-                    default=False,
-                    help="resume previous run with parameters from logfile.")                                                                      
-parser.add_argument('--segments-per-bin', type=int, dest="segments_per_bin", 
-                    metavar="50", default=50, nargs='?',
-                    help="Number of trajectories per bin")
-parser.add_argument('--iterations', type=int, dest="max_iterations", 
-                    metavar="50", default=False, const=50, nargs='?',
-                    help="Maximum number of iterations")
-parser.add_argument('--threshold', type=float, dest="coordinate_threshold", 
-                    metavar="0.1", default=0.1, nargs='?',
-                    help="Defines the minimal RMSD of a trajectory to all other bins "
-                         "after which a new bin is created")
-parser.add_argument('--minimal-probability', type=float, dest="minimal_probability", 
-                    metavar="0.0", default=0.0, nargs='?',
-                    help="Minimal probability a trajectory must have to"
-                    " allow forking a new bin")
-parser.add_argument('--max-bins', type=int, dest="max_bins", 
-                    metavar="N", nargs='?', default=-1,
-                    help="Maximum number of bins")                    
+                    help="continue previous iterations with parameters from conf file.")  
 parser.add_argument('--debug', dest="debug", action="store_true",
                     default=False, help="Turn debugging on")
-parser.add_argument('-nt', '--number-of-threads', type=int, dest="number_of_threads", 
-                    metavar="1", default=1, nargs='?',
-                    help="Number of threads for script parallelization")
-parser_mdgroup = parser.add_mutually_exclusive_group(required=False)
-parser_mdgroup.add_argument("--amber", dest="amber", action="store_true",
-                    default=False)
-parser_mdgroup.add_argument("--gromacs", dest="gromacs", action="store_true",
-                    default=False)
+
 args = parser.parse_args()
-# guarantee a working work_dir variable
-if args.work_dir and args.work_dir[-1] != "/":
-    args.work_dir +="/"
+
+###### Parse Config File #######
+config = ConfigParser.ConfigParser()
+config.read(args.configfile)
+
+#~ # guarantee a working workdir variable
+#~ if args.workdir and args.workdir[-1] != "/":
+    #~ args.workdir +="/"
+    
 # define md_package string (amber/gromacs)
-if args.amber:
+if "amber" in config.sections():
     md_package = "amber"
-elif args.gromacs:
+elif "gromacs" in config.sections():
     md_package = "gromacs"
 else:
-    md_package = None
-# backup log file
-if not (args.append or args.resume):
-    if os.path.isfile(args.logfile):
-        if os.path.isfile(args.logfile + '.bak*'):
-            backups = glob.glob(args.logfile + '.bak.*')
+    raise Exception("No MD package (amber/gromacs) section in configuration file")
+    
+#~ # backup log file
+logfile = config.get('hdWE','logfile')
+if not (args.append):
+    if os.path.isfile(logfile):
+        if os.path.isfile(logfile + '.bak*'):
+            backups = glob.glob(logfile + '.bak.*')
             backup_number = int(sorted(backups)[-1].split(".")[-1]) + 1
         else:
             backup_number = 1
-        os.rename(args.logfile, args.logfile+".bak." + str(backup_number))
-        
+        os.rename(logfile, logfile+".bak." + str(backup_number))
+
 #############################
 # Functions
 #############################
@@ -120,44 +95,35 @@ iterations = []
 
 # Initialize the paramters container
 hdWE_parameters = HdWEParameters()
-if not (args.append or args.resume):
-    hdWE_parameters.loadParams(work_dir             = args.work_dir,
-                               md_conf              = args.md_conf,
-                               md_package           = md_package,
-                               max_iterations       = args.max_iterations,
-                               segments_per_bin     = args.segments_per_bin,
-                               minimal_probability  = args.minimal_probability,
-                               coordinate_threshold = args.coordinate_threshold,
-                               max_bins             = args.max_bins,
-                               logfile              = args.logfile,
-                               debug                = args.debug)
+hdWE_parameters.loadParams(md_package           = md_package,
+                           workdir              = config.get('hdWE','workdir'),
+                           max_iterations       = config.get('hdWE','max-iterations'),
+                           segments_per_bin     = config.get('hdWE','segments-per-bin'),
+                           minimal_probability  = config.get('hdWE','minimal-probability'),
+                           coordinate_threshold = config.get('hdWE','threshold'),
+                           max_bins             = config.get('hdWE','max-bins'),
+                           logfile              = config.get('hdWE','logfile'),
+                           debug                = args.debug)
+                           
 
 # Initialize the logger
-logger = Logger(filename=args.logfile, debug=args.debug)
+logger = Logger(filename=hdWE_parameters.logfile, debug=args.debug)
+logger.logParameters(hdWE_parameters)
 # append or resume
 if args.append:
-    logger.logParameters(hdWE_parameters)
-    iterations = logger.loadIterations() 
-elif args.resume:
-    hdWE_parameters.loadJsonParams(logger.getHdWEParameterString())
-    if args.max_iterations:
-        hdWE_parameters.max_iterations = args.max_iterations
-        logger.logParameters(hdWE_parameters)
-    iterations = logger.loadIterations()   
-else:
-    logger.logParameters(hdWE_parameters)
-    
+    iterations = logger.loadIterations()  
 
-# Setup the work_dir and initiate iterations
-initiate.prepare(hdWE_parameters.work_dir, starting_structure="", override="", debug=hdWE_parameters.debug)
+# Setup the workdir and initiate iterations
+initiate.prepare(hdWE_parameters.workdir, starting_structure="", override="", debug=args.debug)
 if len(iterations)==0:
     iterations.append(initiate.create_initial_iteration(hdWE_parameters.segments_per_bin))
     logger.logIteration(iterations[0])
 
+
 # Check MD suite
 if(hdWE_parameters.md_package.lower() == "amber"):
     from amber_module import MD_module
-    md_module = MD_module(hdWE_parameters.work_dir, hdWE_parameters.md_conf, debug=args.debug)
+    md_module = MD_module(args.configfile, debug=args.debug)
 if(hdWE_parameters.md_package.lower() == "gromacs"):
     print("Sorry, support for gromacs is not implemented yet.")
     sys.exit(-1)
@@ -197,11 +163,11 @@ for iteration_counter in range(len(iterations), hdWE_parameters.max_iterations +
                                                   parent_segment_id=segment.getId())
     # Split and merge (Manu)
     # Parallel
-    if args.number_of_threads > 1:
+    if config.get('hdWE','number-of-threads') > 1:
         thread_container = ThreadContainer()
         for this_bin in iteration:
             thread_container.appendJob(threading.Thread(target=this_bin.resampleSegments))
-            if thread_container.getNumberOfJobs() >= args.number_of_threads:
+            if thread_container.getNumberOfJobs() >= config.get('hdWE','number-of-threads'):
                 thread_container.runJobs()
         # Run remaining jobs
         thread_container.runJobs()
@@ -210,7 +176,7 @@ for iteration_counter in range(len(iterations), hdWE_parameters.max_iterations +
         for this_bin in iteration:
             this_bin.resampleSegments()
 
-    if hdWE_parameters.debug: 
+    if args.debug: 
         print("The overall probabiliy is at {0:05f}".format(iteration.getProbability()))
 
     # Run MD

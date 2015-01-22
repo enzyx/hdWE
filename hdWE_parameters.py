@@ -10,18 +10,16 @@ class HdWEParameters():
     def __init(self):
         pass
     
-    def loadParams(self, work_dir,
-                        md_conf,
-                        md_package,
-                        max_iterations,
-                        segments_per_bin,
-                        minimal_probability,
-                        coordinate_threshold,
-                        max_bins,
-                        logfile = "hdWE.log",
-                        debug = False):
-        self.work_dir             = str(work_dir)                # str, DIR
-        self.md_conf              = str(md_conf)                 # str, FILE
+    def loadParams(self, workdir,
+                         md_package,
+                         max_iterations,
+                         segments_per_bin,
+                         minimal_probability,
+                         coordinate_threshold,
+                         max_bins,
+                         logfile = "hdWE.log",
+                         debug = False):
+        self.workdir             = str(workdir)                # str, DIR
         self.logfile              = str(logfile)                 # str, FILE
         self.max_iterations       = int(max_iterations)          # int
         self.coordinate_threshold = float(coordinate_threshold)  # float
@@ -33,8 +31,7 @@ class HdWEParameters():
         
     def loadJsonParams(self, json_string):
         param_dict = json.loads(json_string)
-        self.work_dir             = param_dict.get("work_dir")                # str, DIR
-        self.md_conf              = param_dict.get("md_conf")                 # str, FILE
+        self.workdir             = param_dict.get("workdir")                # str, DIR
         self.logfile              = param_dict.get("logfile")                 # str, FILE
         self.max_iterations       = param_dict.get("max_iterations")          # int
         self.coordinate_threshold = param_dict.get("coordinate_threshold")    # float

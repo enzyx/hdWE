@@ -95,6 +95,16 @@ class Iteration(object):
         self._iter_index = -1
         return self
 
+    def next(self):
+        """
+        Returns the next element of the array self.bins for pyton 2.6
+        """
+        self._iter_index += 1
+        if self._iter_index >= len(self.bins):
+            raise StopIteration
+        else:
+            return self.bins[self._iter_index]
+            
     def __next__(self):
         """
         Returns the next element of the array self.bins
