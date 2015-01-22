@@ -1,9 +1,11 @@
-#!/usr/bin/python3
-
+#!/usr/bin/python2
+"""
+hdWE is a hyperdimensional weighted ensemble simulation implementation.
+"""
+from __future__ import print_function
 import sys
 import os
 import glob
-import argparse
 import numpy
 import initiate
 import analysis_operations
@@ -13,10 +15,22 @@ import threading
 from thread_container import ThreadContainer
 from hdWE_parameters import HdWEParameters
 
-#############################
-# parsing the commandline
-parser = argparse.ArgumentParser(description=
-    'hdWE is a hyperdimensional weighted ensemble simulation implementation.')
+# Compatibility mode for python2.6
+has_argparse = False
+try:
+    import argparse  
+    has_argparse = True  
+except ImportError:
+    import optparse  #Python 2.6
+
+###### Parse command line ###### 
+if has_argparse:
+    parser =argparse.ArgumentParser(description=__doc__,
+                            formatter_class=argparse.RawDescriptionHelpFormatter)
+else:
+    parser = optparse.OptionParser()
+    parser.add_argument = parser.add_option
+
 parser.add_argument('-d', '--dir', type=str, 
                     dest="work_dir", metavar="DIR",
                     help="The working direcory")
@@ -27,10 +41,10 @@ parser.add_argument('-l', '--log', type=str, dest="logfile",
                     default="logfile.log", metavar="FILE",
                     help="The logfile for reading and writing")          
 parser.add_argument("--append", dest="append", action='store_true', 
-					default=False,
+                    default=False,
                     help="continue previous iterations from logfile with new parameters.") 
 parser.add_argument("--resume", dest="resume", action='store_true', 
-					default=False,
+                    default=False,
                     help="resume previous run with parameters from logfile.")                                                                      
 parser.add_argument('--segments-per-bin', type=int, dest="segments_per_bin", 
                     metavar="50", default=50, nargs='?',
@@ -54,18 +68,12 @@ parser.add_argument('--debug', dest="debug", action="store_true",
 parser.add_argument('-nt', '--number-of-threads', type=int, dest="number_of_threads", 
                     metavar="1", default=1, nargs='?',
                     help="Number of threads for script parallelization")
-parser_mdgroup = parser.add_mutually_exclusive_group()
+parser_mdgroup = parser.add_mutually_exclusive_group(required=False)
 parser_mdgroup.add_argument("--amber", dest="amber", action="store_true",
                     default=False)
 parser_mdgroup.add_argument("--gromacs", dest="gromacs", action="store_true",
                     default=False)
 args = parser.parse_args()
-if not ( args.logfile and args.resume\
-    or \
-    ((args.amber or args.gromacs) and args.work_dir and args.md_conf) ):
-    parser.print_help()
-    raise ValueError("\nMissing either\n --log and --resume \nor\n"
-                     " - (--gromacs/--amber), --work_dir and --conf")
 # guarantee a working work_dir variable
 if args.work_dir and args.work_dir[-1] != "/":
     args.work_dir +="/"
