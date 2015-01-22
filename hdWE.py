@@ -40,7 +40,10 @@ parser.add_argument("--append", dest="append", action='store_true',
 parser.add_argument('--debug', dest="debug", action="store_true",
                     default=False, help="Turn debugging on")
 
-args = parser.parse_args()
+if has_argparse:
+    args = parser.parse_args()
+else:
+    (args, options) = parser.parse_args()
 
 ###### Parse Config File #######
 config = ConfigParser.ConfigParser()
