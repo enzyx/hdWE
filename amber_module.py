@@ -1,5 +1,6 @@
 from __future__ import print_function
 import os
+import ConfigParser
 import numpy
 import threading
 import sys
@@ -9,7 +10,7 @@ from thread_container import ThreadContainer
 
 class MD_module():
     
-    # work_dir                    = ''
+    # workdir                    = ''
     # debug                       = False
     # configuration_file          = ''   path to the amer configuration file that contains the 
     #                                    following entries:
@@ -20,30 +21,28 @@ class MD_module():
     # parallelization_mode        = ''   serial, parallel, custom_cow
     # number of threads           = ''   number of threads in parallel mode
     
-    def __init__(self, work_dir, configuration_file_path, debug):
+    def __init__(self, configfile, debug):
         """Initializes the MD module and Reads the amber configuration file.
         """
-        self.work_dir                 = work_dir
-        self.debug                    = debug
-        self.configuration_file_path  = configuration_file_path
-        
         #read in configuration file
-        configuration_file = open(self.configuration_file_path,'r')
-        lines              = configuration_file.readlines()
-        for line in lines:
-            if line.split('=')[0].strip() == 'topology_path':
-                self.amber_topology_path   = line.split('=')[1].strip()
-            if line.split('=')[0].strip() == 'infile_path':
-                self.amber_infile_path   = line.split('=')[1].strip()
-            if line.split('=')[0].strip() == 'coordinate_mask':
-                self.amber_coordinate_mask   = line.split('=')[1].strip()
-            if line.split('=')[0].strip() == 'binary':
-                self.amber_binary   = line.split('=')[1].strip()
-            if line.split('=')[0].strip() == 'parallelization_mode':
-                self.parallelization_mode   = line.split('=')[1].strip()
-            if line.split('=')[0].strip() == 'number_of_threads':
-                self.number_of_threads   = int(line.split('=')[1].strip())
-        configuration_file.close()
+        config = ConfigParser.ConfigParser()
+        config.read(configfile)
+        self.workdir               = config.get('hdWE','workdir')        
+        self.amber_topology_path   = config.get('amber','topology-path')
+        self.amber_infile_path     = config.get('amber','infile-path')
+        self.amber_coordinate_mask = config.get('amber','coordinate-mask')
+        self.amber_binary          = config.get('amber','binary')
+        self.parallelization_mode  = config.get('amber','parallelization-mode')
+        self.number_of_threads     = int(config.get('amber','number-of-threads'))
+        self.debug = debug
+        
+        
+        
+        # check topology and infile:
+        if not os.path.isfile(self.amber_topology_path):
+            raise Exception("No topology found at given path.")
+        if not os.path.isfile(self.amber_infile_path):
+            raise Exception("No infile found at given path.")        
     
     def RunMDs(self, iteration):
         """Propagates the trajectories corresponding to an iteration using amber."""
@@ -54,9 +53,9 @@ class MD_module():
             #Command line for debugging
             if self.debug==True:
                     os.system('echo ' + command_line + \
-                              ' >> ' + self.work_dir + 'debug/amber_command_lines.log')
+                              ' >> ' + self.workdir + 'debug/amber_command_lines.log')
             #Log and Run MD
-            logfile = open(self.work_dir + 'log/' + iteration.getNameString() + '.MD_log','w')
+            logfile = open(self.workdir + 'log/' + iteration.getNameString() + '.MD_log','w')
             logfile.write(MdLogString(segment, status = 0 ))
             sys.stdout.write(writeMdStatus(segment, MD_run_count))
             sys.stdout.flush()
@@ -70,10 +69,10 @@ class MD_module():
             """Returns the command line for an amber run corresponding to the 
             given indices and binary.
             """
-            amber_start_coords_path =  self.work_dir + 'run/' + segment.getParentNameString() + '.rst7'
-            amber_outfile_path      =  self.work_dir + 'run/' + segment.getNameString()       + '.out'
-            amber_trajectory_path   =  self.work_dir + 'run/' + segment.getNameString()       + '.nc'
-            amber_end_coords_path   =  self.work_dir + 'run/' + segment.getNameString()       + '.rst7'
+            amber_start_coords_path =  self.workdir + 'run/' + segment.getParentNameString() + '.rst7'
+            amber_outfile_path      =  self.workdir + 'run/' + segment.getNameString()       + '.out'
+            amber_trajectory_path   =  self.workdir + 'run/' + segment.getNameString()       + '.nc'
+            amber_end_coords_path   =  self.workdir + 'run/' + segment.getNameString()       + '.rst7'
         
             amber_command_line      =   self.amber_binary + ' -O' + \
                                         ' -p ' + self.amber_topology_path + \
@@ -88,8 +87,8 @@ class MD_module():
         def RemoveMdOutput(segment):
             """Removes unnecessary MD output files.
             """
-            amber_outfile_path      =  self.work_dir + 'run/' + segment.getNameString()       + '.out'
-            amber_trajectory_path   =  self.work_dir + 'run/' + segment.getNameString()       + '.nc'
+            amber_outfile_path      =  self.workdir + 'run/' + segment.getNameString()       + '.out'
+            amber_trajectory_path   =  self.workdir + 'run/' + segment.getNameString()       + '.nc'
             os.remove(amber_outfile_path)
             os.remove(amber_trajectory_path)
  
@@ -144,12 +143,12 @@ class MD_module():
         #Write the cpptraj infile
         segment_name_string=segment.getNameString() 
         
-        cpptraj_infile_path=self.work_dir + segment_name_string + '.cpptraj_in'
+        cpptraj_infile_path=self.workdir + segment_name_string + '.cpptraj_in'
         cpptraj_infile=open(cpptraj_infile_path,'w')
-        cpptraj_infile.write('trajin ' + self.work_dir + 'run/' + segment_name_string + '.rst7' + '\n')     
-        cpptraj_output_path = self.work_dir + segment_name_string + '.cpptraj_output'
+        cpptraj_infile.write('trajin ' + self.workdir + 'run/' + segment_name_string + '.rst7' + '\n')     
+        cpptraj_output_path = self.workdir + segment_name_string + '.cpptraj_output'
         for bin_loop in range(0,len(bins)):
-            reference_bin_name_string         = self.work_dir + 'run/' + bins[bin_loop].getReferenceNameString() + '.rst7 '
+            reference_bin_name_string         = self.workdir + 'run/' + bins[bin_loop].getReferenceNameString() + '.rst7 '
             cpptraj_reference_id_name_string  = '[reference_id_' + str(bin_loop).zfill(5) + ']'
 
             cpptraj_infile.write('reference ' + reference_bin_name_string + cpptraj_reference_id_name_string + '\n')
@@ -162,7 +161,7 @@ class MD_module():
         #Run cpptraj
         cpptraj_execute_string =' -p ' + self.amber_topology_path + \
                                 ' -i ' + cpptraj_infile_path + \
-                                ' >> ' + self.work_dir + 'debug/cpptraj.log' 
+                                ' >> ' + self.workdir + 'debug/cpptraj.log' 
         os.system('cpptraj ' + cpptraj_execute_string )
       
         #Load cpptraj output as numpy array
@@ -183,7 +182,7 @@ class MD_module():
         if (self.debug==False):
             os.remove(cpptraj_infile_path)
             os.remove(cpptraj_output_path)
-            os.remove(self.work_dir + 'debug/cpptraj.log')
+            os.remove(self.workdir + 'debug/cpptraj.log')
         
         return coordinates
         
@@ -195,17 +194,17 @@ class MD_module():
         
         #Write the cpptraj infile
         segment_name_string=segment.getNameString() 
-        cpptraj_infile_path=self.work_dir + segment_name_string + '.ana_calculatePMF_cpptraj_in'
-        cpptraj_output_path = self.work_dir + segment_name_string + '.ana_calculatePMF_cpptraj_output'
+        cpptraj_infile_path=self.workdir + segment_name_string + '.ana_calculatePMF_cpptraj_in'
+        cpptraj_output_path = self.workdir + segment_name_string + '.ana_calculatePMF_cpptraj_output'
         cpptraj_infile=open(cpptraj_infile_path,'w')
-        cpptraj_infile.write('trajin ' + self.work_dir + 'run/' + segment_name_string + '.rst7' + '\n')
+        cpptraj_infile.write('trajin ' + self.workdir + 'run/' + segment_name_string + '.rst7' + '\n')
         cpptraj_infile.writelines(cpptraj_lines + ' out ' + cpptraj_output_path )
         cpptraj_infile.close()
         
         #Execute cpptraj
         cpptraj_execute_string =' -p ' + self.amber_topology_path + \
                                 ' -i ' + cpptraj_infile_path + \
-                                ' >> ' + self.work_dir + 'debug/ana_calculatePMF_cpptraj.log' 
+                                ' >> ' + self.workdir + 'debug/ana_calculatePMF_cpptraj.log' 
         os.system('cpptraj ' + cpptraj_execute_string )        
         
         #Load cpptraj output as numpy array
@@ -219,7 +218,7 @@ class MD_module():
         if (self.debug==False):
             os.remove(cpptraj_infile_path)
             os.remove(cpptraj_output_path)
-            os.remove(self.work_dir + 'debug/ana_calculatePMF_cpptraj.log' )
+            os.remove(self.workdir + 'debug/ana_calculatePMF_cpptraj.log' )
             
         coordinate_value = coordinates[1]
         

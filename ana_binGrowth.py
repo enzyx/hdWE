@@ -1,14 +1,32 @@
-#!/usr/bin/python3
-import argparse
+#!/usr/bin/python2
+"""
+Calculates the PMF along an arbitrary coordinate from 
+the data of a hdWE run.
+"""
+from __future__ import print_function
 from logger import Logger
 import sys
 import numpy as np                      ## numeric library
 from scipy.optimize import curve_fit    ## fitting library
 import matplotlib.pyplot as plt         ## plot library
 
+# Compatibility mode for python2.6
+has_argparse = False
+try:
+    import argparse  
+    has_argparse = True  
+except ImportError:
+    import optparse  #Python 2.6
+
+
 ###### Parse command line ###### 
-parser = argparse.ArgumentParser(description=
-    'Calculates the PMF along an arbitrary coordinate from the data of a hdWE run.')
+if has_argparse:
+    parser =argparse.ArgumentParser(description=__doc__,
+                            formatter_class=argparse.RawDescriptionHelpFormatter)
+else:
+    parser = optparse.OptionParser()
+    parser.add_argument = parser.add_option
+
 parser.add_argument('-b', '--first_it', dest="first_iteration",
                     required=False, type=int, default=0,
                     help="First iteration to use for PMF calculation.")                    
@@ -53,7 +71,7 @@ sys.stderr.write('\033[1m' + 'Fitting logistic function...' + '\033[0m\n')
 ## Fit using startvalue p0 = [A0,B0,C0] and 
 ## equal uncertainties for data (sigma = None)
 p0 = [1.5, 1.0]
-popt, pcov = curve_fit(logistic_curve, xdata, ydata, sigma=None, p0=p0, maxfev= 10000)
+popt, pcov = curve_fit(logistic_curve, xdata, ydata, sigma=None, p0=p0, maxfev=10000)
 
 sys.stderr.write('\033[1m' + 'Fit results:' + '\033[0m\n')
 sys.stderr.write('\033[1m' + "G = {0:.0f} ".format(popt[0]) 

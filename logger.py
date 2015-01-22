@@ -333,8 +333,9 @@ class Logger():
         if iteration.getNumberOfBins() == target_number_of_read_bins:
             bNbins = True
         else:
-            raise Exception("Bin number mismatch: Iteration had: {target},".format(\
-                        target = target_number_of_read_bins)+
+            sys.stderr.write("read-in: Bin number mismatch: Iteration {it} had: {target},\n".format(\
+                        target = target_number_of_read_bins,
+                        it = iteration.getId())+
                         " read {nbins} bins".format(\
                             nbins = iteration.getNumberOfBins()))
         # check iteration probability

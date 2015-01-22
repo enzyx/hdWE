@@ -95,6 +95,16 @@ class Iteration(object):
         self._iter_index = -1
         return self
 
+    def next(self):
+        """
+        Returns the next element of the array self.bins for pyton 2.6
+        """
+        self._iter_index += 1
+        if self._iter_index >= len(self.bins):
+            raise StopIteration
+        else:
+            return self.bins[self._iter_index]
+            
     def __next__(self):
         """
         Returns the next element of the array self.bins
@@ -104,6 +114,16 @@ class Iteration(object):
             raise StopIteration
         else:
             return self.bins[self._iter_index]
+    
+    def getSegments(self):
+        """
+        @return list of all segments in this iteration
+        """
+        segments = []
+        for _bin in self.bins:
+            for segment in _bin:
+                segments.append(segment)
+        return segments
             
     def FluxMatrix(self):
         """

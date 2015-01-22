@@ -234,6 +234,16 @@ class Bin(object):
         self._iter_index = -1
         return self
 
+    def next(self):
+        """
+        Returns the next element of the array self.segments for python 2.6
+        """
+        self._iter_index += 1
+        if self._iter_index >= len(self.segments):
+            raise StopIteration
+        else:
+            return self.segments[self._iter_index]
+            
     def __next__(self):
         """
         Returns the next element of the array self.segments
