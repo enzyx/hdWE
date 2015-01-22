@@ -2,6 +2,7 @@
 """
 hdWE is a hyperdimensional weighted ensemble simulation implementation.
 """
+from __future__ import print_function
 import sys
 import os
 import glob

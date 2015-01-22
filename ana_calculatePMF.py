@@ -3,6 +3,7 @@
 Calculates the PMF along an arbitrary coordinate 
 from the data of a hdWE run.
 """
+from __future__ import print_function
 import numpy
 import constants
 import sys
