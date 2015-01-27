@@ -6,6 +6,7 @@ from __future__ import print_function
 import sys
 import os
 import ConfigParser
+import argparse
 import glob
 import numpy
 import initiate
@@ -16,21 +17,11 @@ import threading
 from thread_container import ThreadContainer
 from hdWE_parameters import HdWEParameters
 
-# Compatibility mode for python2.6
-has_argparse = False
-try:
-    import argparse  
-    has_argparse = True  
-except ImportError:
-    import optparse  #Python 2.6
-
 ###### Parse command line ###### 
-if has_argparse:
-    parser =argparse.ArgumentParser(description=__doc__,
+
+parser =argparse.ArgumentParser(description=__doc__,
                             formatter_class=argparse.RawDescriptionHelpFormatter)
-else:
-    parser = optparse.OptionParser()
-    parser.add_argument = parser.add_option
+
 parser.add_argument('-c', '--conf', type=str, dest="configfile", 
                     metavar="FILE",
                     help="The hdWE configuration file")      
@@ -40,29 +31,11 @@ parser.add_argument("--append", dest="append", action='store_true',
 parser.add_argument('--debug', dest="debug", action="store_true",
                     default=False, help="Turn debugging on")
 
-if has_argparse:
-    args = parser.parse_args()
-else:
-    (args, options) = parser.parse_args()
+args = parser.parse_args()                
 
 ###### Parse Config File #######
 config = ConfigParser.ConfigParser()
 config.read(args.configfile)
-
-#~ # guarantee a working workdir variable
-#~ if args.workdir and args.workdir[-1] != "/":
-    #~ args.workdir +="/"
-    
-#~ # backup log file
-logfile = config.get('hdWE','logfile')
-if not (args.append):
-    if os.path.isfile(logfile):
-        if os.path.isfile(logfile + '.bak*'):
-            backups = glob.glob(logfile + '.bak.*')
-            backup_number = int(sorted(backups)[-1].split(".")[-1]) + 1
-        else:
-            backup_number = 1
-        os.rename(logfile, logfile+".bak." + str(backup_number))
 
 #############################
 # Main
@@ -71,14 +44,15 @@ if not (args.append):
 # The global list of arrays
 iterations = [] 
 
-# Initialize the paramters container
+# Initialize the parameter container
 hdWE_parameters = HdWEParameters()
 hdWE_parameters.loadConfParameters(config, args.debug)
 
 # Initialize the logger
-logger = Logger(filename=hdWE_parameters.logfile, debug=args.debug)
+logger = Logger(filename=hdWE_parameters.logfile, 
+                append=args.append,
+                debug=args.debug)
 logger.logParameters(hdWE_parameters)
-# append or resume
 if args.append:
     iterations = logger.loadIterations()  
 

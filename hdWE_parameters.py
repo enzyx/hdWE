@@ -2,7 +2,7 @@ import json
 
 #############################
 # parsing the commandline
-
+   
 class HdWEParameters():
     """
     container for hdWE runtime paramters
@@ -42,18 +42,20 @@ class HdWEParameters():
             raise Exception("No MD package (amber/gromacs) section in configuration file")
         self.md_package           = md_package
         self.workdir              = str(config.get('hdWE','workdir'))
+        self.guaranteeWorkdirSlash()
         self.max_iterations       = int(config.get('hdWE','max-iterations'))
         self.segments_per_bin     = int(config.get('hdWE','segments-per-bin'))
         self.minimal_probability  = float(config.get('hdWE','minimal-probability'))
         self.coordinate_threshold = float(config.get('hdWE','threshold'))
         self.max_bins             = int(config.get('hdWE','max-bins'))
-        self.logfile              = str(config.get('hdWE','logfile'))
+        self.logfile              = self.workdir + str(config.get('hdWE','logfile'))
         self.debug                = debug
         
     def loadJsonParams(self, json_string):
         param_dict = json.loads(json_string)
-        self.workdir             = param_dict.get("workdir")                # str, DIR
-        self.logfile              = param_dict.get("logfile")                 # str, FILE
+        self.workdir              = param_dict.get("workdir")                # str, DIR
+        self.guaranteeWorkdirSlash()
+        self.logfile              = self.workdir + param_dict.get("logfile")  # str, FILE
         self.max_iterations       = param_dict.get("max_iterations")          # int
         self.coordinate_threshold = param_dict.get("coordinate_threshold")    # float
         self.segments_per_bin     = param_dict.get("segments_per_bin")        # int
@@ -64,3 +66,10 @@ class HdWEParameters():
 
     def getLogString(self):
         return json.dumps(self.__dict__, sort_keys=True)
+        
+    def guaranteeWorkdirSlash(self):
+        """
+        guarantee a working workdir variable
+        """
+        if self.workdir and self.workdir[-1] != "/":
+            self.workdir +="/"

@@ -1,6 +1,7 @@
 #!/usr/bin/python3
 from __future__ import print_function
 import sys, os
+import glob
 import json
 from segment import Segment
 from bin import Bin
@@ -16,16 +17,16 @@ class Logger():
         logger = Logger(logfilename = "logfile.log")
         
         # log a set of command line arguments
-        logger.log_arguments(args)
+        logger.logArguments(args)
         
         # log an array of iterations
-        logger.log_iterations(iterations)
+        logger.logIterations(iterations)
         
         # log a single iteration
-        logger.log_iteration(iteration)
+        logger.logIteration(iteration)
         
         # load arguments from the logfile:
-        logger.load_arguments(args)
+        logger.loadArguments(args)
         
         # load (correctly) logged iterations
         read_iterations = logger.load_iterations()
@@ -34,10 +35,23 @@ class Logger():
         logger.close()
     
     """
-    def __init__(self, filename, debug = False):
+    def __init__(self, filename, append = False, debug = False):
         self.logfilename = filename
-        self.logfile = open(self.logfilename, "a+")
         self.debug = debug
+        
+        # backup log file
+        if not (append):
+            if os.path.isfile(filename):
+                #~ if os.path.isfile(filename + '.bak*'):
+                if glob.glob(filename + '.bak.*'):
+                    backups = glob.glob(filename + '.bak.*')
+                    backup_number = int(sorted(backups)[-1].split(".")[-1]) + 1
+                else:
+                    backup_number = 1
+                os.rename(filename, filename+".bak." + str(backup_number))
+
+        # open logfile
+        self.logfile = open(self.logfilename, "a+")
     
     def logParameters(self, hdWE_parameters):
         paramline = hdWE_parameters.getLogString()
@@ -56,10 +70,10 @@ class Logger():
         
     def logIterations(self, iterations):
         """
-        writes all interations within [first, last] to the logfile
+        writes all interations to the logfile
         """
         for iteration in iterations:
-            self.log_iteration(iteration)
+            self.logIteration(iteration)
             
     def getHdWEParameterString(self):
         """
@@ -77,9 +91,14 @@ class Logger():
         """
             @return read-in iterations
         """
+        sys.stdout.write("reading iterations {first}-{last} from {file}\n".format(\
+                          first = first,
+                          last = last,
+                          file = self.logfilename))
         iterations = []
         iteration = Iteration(-1)
-        number_of_iterations_read = 0
+        number_of_iterations_read = 0   # number of iterations read
+        b_read_iteration = False        # True if iteration is to be read
         with open(self.logfilename, "r") as readfile:
             file_lines = readfile.readlines()
             # compare arguments, suspended for now because the logger
@@ -111,12 +130,17 @@ class Logger():
                     iteration=Iteration(int(iteration_line[1]))
                     target_number_of_read_bins = int(iteration_line[3])
                     number_of_iterations_read += 1
-
+                    # check if iteration is in range
+                    if iteration.getId() >= first and \
+                       (last == -1 or iteration.getId() <= last):
+                        b_read_iteration = True
+                    else:
+                        b_read_iteration = False
                 # read bin data
-                if line[:5] == "{\"b\":":
+                if b_read_iteration and line[:5] == "{\"b\":":
                     read_bin = self._loadBin(line)
                     # check for iteration_id consistency
-                    if read_bin.getIterationId() != iteration.getId():
+                    if self.debug and read_bin.getIterationId() != iteration.getId():
                         raise Exception("Iteration mismatch: Iteration: {it_id},"+
                                         "Bin: {bin_it_it}".format(\
                                             it_id=self.iteration.getId(),
@@ -128,7 +152,8 @@ class Logger():
             if iteration.getId() != -1:
                 if self.__checkIteration(iteration, target_number_of_read_bins, first, last):
                     iterations.append(iteration)
-                
+        if self.debug:
+            sys.stdout.write("finished reading iterations\n")    
         return iterations
        
     def _logBin(self, _bin):
@@ -329,14 +354,18 @@ class Logger():
         bNbins = False
         bProbability = True
         bRange = True
+        # check if iteration is in range
+        if iteration.getId() < first or (last != -1 and iteration.getId() > last):
+                bRange = False
+                return False
         # check iteration number of bins
         if iteration.getNumberOfBins() == target_number_of_read_bins:
             bNbins = True
         else:
-            sys.stderr.write("read-in: Bin number mismatch: Iteration {it} had: {target},\n".format(\
+            raise Exception("read-in ERROR: Bin number mismatch: Iteration {it} had: {target},".format(\
                         target = target_number_of_read_bins,
                         it = iteration.getId())+
-                        " read {nbins} bins".format(\
+                        " read {nbins} bins\n".format(\
                             nbins = iteration.getNumberOfBins()))
         # check iteration probability
         if self.debug:
@@ -345,11 +374,6 @@ class Logger():
             else:
                 sys.stderr.write("Wrong total Iteration probability: {prob}\n".format(\
                                 prob = iteration.getProbability())) 
-        # check if iteration is in range
-        if iteration.getId() < first:
-                bRange = False
-        elif last != -1 and iteration.getId() > last:
-                bRange = False
         # append iteration
         if bNbins and bProbability and bRange:
             return True
