@@ -1,6 +1,7 @@
 #!/usr/bin/python3
 from __future__ import print_function
 import sys, os
+import glob
 import json
 from segment import Segment
 from bin import Bin
@@ -34,10 +35,23 @@ class Logger():
         logger.close()
     
     """
-    def __init__(self, filename, debug = False):
+    def __init__(self, filename, append = False, debug = False):
         self.logfilename = filename
-        self.logfile = open(self.logfilename, "a+")
         self.debug = debug
+        
+        # backup log file
+        if not (append):
+            if os.path.isfile(filename):
+                #~ if os.path.isfile(filename + '.bak*'):
+                if glob.glob(filename + '.bak.*'):
+                    backups = glob.glob(filename + '.bak.*')
+                    backup_number = int(sorted(backups)[-1].split(".")[-1]) + 1
+                else:
+                    backup_number = 1
+                os.rename(filename, filename+".bak." + str(backup_number))
+
+        # open logfile
+        self.logfile = open(self.logfilename, "a+")
     
     def logParameters(self, hdWE_parameters):
         paramline = hdWE_parameters.getLogString()
@@ -77,8 +91,10 @@ class Logger():
         """
             @return read-in iterations
         """
-        if self.debug:
-            sys.stdout.write("start reading iterations\n")
+        sys.stdout.write("reading iterations {first}-{last} from {file}\n".format(\
+                          first = first,
+                          last = last,
+                          file = self.logfilename))
         iterations = []
         iteration = Iteration(-1)
         number_of_iterations_read = 0   # number of iterations read
@@ -116,8 +132,7 @@ class Logger():
                     number_of_iterations_read += 1
                     # check if iteration is in range
                     if iteration.getId() >= first and \
-                       last != -1 and \
-                       iteration.getId() <= last:
+                       (last == -1 or iteration.getId() <= last):
                         b_read_iteration = True
                     else:
                         b_read_iteration = False
@@ -340,20 +355,17 @@ class Logger():
         bProbability = True
         bRange = True
         # check if iteration is in range
-        if iteration.getId() < first:
-                bRange = False
-                return False
-        elif last != -1 and iteration.getId() > last:
+        if iteration.getId() < first or (last != -1 and iteration.getId() > last):
                 bRange = False
                 return False
         # check iteration number of bins
         if iteration.getNumberOfBins() == target_number_of_read_bins:
             bNbins = True
         else:
-            sys.stderr.write("read-in: Bin number mismatch: Iteration {it} had: {target},\n".format(\
+            raise Exception("read-in ERROR: Bin number mismatch: Iteration {it} had: {target},".format(\
                         target = target_number_of_read_bins,
                         it = iteration.getId())+
-                        " read {nbins} bins".format(\
+                        " read {nbins} bins\n".format(\
                             nbins = iteration.getNumberOfBins()))
         # check iteration probability
         if self.debug:
