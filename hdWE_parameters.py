@@ -29,6 +29,27 @@ class HdWEParameters():
         self.debug                = bool(debug)                  # bool
         self.md_package           = str(md_package)              # str
         
+    def loadConfParameters(self, config, debug=False):
+        """
+        load hdWE parameters from config file
+        """
+        # define md_package string (amber/gromacs)
+        if "amber" in config.sections():
+            md_package = "amber"
+        elif "gromacs" in config.sections():
+            md_package = "gromacs"
+        else:
+            raise Exception("No MD package (amber/gromacs) section in configuration file")
+        self.md_package           = md_package
+        self.workdir              = str(config.get('hdWE','workdir'))
+        self.max_iterations       = int(config.get('hdWE','max-iterations'))
+        self.segments_per_bin     = int(config.get('hdWE','segments-per-bin'))
+        self.minimal_probability  = float(config.get('hdWE','minimal-probability'))
+        self.coordinate_threshold = float(config.get('hdWE','threshold'))
+        self.max_bins             = int(config.get('hdWE','max-bins'))
+        self.logfile              = str(config.get('hdWE','logfile'))
+        self.debug                = debug
+        
     def loadJsonParams(self, json_string):
         param_dict = json.loads(json_string)
         self.workdir             = param_dict.get("workdir")                # str, DIR

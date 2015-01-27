@@ -27,30 +27,33 @@ else:
     parser = optparse.OptionParser()
     parser.add_argument = parser.add_option
 parser.add_argument('-d', '--dir', type=str, 
-                    dest="work_dir", required=True, metavar="DIR",
+                    dest="work_dir", metavar="DIR",
                     help="The working direcory")
 parser.add_argument('-c', '--conf', dest="input_md_conf", 
-                    required=True, type=str,
+                    type=str,
                     help="MD-Software configuration file")
 parser.add_argument('-b', '--first_it', dest="first_iteration",
-                    required=False, type=int, default=0,
+                    type=int, default=0,
                     help="First iteration to use for PMF calculation.")                    
 parser.add_argument('-e', '--last_it', dest="last_iteration",
-                    required=False, type=int, default=0,
+                    type=int, default=0,
                     help="Last iteration to to use for PMF calculation.")  
 parser.add_argument('-o', '--output', dest="output_path", 
-                    required=False, type=str, default='ana_calculatePMF.output',
+                    type=str, default='ana_calculatePMF.output',
                     help="Output filename")  
 parser.add_argument('-N', '--number_of_bins', dest="number_of_bins",
-                    required=False, type=int, default=100, 
+                    type=int, default=100, 
                     help="Number of bins used to calculate the probability histogram.")  
 parser.add_argument('-i', '--cpptraj_lines_file', dest="cpptraj_lines_file_path", 
-                    required=True, type=str, 
+                    type=str, 
                     help="File containig cpptraj syntax that defines the reaction coordinate.")
 parser.add_argument('-l', '--log', type=str, dest="logfile", 
-                    required=True, default="logfile.log", metavar="FILE",
+                    default="logfile.log", metavar="FILE",
                     help="The logfile for reading and writing")
-                    
+if has_argparse:
+    args = parser.parse_args()
+else:
+    (args, options) = parser.parse_args()
 
 print('\033[1mCalculating PMF\033[0m (Free Energy is given in kcal/mol at 298K).')            
                

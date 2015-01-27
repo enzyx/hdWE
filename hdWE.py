@@ -53,14 +53,6 @@ config.read(args.configfile)
 #~ if args.workdir and args.workdir[-1] != "/":
     #~ args.workdir +="/"
     
-# define md_package string (amber/gromacs)
-if "amber" in config.sections():
-    md_package = "amber"
-elif "gromacs" in config.sections():
-    md_package = "gromacs"
-else:
-    raise Exception("No MD package (amber/gromacs) section in configuration file")
-    
 #~ # backup log file
 logfile = config.get('hdWE','logfile')
 if not (args.append):
@@ -73,23 +65,6 @@ if not (args.append):
         os.rename(logfile, logfile+".bak." + str(backup_number))
 
 #############################
-# Functions
-#############################
-def run_parallel_jobs(job_list):
-    """
-    Run a list of jobs in parallel
-    @param job_list of jobs to run
-    @return a new empty job_list
-    """
-    for job in parallel_jobs:
-       job.start()
-    # Wait until threads are finished
-    for job in parallel_jobs:
-        job.join()
-    # Reset the job list to fill it with next bunch of work
-    return []
-
-#############################
 # Main
 #############################
 
@@ -98,16 +73,7 @@ iterations = []
 
 # Initialize the paramters container
 hdWE_parameters = HdWEParameters()
-hdWE_parameters.loadParams(md_package           = md_package,
-                           workdir              = config.get('hdWE','workdir'),
-                           max_iterations       = config.get('hdWE','max-iterations'),
-                           segments_per_bin     = config.get('hdWE','segments-per-bin'),
-                           minimal_probability  = config.get('hdWE','minimal-probability'),
-                           coordinate_threshold = config.get('hdWE','threshold'),
-                           max_bins             = config.get('hdWE','max-bins'),
-                           logfile              = config.get('hdWE','logfile'),
-                           debug                = args.debug)
-                           
+hdWE_parameters.loadConfParameters(config, args.debug)
 
 # Initialize the logger
 logger = Logger(filename=hdWE_parameters.logfile, debug=args.debug)
