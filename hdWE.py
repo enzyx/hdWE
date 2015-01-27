@@ -116,7 +116,7 @@ for iteration_counter in range(len(iterations), hdWE_parameters.max_iterations +
             coordinates = md_module.CalculateCoordinate(segment, iteration.bins)
             min_coordinate = numpy.min(coordinates)
             # Sort Segment into appropriate bin
-            if (min_coordinate <= hdWE_parameters.coordinate_threshold or segment.getProbability() < hdWE_parameters.minimal_probability):
+            if (min_coordinate <= hdWE_parameters.coordinate_threshold or segment.getProbability() < hdWE_parameters.minimal_probability or iteration.getNumberOfBins() > hdWE_parameters.max_bins):
                 bin_id = numpy.argmin(coordinates)
                 iteration.bins[bin_id].generateSegment(probability=segment.getProbability(),
                                                   parent_bin_id=segment.getBinId(),
@@ -154,15 +154,24 @@ for iteration_counter in range(len(iterations), hdWE_parameters.max_iterations +
     iterations.append(iteration)
     
     #test: print rate matrix, bin probabilities from rates and actual bin probabilities
-    if iteration_counter > 15:
-        mean_rate_matrix= analysis_operations.meanRateMatrix(iterations, iteration_counter -10, iteration_counter)
+    if iteration_counter > 2:
+        mean_rate_matrix= analysis_operations.meanRateMatrix(iterations, iteration_counter -20, iteration_counter)
         print('')
+        print(mean_rate_matrix)
         try:
+            bin_probs_from_rates = analysis_operations.BinProbabilitiesFromRates(mean_rate_matrix) 
             print('Bin probabilities from Rate Matrix:')
-            print(analysis_operations.BinProbabilitiesFromRates(mean_rate_matrix)) 
+            print(bin_probs_from_rates)
+            #test:
+            for bin_loop in iteration.bins:
+                for segment_loop in bin_loop:
+                    if bin_loop.getNumberOfSegments()>0:
+                         segment_loop.probability = bin_probs_from_rates[bin_loop.getId()] / bin_loop.getNumberOfSegments()
         except:
-
             print('Singular rate matrix')
+        #for bin_loop in iteration.bins:
+        #    for segment_loop in bin_loop:
+        #        segment_loop.probability = bin_probs_from_rates[bin_loop.getId()] / bin_loop.getTargetNumberOfSegments()
         print('Actual Bin probabilities:')
         print(analysis_operations.meanBinProbabilities(iterations, iteration_counter -10, iteration_counter))         
 

@@ -58,6 +58,7 @@ else:
 print('\033[1mCalculating PMF\033[0m (Free Energy is given in kcal/mol at 298K).')            
                
 # Initialize
+args = parser.parse_args()
 md_module = MD_module(args.input_md_conf, debug=False)
 
 #get the actual Iteration from logger module
