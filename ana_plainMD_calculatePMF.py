@@ -1,23 +1,28 @@
-#!/usr/bin/python2
+#!/usr/bin/python2.7
 from __future__ import print_function
 import argparse
 import numpy
-import iteration
+import constants
 from math import log
-from amber_module import MD_module
 
 # Parse command line
 parser = argparse.ArgumentParser(description=
-    'Calculates the PMF based on a cpptraj output file generated from a free MD simulation.')
+    'Calculates the PMF based on a plain MD trajectory.')
+parser.add_argument('-c', '--conf', type=str, dest="configfile", 
+                    metavar="FILE",
+                    help="The hdWE configuration file")   
 parser.add_argument('-b', '--begin_frame', dest="begin_frame",
                     required=False, type=int, default=0,
                     help="First frame to use for PMF calculation.")                    
 parser.add_argument('-e', '--end_frame', dest="end_frame",
                     required=False, type=int, default=0,
                     help="Last frame to to use for PMF calculation.")  
-parser.add_argument('-i', '--input', dest="input_path", 
+parser.add_argument('-i', '--cpptraj_lines_file', dest="cpptraj_lines_file_path", 
+                    type=str, 
+                    help="File containig cpptraj syntax that defines the reaction coordinate.")
+parser.add_argument('-t', '--trajectory', dest="trajectory", 
                     required=True, type=str,
-                    help="Output filename") 
+                    help="Plain MD trajectory.") 
 parser.add_argument('-o', '--output', dest="output_path", 
                     required=False, type=str, default='freeMD_calculatePMF.output',
                     help="Output filename")  
@@ -27,7 +32,6 @@ parser.add_argument('-N', '--number_of_bins', dest="number_of_bins",
 
 # Initialize
 args = parser.parse_args()
-kT = 0.0019872041 * 298 # k in kcal/mol
 
 # Load coordinates
 coordinates_tmp = numpy.loadtxt(args.input_path, usecols=(1,) )
@@ -55,7 +59,7 @@ for i in range(0,len(coordinates)):
 for i in range(0,args.number_of_bins):
     hist[i,0] = hist_min + i * dcoord
     if hist[i,2]>0:
-        hist[i,1]  = - kT * log(hist[i,2])
+        hist[i,1]  = - constants.kT * log(hist[i,2])
     else:
         hist[i,1]  = 'Inf'
 

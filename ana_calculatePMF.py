@@ -10,33 +10,23 @@ import sys
 from logger import Logger
 from math import log
 from amber_module import MD_module
+import argparse  
 
-# Compatibility mode for python2.6
-has_argparse = False
-try:
-    import argparse  
-    has_argparse = True  
-except ImportError:
-    import optparse  #Python 2.6
 
 ###### Parse command line ###### 
-if has_argparse:
-    parser =argparse.ArgumentParser(description=__doc__,
-                            formatter_class=argparse.RawDescriptionHelpFormatter)
-else:
-    parser = optparse.OptionParser()
-    parser.add_argument = parser.add_option
-parser.add_argument('-d', '--dir', type=str, 
-                    dest="work_dir", metavar="DIR",
-                    help="The working direcory")
+parser =argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+
 parser.add_argument('-c', '--conf', dest="input_md_conf", 
                     type=str,
                     help="MD-Software configuration file")
+parser.add_argument('-l', '--log', type=str, dest="logfile", 
+                    default="logfile.log", metavar="FILE",
+                    help="The logfile for reading and writing")
 parser.add_argument('-b', '--first_it', dest="first_iteration",
                     type=int, default=0,
                     help="First iteration to use for PMF calculation.")                    
 parser.add_argument('-e', '--last_it', dest="last_iteration",
-                    type=int, default=0,
+                    type=int, default=-1,
                     help="Last iteration to to use for PMF calculation.")  
 parser.add_argument('-o', '--output', dest="output_path", 
                     type=str, default='ana_calculatePMF.output',
@@ -47,33 +37,17 @@ parser.add_argument('-N', '--number_of_bins', dest="number_of_bins",
 parser.add_argument('-i', '--cpptraj_lines_file', dest="cpptraj_lines_file_path", 
                     type=str, 
                     help="File containig cpptraj syntax that defines the reaction coordinate.")
-parser.add_argument('-l', '--log', type=str, dest="logfile", 
-                    default="logfile.log", metavar="FILE",
-                    help="The logfile for reading and writing")
-if has_argparse:
-    args = parser.parse_args()
-else:
-    (args, options) = parser.parse_args()
 
-print('\033[1mCalculating PMF\033[0m (Free Energy is given in kcal/mol at 298K).')            
-               
 # Initialize
+print('\033[1mCalculating PMF\033[0m (Free Energy is given in kcal/mol at 298K).')      
 args = parser.parse_args()
 md_module = MD_module(args.input_md_conf, debug=False)
 
 #get the actual Iteration from logger module
-logger = Logger(args.work_dir+args.logfile)
-iterations = logger.loadIterations()
+print(' Loading logfile...')  
+logger = Logger(args.logfile)
+iterations = logger.loadIterations(args.first_iteration, args.last_iteration)
 logger.close()
-
-#iteration I = iterations[I - 1]
-args.first_iteration -= 1
-args.last_iteration  -= 1
-
-#set default last_iteration value
-if args.last_iteration < 1:
-    args.last_iteration = len(iterations) -1 
-
 
 # Load cpptraj input file as one string with linebreaks and delete the last line break
 try:
@@ -89,18 +63,21 @@ cpptraj_lines_file.close()
 #Calculate the coordinate values and store them together with
 #the trajectory probability into coordinates 
 coordinates     = numpy.zeros([0,2])
-coordinates_tmp = numpy.zeros([1,2]) 
-for iteration_loop in iterations[args.first_iteration:args.last_iteration+1]:
-    sys.stdout.write(' Processing iteration ' + str(iteration_loop.getId()).zfill(5) +  \
-                     ' / ' + str(args.first_iteration+1).zfill(5) + '-' + str(args.last_iteration+1).zfill(5) + '\r')
-    sys.stdout.flush()  
+coordinates_tmp = numpy.zeros([1,2])
+first_it = iterations[0].getId()
+last_it  = iterations[-1].getId()
+ 
+for iteration_loop in iterations:
     for bin_loop in iteration_loop:
+        sys.stdout.write(' Processing iteration ' + str(iteration_loop.getId()).zfill(5) +  \
+                         ' / ' + str(first_it).zfill(5) + '-' + str(last_it).zfill(5) + \
+                         ', Bin ' +  str(bin_loop.getId()+1).zfill(5) + '/ ' + str(iteration_loop.getNumberOfBins()).zfill(5) + '\r' )
+        sys.stdout.flush()  
         for segment_loop in bin_loop:
             coordinates_tmp[0,0] = md_module.ana_calculatePMF_getCoordinate(segment_loop, cpptraj_lines)
             coordinates_tmp[0,1] = segment_loop.getProbability()  
             coordinates          = numpy.append(coordinates, coordinates_tmp, axis=0)
  
-
 
 #Calculate the weighted histogram and PMF     
 #Setup variables
