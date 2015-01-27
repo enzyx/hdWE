@@ -16,16 +16,16 @@ class Logger():
         logger = Logger(logfilename = "logfile.log")
         
         # log a set of command line arguments
-        logger.log_arguments(args)
+        logger.logArguments(args)
         
         # log an array of iterations
-        logger.log_iterations(iterations)
+        logger.logIterations(iterations)
         
         # log a single iteration
-        logger.log_iteration(iteration)
+        logger.logIteration(iteration)
         
         # load arguments from the logfile:
-        logger.load_arguments(args)
+        logger.loadArguments(args)
         
         # load (correctly) logged iterations
         read_iterations = logger.load_iterations()
@@ -56,10 +56,10 @@ class Logger():
         
     def logIterations(self, iterations):
         """
-        writes all interations within [first, last] to the logfile
+        writes all interations to the logfile
         """
         for iteration in iterations:
-            self.log_iteration(iteration)
+            self.logIteration(iteration)
             
     def getHdWEParameterString(self):
         """
@@ -77,9 +77,12 @@ class Logger():
         """
             @return read-in iterations
         """
+        if self.debug:
+            sys.stdout.write("start reading iterations\n")
         iterations = []
         iteration = Iteration(-1)
-        number_of_iterations_read = 0
+        number_of_iterations_read = 0   # number of iterations read
+        b_read_iteration = False        # True if iteration is to be read
         with open(self.logfilename, "r") as readfile:
             file_lines = readfile.readlines()
             # compare arguments, suspended for now because the logger
@@ -111,12 +114,18 @@ class Logger():
                     iteration=Iteration(int(iteration_line[1]))
                     target_number_of_read_bins = int(iteration_line[3])
                     number_of_iterations_read += 1
-
+                    # check if iteration is in range
+                    if iteration.getId() >= first and \
+                       last != -1 and \
+                       iteration.getId() <= last:
+                        b_read_iteration = True
+                    else:
+                        b_read_iteration = False
                 # read bin data
-                if line[:5] == "{\"b\":":
+                if b_read_iteration and line[:5] == "{\"b\":":
                     read_bin = self._loadBin(line)
                     # check for iteration_id consistency
-                    if read_bin.getIterationId() != iteration.getId():
+                    if self.debug and read_bin.getIterationId() != iteration.getId():
                         raise Exception("Iteration mismatch: Iteration: {it_id},"+
                                         "Bin: {bin_it_it}".format(\
                                             it_id=self.iteration.getId(),
@@ -128,7 +137,8 @@ class Logger():
             if iteration.getId() != -1:
                 if self.__checkIteration(iteration, target_number_of_read_bins, first, last):
                     iterations.append(iteration)
-                
+        if self.debug:
+            sys.stdout.write("finished reading iterations\n")    
         return iterations
        
     def _logBin(self, _bin):
@@ -329,6 +339,13 @@ class Logger():
         bNbins = False
         bProbability = True
         bRange = True
+        # check if iteration is in range
+        if iteration.getId() < first:
+                bRange = False
+                return False
+        elif last != -1 and iteration.getId() > last:
+                bRange = False
+                return False
         # check iteration number of bins
         if iteration.getNumberOfBins() == target_number_of_read_bins:
             bNbins = True
@@ -345,11 +362,6 @@ class Logger():
             else:
                 sys.stderr.write("Wrong total Iteration probability: {prob}\n".format(\
                                 prob = iteration.getProbability())) 
-        # check if iteration is in range
-        if iteration.getId() < first:
-                bRange = False
-        elif last != -1 and iteration.getId() > last:
-                bRange = False
         # append iteration
         if bNbins and bProbability and bRange:
             return True
