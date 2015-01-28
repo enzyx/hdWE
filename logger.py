@@ -35,7 +35,7 @@ class Logger():
         logger.close()
     
     """
-    def __init__(self, filename, append = False, debug = False):
+    def __init__(self, filename, append = True, debug = False):
         self.logfilename = filename
         self.debug = debug
         
