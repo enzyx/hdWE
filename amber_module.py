@@ -36,8 +36,7 @@ class MD_module():
         self.number_of_threads     = int(config.get('amber','number-of-threads'))
         self.debug = debug
         
-        
-        
+       
         # check topology and infile:
         if not os.path.isfile(self.amber_topology_path):
             raise Exception("No topology found at given path.")
@@ -134,7 +133,7 @@ class MD_module():
             thread_container.runJobs()
     
         
-    def CalculateCoordinate(self, segment, bins):
+    def calcRmsdToBins(self, segment, bins):
         """Calculates the coordinate values of a segment with respect to all
         existing bin reference coordinates and returns them in a numpy array.
         The array entries are in the same order as the bins.
@@ -186,7 +185,7 @@ class MD_module():
         
         return coordinates
         
-    def ana_calculatePMF_getCoordinate(self, segment, cpptraj_lines):
+    def ana_calcCoordinateOfSegment(self, segment, cpptraj_lines):
         """
         Calculates the value of a coordinate corresponding to a segment and defined
         in cpptraj_line via cpptraj.

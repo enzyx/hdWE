@@ -148,10 +148,20 @@ class Iteration(object):
         # diveded by the parent bin total probability
         for bin_l in self.bins:
             for segment_l in bin_l.segments:
-                if self.bins[segment_l.getParentBinId()].getProbability() != 0:
+                if self.bins[segment_l.getParentBinId()].getProbability() != 0.0:
                     rate_matrix[segment_l.getParentBinId(), bin_l.getId()] += \
                     segment_l.getProbability() / self.bins[segment_l.getParentBinId()].getProbability()
         return rate_matrix
         
         
-        
+    def getMaxBinProbability(self):
+        """
+        Returns the probablity of the bin with largest probability.
+        """
+        max_bin_probability = 0.0
+        for bin_l in self.bins:
+            buf_prob = bin_l.getProbability()
+            if buf_prob > max_bin_probability:
+                max_bin_probability = buf_prob
+
+        return max_bin_probability        

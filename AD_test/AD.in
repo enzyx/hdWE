@@ -1,6 +1,6 @@
 # AD/AD_equ/AD_equ9
  &cntrl
- nstlim=100,
+ nstlim=5000,
  gbsa=0,
  temp0=298,
  gamma_ln=5,
@@ -8,13 +8,13 @@
  dt=0.002,
  ig=-1,
  cut=9999,
- ntpr=50,
+ ntpr=500,
  igb=8,
  ntx=5,
  ntp=0,
  ntt=3,
  ntc=2,
- ntwx=50,
+ ntwx=500,
  ntf=2,
  irest=1,
  nscm=50000,

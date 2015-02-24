@@ -34,7 +34,7 @@ parser.add_argument('-e', '--last_it', dest="last_iteration",
                     required=False, type=int, default=-1,
                     help="Last iteration to to use for PMF calculation.")  
 parser.add_argument('-l', '--log', type=str, dest="logfile", 
-                    required=True, default="logfile.log", metavar="FILE",
+                    required=False, default="logfile.log", metavar="FILE",
                     help="The logfile for reading and writing")
 parser.add_argument('-p', '--plot', dest="plot", 
                     required=False, default=False, action="store_true",

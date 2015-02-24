@@ -4,16 +4,14 @@ hdWE is a hyperdimensional weighted ensemble simulation implementation.
 """
 from __future__ import print_function
 import sys
-import os
 import ConfigParser
 import argparse
-import glob
 import numpy
 import initiate
-import analysis_operations
 from iteration import Iteration
 from logger import Logger
 import threading
+import reweighting
 from thread_container import ThreadContainer
 from hdWE_parameters import HdWEParameters
 
@@ -23,7 +21,7 @@ parser =argparse.ArgumentParser(description=__doc__,
                             formatter_class=argparse.RawDescriptionHelpFormatter)
 
 parser.add_argument('-c', '--conf', type=str, dest="configfile", 
-                    metavar="FILE",
+                    metavar="FILE", required=False, default='hdWE.conf',
                     help="The hdWE configuration file")      
 parser.add_argument("--append", dest="append", action='store_true', 
                     default=False,
@@ -84,13 +82,19 @@ for iteration_counter in range(len(iterations), hdWE_parameters.max_iterations +
                               target_number_of_segments=hdWE_parameters.segments_per_bin)
     
     coordinates = numpy.array([]) # numpy array?
+    
+    max_bin_probability = parent_iteration.getMaxBinProbability()
+    
     # Sort segments in bins. Generate new bin if required
     for parent_bin in parent_iteration:
         for segment in parent_bin:
-            coordinates = md_module.CalculateCoordinate(segment, iteration.bins)
+            coordinates = md_module.calcRmsdToBins(segment, iteration.bins)
             min_coordinate = numpy.min(coordinates)
             # Sort Segment into appropriate bin
-            if (min_coordinate <= hdWE_parameters.coordinate_threshold or segment.getProbability() < hdWE_parameters.minimal_probability or iteration.getNumberOfBins() > hdWE_parameters.max_bins):
+            if (min_coordinate <= hdWE_parameters.coordinate_threshold or 
+               segment.getProbability() < hdWE_parameters.minimal_probability*max_bin_probability or 
+               iteration.getNumberOfBins() >= hdWE_parameters.max_bins):
+                   
                 bin_id = numpy.argmin(coordinates)
                 iteration.bins[bin_id].generateSegment(probability=segment.getProbability(),
                                                   parent_bin_id=segment.getBinId(),
@@ -124,32 +128,15 @@ for iteration_counter in range(len(iterations), hdWE_parameters.max_iterations +
 
     # Run MD
     md_module.RunMDs(iteration)
-    
-    iterations.append(iteration)
-    
-    #test: print rate matrix, bin probabilities from rates and actual bin probabilities
-    if iteration_counter > 2:
-        mean_rate_matrix= analysis_operations.meanRateMatrix(iterations, iteration_counter -20, iteration_counter)
-        print('')
-        print(mean_rate_matrix)
-        try:
-            bin_probs_from_rates = analysis_operations.BinProbabilitiesFromRates(mean_rate_matrix) 
-            print('Bin probabilities from Rate Matrix:')
-            print(bin_probs_from_rates)
-            #test:
-            for bin_loop in iteration.bins:
-                for segment_loop in bin_loop:
-                    if bin_loop.getNumberOfSegments()>0:
-                         segment_loop.probability = bin_probs_from_rates[bin_loop.getId()] / bin_loop.getNumberOfSegments()
-        except:
-            print('Singular rate matrix')
-        #for bin_loop in iteration.bins:
-        #    for segment_loop in bin_loop:
-        #        segment_loop.probability = bin_probs_from_rates[bin_loop.getId()] / bin_loop.getTargetNumberOfSegments()
-        print('Actual Bin probabilities:')
-        print(analysis_operations.meanBinProbabilities(iterations, iteration_counter -10, iteration_counter))         
 
-        
+    iterations.append(iteration)
+
+    #reweight Bin Probabilities
+    if iteration.getNumberOfBins() > 1:
+        if hdWE_parameters.reweighting_range > 0:
+            reweighting.reweightBinProbabilities(iterations, hdWE_parameters.reweighting_range)
+
+    
     # log iteration (Rainer)
     logger.logIteration(iteration)
     
