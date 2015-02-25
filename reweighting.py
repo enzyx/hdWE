@@ -6,8 +6,8 @@ def reweightBinProbabilities(iterations, iteration_range):
     '''
     Reweights the bin probabilities according to the steady state equations, using
     the mean rates over the last iteration_range iterations. 
-    If a new bin was created in the previous iteration, this bin is omitted for the reweighting,
-    because no out-rate is yet available. 
+    If a new bin was created within the last iteration_range iterations, this bin is omitted for the reweighting,
+    because no reliable out-rate is yet available. 
     The reweighted and not reweighted bin probabilities are then normalized.
     '''
     iteration_counter = len(iterations) - 1
@@ -39,7 +39,10 @@ def reweightBinProbabilities(iterations, iteration_range):
                     reweight_factor = new_bin_probs[bin_loop.getId()] / bin_loop.getProbability()
                     if bin_loop.getNumberOfSegments()>0.0:
                          segment_loop.probability = segment_loop.probability * reweight_factor
-            print('Reweighted Bin Probabilities (approximated: skipped latest ' + str(skipped_bins) + ' bins):')
+            if skipped_bins==0:
+                print('Reweighted Bin Probabilities:')                
+            else:
+                print('Reweighted Bin Probabilities (approximated: skipped latest ' + str(skipped_bins) + ' bins):')
             print(new_bin_probs)            
             
         except:

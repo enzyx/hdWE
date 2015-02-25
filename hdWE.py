@@ -57,7 +57,7 @@ if args.append:
     iterations = logger.loadIterations()  
 
 # Setup the workdir and initiate iterations
-initiate.prepare(hdWE_parameters.workdir, starting_structure="", override="", debug=args.debug)
+initiate.prepare(hdWE_parameters.workdir, hdWE_parameters.starting_structure, args.append, args.debug)
 if len(iterations)==0:
     iterations.append(initiate.create_initial_iteration(hdWE_parameters.segments_per_bin))
     logger.logIteration(iterations[0])

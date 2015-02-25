@@ -17,6 +17,7 @@ class HdWEParameters():
                          minimal_probability,
                          coordinate_threshold,
                          max_bins,
+                         starting_structure,
                          logfile = "hdWE.log",
                          debug = False,
                          reweighting_range = 0):
@@ -30,6 +31,7 @@ class HdWEParameters():
         self.debug                = bool(debug)                  # bool
         self.md_package           = str(md_package)              # str
         self.reweighting_range    = int(reweighting_range)       # int
+        self.starting_structure   = str(starting_structure)      # str
         
     def loadConfParameters(self, config, debug=False):
         """
@@ -53,6 +55,7 @@ class HdWEParameters():
         self.logfile              = self.workdir + str(config.get('hdWE','logfile'))
         self.debug                = debug
         self.reweighting_range    = int((config.get('hdWE','reweighting-range')))
+        self.starting_structure   = str((config.get('hdWE','starting-structure')))
         
     def loadJsonParams(self, json_string):
         param_dict = json.loads(json_string)
@@ -66,7 +69,8 @@ class HdWEParameters():
         self.max_bins             = param_dict.get("max_bins")                # int
         self.debug                = param_dict.get("debug")                   # bool
         self.md_package           = param_dict.get("md_package")              # str
-        self.reweighting_range    = param_dict.get("reweighting-range")       # int
+        self.reweighting_range    = param_dict.get("reweighting_range")       # int
+        self.starting_structure   = param_dict.get("starting_structure")      # str
 
     def getLogString(self):
         return json.dumps(self.__dict__, sort_keys=True)

@@ -1,24 +1,30 @@
 import os
+import glob
 from iteration import Iteration
-from bin import Bin
-from segment import Segment
 
-def prepare(work_dir, starting_structure, override, debug):
+
+def prepare(work_dir, starting_structure, append, debug):
     """
     Creates the directory structure. Copies the starting configuration
     into the bin_refcoords folder as the first bin.
     """
-    # Create or override directories
-    # /run    
-    try:
-        os.mkdir(work_dir + '/run')
-        #copy starting_structure to /run directory
-    except:
-        # if already exists, move run directory to a backup directory 
-        if override == True:
-            os.rmdir(work_dir + '/run')
-    # /debug
-    # /log
+    # Create directories if necessary
+    if append == False:
+        for sub_dir in ['run', 'log', 'debug']:
+            if sub_dir=='debug' and debug==False:
+                break
+            dir_tmp = work_dir + sub_dir
+            if os.path.exists(dir_tmp):
+                if glob.glob(dir_tmp + '.bak.*'):
+                    backups = glob.glob(dir_tmp + '.bak.*')
+                    backup_number = int(sorted(backups)[-1].split(".")[-1]) + 1
+                else:
+                    backup_number = 1
+                os.rename(dir_tmp, dir_tmp + '.bak.' + str(backup_number))
+            os.mkdir(dir_tmp)
+        os.system('cp ' + work_dir + starting_structure + ' ' + work_dir + 'run/' + '00000_00000_00000.rst7')
+        
+
 
 def create_initial_iteration(target_number_of_segments):
     """
