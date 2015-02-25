@@ -66,6 +66,7 @@ class HdWEParameters():
         self.max_bins             = param_dict.get("max_bins")                # int
         self.debug                = param_dict.get("debug")                   # bool
         self.md_package           = param_dict.get("md_package")              # str
+        self.reweighting_range    = param_dict.get("reweighting-range")       # int
 
     def getLogString(self):
         return json.dumps(self.__dict__, sort_keys=True)

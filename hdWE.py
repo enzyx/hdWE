@@ -7,6 +7,7 @@ import sys
 import ConfigParser
 import argparse
 import numpy
+import json
 import initiate
 from iteration import Iteration
 from logger import Logger
@@ -14,6 +15,7 @@ import threading
 import reweighting
 from thread_container import ThreadContainer
 from hdWE_parameters import HdWEParameters
+from analysis_operations import meanRateMatrix
 
 ###### Parse command line ###### 
 
@@ -124,7 +126,12 @@ for iteration_counter in range(len(iterations), hdWE_parameters.max_iterations +
             this_bin.resampleSegments()
 
     if args.debug: 
-        print("The overall probabiliy is at {0:05f}".format(iteration.getProbability()))
+        print("The overall probabiliy is {0:05f}".format(iteration.getProbability()))
+        
+    # check which bins have to be rerun
+    reweighting.checkOutratesForConvergence(iterations, hdWE_parameters.reweighting_range, 0.05)
+                        
+				
 
     # Run MD
     md_module.RunMDs(iteration)
