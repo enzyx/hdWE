@@ -245,7 +245,8 @@ class Logger():
             'i':_bin.getIterationId(),
             'b':_bin.getId(),
             'r':_bin.getReferenceNameString(),
-            'n':_bin.getTargetNumberOfSegments()}
+            'n':_bin.getTargetNumberOfSegments(),
+            'conv':_bin.isConverged()}
         
         return self.bin_dictionary
     
@@ -262,7 +263,8 @@ class Logger():
                 reference_iteration_id    = int(self.reference_name[0]), 
                 reference_bin_id          = int(self.reference_name[1]),
                 reference_segment_id      = int(self.reference_name[2]),
-                target_number_of_segments = int(bin_dictionary.get('n')) )
+                target_number_of_segments = int(bin_dictionary.get('n')),
+                outrates_converged        = bool(bin_dictionary.get('conv')) )
         else:
             raise Exception("Non-bin or insufficient data parsed as bin.")
 

@@ -10,7 +10,7 @@ class Bin(object):
     """
     def __init__(self, iteration_id, bin_id, reference_iteration_id, 
                  reference_bin_id, reference_segment_id, 
-                 target_number_of_segments):
+                 target_number_of_segments, outrates_converged = False):
         """
         @param ref_coords the path to reference coordinates defining the bin
         @param trajectories single or list of trajectories to 
@@ -24,6 +24,8 @@ class Bin(object):
         self.reference_segment_id      = reference_segment_id       # int
         # How many segments we want in this bin
         self.target_number_of_segments = target_number_of_segments  # int
+        # are the outrates converged
+        self.b_outrates_converged      = outrates_converged
         # The array of segments
         self.segments = []
 
@@ -226,6 +228,12 @@ class Bin(object):
         @return Target number of segments
         """
         return self.target_number_of_segments
+    
+    def set_outrates_converged(self, boolean):
+        self.b_outrates_converged = boolean
+    
+    def isConverged(self):
+        return self.b_outrates_converged
     
     def __iter__(self):
         """
