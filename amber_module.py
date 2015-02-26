@@ -104,7 +104,7 @@ class MD_module():
             amber_start_coords_path = self.workdir + 'run/' + segment.getParentNameString() + '.rst7'
             amber_end_coords_path   = self.workdir + 'run/' + segment.getNameString()       + '.rst7'
             
-            skip_command_line       = 'ln' + \
+            skip_command_line       = 'ln -s' + \
                                       '  ' + amber_start_coords_path + \
                                       '  ' + amber_end_coords_path
             return skip_command_line
@@ -146,7 +146,7 @@ class MD_module():
             MD_run_count  = 0
             MD_skip_count = 0
             for bin_loop in iteration:
-                if bin_loop.b_outrates_converged == False:
+                if bin_loop.isConverged() == False:
                     for segment_loop in bin_loop:
                         MD_run_count  += 1
                         RunSegmentMD(segment_loop, MD_run_count, MD_skip_count)
@@ -162,7 +162,7 @@ class MD_module():
             MD_skip_count = 0
             thread_container = ThreadContainer()
             for bin_loop in iteration:
-                if bin_loop.b_outrates_converged == False:
+                if bin_loop.isConverged() == False:
                     for segment_loop in bin_loop:
                         MD_run_count  += 1
                         thread_container.appendJob(threading.Thread(target=RunSegmentMD, 

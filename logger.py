@@ -91,10 +91,7 @@ class Logger():
         """
             @return read-in iterations
         """
-        sys.stdout.write("reading iterations {first}-{last} from {file}\n".format(\
-                          first = first,
-                          last = last,
-                          file = self.logfilename))
+        sys.stdout.write("reading iterations from {file}\n".format(file = self.logfilename))
         iterations = []
         iteration = Iteration(-1)
         number_of_iterations_read = 0   # number of iterations read

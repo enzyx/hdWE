@@ -24,9 +24,16 @@ class Segment(object):
     def setSegmentId(self, segment_id):
         """
         required for resampling function to reorder the segment ids. 
-        Should not be used from outside Bins class
+        Should not be used from outside Bin class
         """
         self.segment_id = segment_id
+        
+    def setParentIterationId(self, parent_iteration_id):
+        """
+        required for reweighting function to create new segments in empy bins. 
+        Should not be used from Bin class
+        """        
+        self.parent_iteration_id = parent_iteration_id
 
     def getNameString(self):
         """
@@ -46,6 +53,9 @@ class Segment(object):
         
     def getProbability(self):
         return self.probability
+        
+    def setProbability(self, probability):
+        self.probability = probability
 
     def addProbability(self, probability):
         self.probability += probability
