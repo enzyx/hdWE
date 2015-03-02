@@ -20,14 +20,14 @@ class Iteration(object):
 
     def generateBin(self, reference_iteration_id, 
                     reference_bin_id, reference_segment_id,
-                    target_number_of_segments):
+                    target_number_of_segments, outrates_converged = False):
         """
         Initialize a new instance of class Bin and append to bins
         @return  bin_id returns the id of the created bin
         """
         __bin = Bin(self.getId(), len(self.bins), reference_iteration_id, 
                     reference_bin_id, reference_segment_id,
-                    target_number_of_segments)
+                    target_number_of_segments, outrates_converged)
         return self.__addBin(__bin)
 
     def __addBin(self, _bin):
@@ -141,6 +141,7 @@ class Iteration(object):
     def RateMatrix(self):
         """
         Calculates the Rate Matrix for the given iteration.
+        rate from bin i to bin j are stored in value [i][j]
         """
         # Initialize array for rate matrix
         rate_matrix = numpy.zeros([self.getNumberOfBins(), self.getNumberOfBins()], float)

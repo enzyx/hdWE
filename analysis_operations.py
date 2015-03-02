@@ -18,6 +18,7 @@ def meanRateMatrix(iterations, begin, end):
             for j in range(0,len(mean_rate_matrix_tmp)):
                 mean_rate_matrix[i,j] += mean_rate_matrix_tmp[i,j]
                 
+                
     # Divide by number of iterations            
     for i in range(0,len(mean_rate_matrix)):
         for j in range(0,len(mean_rate_matrix)): 
@@ -76,3 +77,32 @@ def BinProbabilitiesFromRates(rate_matrix):
         bin_probabilities[i] = bin_probabilities[i] / total_probability
         
     return bin_probabilities
+    
+def getMeanRateMatrixWithConvergedOutrates(iterations, begin, end):
+    """
+    Calculates the mean Rate Matrix over a range of iterations goining back from
+    the iteration at which the outrate was converged.
+    """
+    
+    mean_rate_matrix = meanRateMatrix(iterations, begin, end)
+    delta = end-begin
+    # get iterations of convergence
+    iteration_of_convergence = numpy.zeros([iterations[end].getNumberOfBins()],int)
+    for iteration_loop in iterations:
+        for bin_loop in iteration_loop:
+            if not bin_loop.isConverged():
+                iteration_of_convergence[bin_loop.getId()] = iteration_loop.getId()
+    
+    for bin_loop in iterations[-1]:
+        if bin_loop.getId() == iteration_of_convergence[bin_loop.getId()]:
+            continue
+        temp_mean_rate_matrix = meanRateMatrix(iterations,
+                                iteration_of_convergence[bin_loop.getId()]-delta,
+                                iteration_of_convergence[bin_loop.getId()])
+        for i in range(len(temp_mean_rate_matrix[0,:])):
+            mean_rate_matrix[bin_loop.getId(),i] = temp_mean_rate_matrix[bin_loop.getId(),i]
+            
+    return mean_rate_matrix
+        
+        
+    

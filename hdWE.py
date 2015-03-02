@@ -7,13 +7,16 @@ import sys
 import ConfigParser
 import argparse
 import numpy
+import json
 import initiate
 from iteration import Iteration
 from logger import Logger
 import threading
 import reweighting
+import convergenceCheck
 from thread_container import ThreadContainer
 from hdWE_parameters import HdWEParameters
+from analysis_operations import meanRateMatrix
 
 ###### Parse command line ###### 
 
@@ -55,7 +58,7 @@ if args.append:
     iterations = logger.loadIterations()  
 
 # Setup the workdir and initiate iterations
-initiate.prepare(hdWE_parameters.workdir, starting_structure="", override="", debug=args.debug)
+initiate.prepare(hdWE_parameters.workdir, hdWE_parameters.starting_structure, args.append, args.debug)
 if len(iterations)==0:
     iterations.append(initiate.create_initial_iteration(hdWE_parameters.segments_per_bin))
     logger.logIteration(iterations[0])
@@ -79,7 +82,8 @@ for iteration_counter in range(len(iterations), hdWE_parameters.max_iterations +
         iteration.generateBin(reference_iteration_id=parent_bin.getReferenceIterationId(),
                               reference_bin_id=parent_bin.getReferenceBinId(),
                               reference_segment_id=parent_bin.getReferenceSegmentId(),
-                              target_number_of_segments=hdWE_parameters.segments_per_bin)
+                              target_number_of_segments=hdWE_parameters.segments_per_bin,
+                              outrates_converged = parent_bin.isConverged())
     
     coordinates = numpy.array([]) # numpy array?
     
@@ -124,7 +128,11 @@ for iteration_counter in range(len(iterations), hdWE_parameters.max_iterations +
             this_bin.resampleSegments()
 
     if args.debug: 
-        print("The overall probabiliy is at {0:05f}".format(iteration.getProbability()))
+        print("The overall probabiliy is {0:05f}".format(iteration.getProbability()))
+        
+    # check which bins have to be rerun
+    convergenceCheck.checkOutratesForConvergence(iterations, iteration, hdWE_parameters.reweighting_range, 1.5)
+				
 
     # Run MD
     md_module.RunMDs(iteration)

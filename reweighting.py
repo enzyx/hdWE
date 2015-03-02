@@ -1,21 +1,22 @@
 from __future__ import print_function
 import numpy
+import constants
 import analysis_operations
 
 def reweightBinProbabilities(iterations, iteration_range):
     '''
     Reweights the bin probabilities according to the steady state equations, using
     the mean rates over the last iteration_range iterations. 
-    If a new bin was created in the previous iteration, this bin is omitted for the reweighting,
-    because no out-rate is yet available. 
+    If a new bin was created within the last iteration_range iterations, this bin is omitted for the reweighting,
+    because no reliable out-rate is yet available. 
     The reweighted and not reweighted bin probabilities are then normalized.
     '''
     iteration_counter = len(iterations) - 1
     if iteration_counter >= iteration_range:
         print('\nOld Bin Probabilities:')
         print(analysis_operations.meanBinProbabilities(iterations, iteration_counter, iteration_counter))         
-       #get Rate Matrix, averaged over the last iteration_range iterations
-        mean_rate_matrix= analysis_operations.meanRateMatrix(iterations, iteration_counter - iteration_range, iteration_counter)
+        #get Rate Matrix, averaged over the last iteration_range iterations
+        mean_rate_matrix= analysis_operations.getMeanRateMatrixWithConvergedOutrates(iterations, iteration_counter - iteration_range, iteration_counter)
         #delete entries for only in the last iteration newly created bins
         last_bin_number=iterations[iteration_counter - iteration_range].getNumberOfBins()
         mean_rate_matrix=numpy.delete(mean_rate_matrix,numpy.s_[last_bin_number:iterations[iteration_counter].getNumberOfBins()],0)       
@@ -33,13 +34,22 @@ def reweightBinProbabilities(iterations, iteration_range):
             total_prob_tmp = numpy.sum(new_bin_probs)
             for i in range(0,len(new_bin_probs)):
                 new_bin_probs[i] = new_bin_probs[i] / total_prob_tmp
+            if numpy.min(new_bin_probs) <= constants.num_boundary:
+                print('At least one new probability would be 0. Skipping reweighting.')
+                return
             #Assign the new probabilities to bins. Keep relative segment probabilities within bins.
             for bin_loop in iterations[iteration_counter].bins:
-                for segment_loop in bin_loop:
-                    reweight_factor = new_bin_probs[bin_loop.getId()] / bin_loop.getProbability()
-                    if bin_loop.getNumberOfSegments()>0.0:
-                         segment_loop.probability = segment_loop.probability * reweight_factor
-            print('Reweighted Bin Probabilities (approximated: skipped latest ' + str(skipped_bins) + ' bins):')
+                reweight_factor = new_bin_probs[bin_loop.getId()] / bin_loop.getProbability()
+                if bin_loop.getNumberOfSegments() > 0:
+                    for segment_loop in bin_loop:
+                        segment_loop.setProbability(segment_loop.getProbability() * reweight_factor)
+                else:
+                    respawnSegmentFromReference(new_bin_probs[bin_loop.getId()])
+                        
+            if skipped_bins==0:
+                print('Reweighted Bin Probabilities:')                
+            else:
+                print('Reweighted Bin Probabilities (approximated: skipped latest ' + str(skipped_bins) + ' bins):')
             print(new_bin_probs)            
             
         except:

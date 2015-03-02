@@ -10,7 +10,7 @@ class Bin(object):
     """
     def __init__(self, iteration_id, bin_id, reference_iteration_id, 
                  reference_bin_id, reference_segment_id, 
-                 target_number_of_segments, outrates_converged = False):
+                 target_number_of_segments, outrates_converged):
         """
         @param ref_coords the path to reference coordinates defining the bin
         @param trajectories single or list of trajectories to 
@@ -40,6 +40,14 @@ class Bin(object):
                             bin_id=self.getId(),
                             segment_id=len(self.segments))
         return self.__addSegment(__segment)
+
+    def respawnSegmentFromReference(self, probability):
+        __segment = self.generateSegment(probability = probability,
+                             parent_bin_id = self.getReferenceBinId(),
+                             parent_segment_id = self.getReferenceSegmentId())                    
+        __segment.setParentIterationId(self.getReferenceIterationId())
+        self.setConverged(False)
+        return __segment
         
     def resampleSegments(self):
         """
@@ -229,7 +237,7 @@ class Bin(object):
         """
         return self.target_number_of_segments
     
-    def set_outrates_converged(self, boolean):
+    def setConverged(self, boolean):
         self.b_outrates_converged = boolean
     
     def isConverged(self):
