@@ -91,9 +91,6 @@ class MD_module():
             os.remove(amber_outfile_path)
             os.remove(amber_trajectory_path)
  
-            
-            
-
         def MdLogString(segment,status):
             """Returns a string containing system time for MD run logging."""
             if status==0:

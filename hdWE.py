@@ -145,6 +145,6 @@ logger.close()
 #count total n of segments
 n_segments = 0
 for iteration_loop in iterations:
-     n_segments += iteration_loop.getNumberOfSegments()
+    n_segments += iteration_loop.getNumberOfSegments()
     
 print('hdWE completed. Total number of propagated segments: ' + str(n_segments) + '            ')
