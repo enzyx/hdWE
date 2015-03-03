@@ -14,17 +14,18 @@ def prepare(work_dir, starting_structure, append, debug):
         # Get the backup index 
         backup_index = -1
         for sub_dir in ['run', 'log', 'debug']:
-            if sub_dir=='debug' and debug==False:
-                continue
             dir_tmp = work_dir + sub_dir
             if os.path.exists(dir_tmp):
-                backups = glob.glob(dir_tmp + '.bak.*')
-                backups = [int(backup.split(".")[-1]) for backup in backups]
-                tmp_index = int(sorted(backups)[-1]) + 1
-                if backup_index < tmp_index:
-                    backup_index = tmp_index
-                elif backup_index < 0:
+                if backup_index < 0:
                     backup_index = 1
+                backups = glob.glob(dir_tmp + '.bak.*')
+                try:
+                    backups = [int(backup.split(".")[-1]) for backup in backups]
+                    tmp_index = int(sorted(backups)[-1]) + 1
+                    if backup_index < tmp_index:
+                        backup_index = tmp_index                  
+                except IndexError:
+                    continue
         # Now move old data to backup and create empty new folders
         for sub_dir in ['run', 'log', 'debug']:
             if sub_dir=='debug' and debug==False:

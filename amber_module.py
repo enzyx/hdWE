@@ -39,7 +39,7 @@ class MD_module():
             self.mpirun                = config.get('amber', 'mpirun')
         self.number_of_threads     = int(config.get('amber','number-of-threads'))
         self.debug                 = debug
-        
+        # local link to iteration
         self.iteration             = None
        
         # check topology and infile:
@@ -66,14 +66,14 @@ class MD_module():
         os.system(command_line)
         logfile.write(self.MdLogString(segment, status = 1 ))
         logfile.close()
-        if self.debug==False:
+        if not self.debug:
             self.RemoveMdOutput(segment)
 
     def SkipSegmentMD(self, segment, MD_run_count, MD_skip_count):
         """Function that runs one single segment MD."""
         command_line = self.SkipCommandLineString(segment)
         #Command line for debugging
-        if self.debug==True:
+        if self.debug:
                 os.system('echo ' + command_line + \
                           ' >> ' + self.workdir + 'debug/amber_command_lines.log')
         #Log and Run MD
@@ -245,7 +245,7 @@ class MD_module():
             print('amber_module error: cpptraj output ' + cpptraj_output_path + ' does not have the correct number of entries.' )
 
         #Remove temporary files
-        if (self.debug==False):
+        if not self.debug:
             os.remove(cpptraj_infile_path)
             os.remove(cpptraj_output_path)
         
@@ -280,7 +280,7 @@ class MD_module():
             print('amber_module error: cpptraj output ' + cpptraj_output_path + ' can not be found or loaded.')
             
         #Remove temporary files
-        if (self.debug==False):
+        if not self.debug:
             os.remove(cpptraj_infile_path)
             os.remove(cpptraj_output_path)
             
@@ -294,7 +294,7 @@ if __name__ == "__main__":
     comm = MPI.COMM_WORLD
     rank = comm.Get_rank()
     size = comm.Get_size()
-    debug =  bool(sys.argv[2])
+    debug = bool(str(sys.argv[2]) == "True")
     md_module = MD_module(configfile = sys.argv[1], debug = debug)
     iteration_dump_file = open(sys.argv[3], "r")
     md_module.setIteration(pickle.load(iteration_dump_file))
@@ -320,4 +320,6 @@ if __name__ == "__main__":
             workcount += 1
     if rank == 0:
         sys.stderr.write("\n")
+        if debug:
+            sys.stderr.write("Finishing MPI\n")
         sys.stderr.flush()
