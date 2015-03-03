@@ -6,7 +6,7 @@ import threading
 import sys
 from datetime import datetime
 from thread_container import ThreadContainer
-
+import pickle
 
 class MD_module():
     
@@ -25,6 +25,7 @@ class MD_module():
         """Initializes the MD module and Reads the amber configuration file.
         """
         #read in configuration file
+        self.configfile = configfile
         config = ConfigParser.ConfigParser()
         config.read(configfile)
         self.workdir               = config.get('hdWE','workdir')        
@@ -33,9 +34,13 @@ class MD_module():
         self.amber_coordinate_mask = config.get('amber','coordinate-mask')
         self.amber_binary          = config.get('amber','binary')
         self.parallelization_mode  = config.get('amber','parallelization-mode')
+        # Only search mpirun binary in config file if MPI switched on
+        if self.parallelization_mode == 'mpi':
+            self.mpirun                = config.get('amber', 'mpirun')
         self.number_of_threads     = int(config.get('amber','number-of-threads'))
-        self.debug = debug
+        self.debug                 = debug
         
+        self.iteration             = None
        
         # check topology and infile:
         if not os.path.isfile(self.amber_topology_path):
@@ -43,101 +48,103 @@ class MD_module():
         if not os.path.isfile(self.amber_infile_path):
             raise Exception("No infile found at given path.")        
     
+    def setIteration(self, iteration):
+        self.iteration = iteration
+    
+    def RunSegmentMD(self, segment, MD_run_count, MD_skip_count):
+        """Function that runs one single segment MD."""
+        command_line = self.AmberCommandLineString(segment)
+        #Command line for debugging
+        if self.debug==True:
+                os.system('echo ' + command_line + \
+                          ' >> ' + self.workdir + 'debug/amber_command_lines.log')
+        #Log and Run MD
+        logfile = open(self.workdir + 'log/' + self.iteration.getNameString() + '.MD_log','a')
+        logfile.write(self.MdLogString(segment, status = 0 ))
+        sys.stdout.write(self.writeMdStatus(segment, MD_run_count, MD_skip_count))
+        sys.stdout.flush()
+        os.system(command_line)
+        logfile.write(self.MdLogString(segment, status = 1 ))
+        logfile.close()
+        if self.debug==False:
+            self.RemoveMdOutput(segment)
+
+    def SkipSegmentMD(self, segment, MD_run_count, MD_skip_count):
+        """Function that runs one single segment MD."""
+        command_line = self.SkipCommandLineString(segment)
+        #Command line for debugging
+        if self.debug==True:
+                os.system('echo ' + command_line + \
+                          ' >> ' + self.workdir + 'debug/amber_command_lines.log')
+        #Log and Run MD
+        logfile = open(self.workdir + 'log/' + self.iteration.getNameString() + '.MD_log','a')
+        logfile.write(self.MdLogString(segment, status = 2 ))
+        sys.stdout.write(self.writeMdStatus(segment, MD_run_count, MD_skip_count))
+        sys.stdout.flush()
+        os.system(command_line)
+        logfile.close()
+    
+    def AmberCommandLineString(self, segment):
+        """Returns the command line for an amber run corresponding to the 
+        given indices and binary.
+        """
+        amber_start_coords_path = self.workdir + 'run/' + segment.getParentNameString() + '.rst7'
+        amber_outfile_path      = self.workdir + 'run/' + segment.getNameString()       + '.out'
+        amber_trajectory_path   = self.workdir + 'run/' + segment.getNameString()       + '.nc'
+        amber_end_coords_path   = self.workdir + 'run/' + segment.getNameString()       + '.rst7'
+    
+        amber_command_line      = self.amber_binary + ' -O' + \
+                                  ' -p ' + self.amber_topology_path + \
+                                  ' -i ' + self.amber_infile_path + \
+                                  ' -c ' + amber_start_coords_path + \
+                                  ' -o ' + amber_outfile_path + \
+                                  ' -x ' + amber_trajectory_path + \
+                                  ' -r ' + amber_end_coords_path
+                                    
+        return amber_command_line
+    
+    def SkipCommandLineString(self, segment):
+        """Returns the command line for linking segment restart files of skipped bins to next iteration.
+        """
+        amber_start_coords_path = self.workdir + 'run/' + segment.getParentNameString() + '.rst7'
+        amber_end_coords_path   = self.workdir + 'run/' + segment.getNameString()       + '.rst7'
+        
+        skip_command_line       = 'ln -s' + \
+                                  '  ' + amber_start_coords_path + \
+                                  '  ' + amber_end_coords_path
+        return skip_command_line
+    
+        
+    def RemoveMdOutput(self, segment):
+        """Removes unnecessary MD output files.
+        """
+        amber_outfile_path      =  self.workdir + 'run/' + segment.getNameString()       + '.out'
+        amber_trajectory_path   =  self.workdir + 'run/' + segment.getNameString()       + '.nc'
+        os.remove(amber_outfile_path)
+        os.remove(amber_trajectory_path)
+    
+    def MdLogString(self, segment,status):
+        """Returns a string containing system time for MD run logging."""
+        if status==0:
+            string = 'MD run ' + segment.getNameString() + ' start: ' + str(datetime.now()) + '\n'    
+        elif status==1:
+            string = 'MD run ' + segment.getNameString() + ' end:   ' + str(datetime.now()) + '\n'     
+        else:
+            string = 'MD run ' + segment.getNameString() + ' skipped: ' + str(datetime.now()) + '\n'    
+        return string 
+        
+    def writeMdStatus(self, segment, MD_run_count, MD_skip_count):
+        """Writes the actual WE run status in a string."""
+        number_MD_runs = self.iteration.getNumberOfSegments()
+        string = '\033[1mhdWE Status:\033[0m ' + 'Iteration ' + self.iteration.getNameString() + \
+                 ' Number of bins ' + str(self.iteration.getNumberOfBins()) + \
+                 ' Segment ' + str(MD_run_count).zfill(5) + '/' + str(number_MD_runs).zfill(5) + \
+                 ' Skipped segments: ' + str(MD_skip_count).zfill(6) + '\r'
+        return string
+    
     def RunMDs(self, iteration):
         """Propagates the trajectories corresponding to an iteration using amber."""
-        
-        def RunSegmentMD(segment, MD_run_count, MD_skip_count):
-            """Function that runs one single segment MD."""
-            command_line = AmberCommandLineString(segment)
-            #Command line for debugging
-            if self.debug==True:
-                    os.system('echo ' + command_line + \
-                              ' >> ' + self.workdir + 'debug/amber_command_lines.log')
-            #Log and Run MD
-            logfile = open(self.workdir + 'log/' + iteration.getNameString() + '.MD_log','a')
-            logfile.write(MdLogString(segment, status = 0 ))
-            sys.stdout.write(writeMdStatus(segment, MD_run_count, MD_skip_count))
-            sys.stdout.flush()
-            os.system(command_line)
-            logfile.write(MdLogString(segment, status = 1 ))
-            logfile.close()
-            if self.debug==False:
-                RemoveMdOutput(segment)
-
-        def SkipSegmentMD(segment, MD_run_count, MD_skip_count):
-            """Function that runs one single segment MD."""
-            command_line = SkipCommandLineString(segment)
-            #Command line for debugging
-            if self.debug==True:
-                    os.system('echo ' + command_line + \
-                              ' >> ' + self.workdir + 'debug/amber_command_lines.log')
-            #Log and Run MD
-            logfile = open(self.workdir + 'log/' + iteration.getNameString() + '.MD_log','a')
-            logfile.write(MdLogString(segment, status = 2 ))
-            sys.stdout.write(writeMdStatus(segment, MD_run_count, MD_skip_count))
-            sys.stdout.flush()
-            os.system(command_line)
-            logfile.close()
-
-        def AmberCommandLineString(segment):
-            """Returns the command line for an amber run corresponding to the 
-            given indices and binary.
-            """
-            amber_start_coords_path = self.workdir + 'run/' + segment.getParentNameString() + '.rst7'
-            amber_outfile_path      = self.workdir + 'run/' + segment.getNameString()       + '.out'
-            amber_trajectory_path   = self.workdir + 'run/' + segment.getNameString()       + '.nc'
-            amber_end_coords_path   = self.workdir + 'run/' + segment.getNameString()       + '.rst7'
-        
-            amber_command_line      = self.amber_binary + ' -O' + \
-                                      ' -p ' + self.amber_topology_path + \
-                                      ' -i ' + self.amber_infile_path + \
-                                      ' -c ' + amber_start_coords_path + \
-                                      ' -o ' + amber_outfile_path + \
-                                      ' -x ' + amber_trajectory_path + \
-                                      ' -r ' + amber_end_coords_path
-                                        
-            return amber_command_line
-
-        def SkipCommandLineString(segment):
-            """Returns the command line for linking segment restart files of skipped bins to next iteration.
-            """
-            amber_start_coords_path = self.workdir + 'run/' + segment.getParentNameString() + '.rst7'
-            amber_end_coords_path   = self.workdir + 'run/' + segment.getNameString()       + '.rst7'
-            
-            skip_command_line       = 'ln -s' + \
-                                      '  ' + amber_start_coords_path + \
-                                      '  ' + amber_end_coords_path
-            return skip_command_line
-
-            
-        def RemoveMdOutput(segment):
-            """Removes unnecessary MD output files.
-            """
-            amber_outfile_path      =  self.workdir + 'run/' + segment.getNameString()       + '.out'
-            amber_trajectory_path   =  self.workdir + 'run/' + segment.getNameString()       + '.nc'
-            os.remove(amber_outfile_path)
-            os.remove(amber_trajectory_path)
- 
-        def MdLogString(segment,status):
-            """Returns a string containing system time for MD run logging."""
-            if status==0:
-                string = 'MD run ' + segment.getNameString() + ' start: ' + str(datetime.now()) + '\n'    
-            elif status==1:
-                string = 'MD run ' + segment.getNameString() + ' end:   ' + str(datetime.now()) + '\n'     
-            else:
-                string = 'MD run ' + segment.getNameString() + ' skipped: ' + str(datetime.now()) + '\n'    
-            return string 
-            
-        def writeMdStatus(segment, MD_run_count, MD_skip_count):
-            """Writes the actual WE run status in a string."""
-            number_MD_runs = iteration.getNumberOfSegments()
-            string = '\033[1mhdWE Status:\033[0m ' + 'Iteration ' + iteration.getNameString() + \
-                     ' Number of bins ' + str(iteration.getNumberOfBins()) + \
-                     ' Segment ' + str(MD_run_count).zfill(5) + '/' + str(number_MD_runs).zfill(5) + \
-                     ' Skipped segments: ' + str(MD_skip_count).zfill(6) + '\r'
-            return string
-
-        
+        self.iteration = iteration
         #Serial Run
         if self.parallelization_mode=='serial':
             MD_run_count  = 0
@@ -146,15 +153,15 @@ class MD_module():
                 if bin_loop.isConverged() == False:
                     for segment_loop in bin_loop:
                         MD_run_count  += 1
-                        RunSegmentMD(segment_loop, MD_run_count, MD_skip_count)
+                        self.RunSegmentMD(segment_loop, MD_run_count, MD_skip_count)
                 else:
                     for segment_loop in bin_loop:
                         MD_skip_count += 1  
                         MD_run_count  += 1
-                        SkipSegmentMD(segment_loop, MD_run_count, MD_skip_count)                    
+                        self.SkipSegmentMD(segment_loop, MD_run_count, MD_skip_count)                    
                     
-        #Parallel Run   
-        if self.parallelization_mode=='parallel':
+        #Thread Parallel Run   
+        if self.parallelization_mode=='thread':
             MD_run_count  = 0
             MD_skip_count = 0
             thread_container = ThreadContainer()
@@ -162,7 +169,7 @@ class MD_module():
                 if bin_loop.isConverged() == False:
                     for segment_loop in bin_loop:
                         MD_run_count  += 1
-                        thread_container.appendJob(threading.Thread(target=RunSegmentMD, 
+                        thread_container.appendJob(threading.Thread(target=self.RunSegmentMD, 
                                                                     args=(segment_loop, MD_run_count, MD_skip_count, )))
                         if thread_container.getNumberOfJobs() >= self.number_of_threads:
                             thread_container.runJobs()
@@ -170,11 +177,28 @@ class MD_module():
                     for segment_loop in bin_loop:
                         MD_skip_count += 1
                         MD_run_count  += 1
-                        SkipSegmentMD(segment_loop, MD_run_count, MD_skip_count)     
+                        self.SkipSegmentMD(segment_loop, MD_run_count, MD_skip_count)     
                         
             # Finish jobs in queue
             thread_container.runJobs()
-    
+        
+        #MPI parallel run
+        if self.parallelization_mode == 'mpi':
+            # dump the iteration object to a file
+            iteration_dump_filename = self.workdir + 'run/' + 'iteration.dump.tmp'
+            iteration_dump_file = open(iteration_dump_filename, 'w')
+            pickle.dump(iteration, iteration_dump_file, protocol=2)
+            iteration_dump_file.close()
+            # Call myself with MPI...
+            if self.debug:
+                print("Switching to MPI for MD now...")
+            os.system(self.mpirun + ' ' + 
+                      sys.executable + ' ' +
+                      os.path.realpath(__file__) + ' ' + 
+                      self.configfile + ' ' + 
+                      str(self.debug) + ' ' + 
+                      iteration_dump_filename)
+
         
     def calcRmsdToBins(self, segment, bins):
         """Calculates the coordinate values of a segment with respect to all
@@ -263,3 +287,37 @@ class MD_module():
         coordinate_value = coordinates[1]
         
         return coordinate_value
+
+# Call only in MPI mode
+if __name__ == "__main__":
+    from mpi4py import MPI
+    comm = MPI.COMM_WORLD
+    rank = comm.Get_rank()
+    size = comm.Get_size()
+    debug =  bool(sys.argv[2])
+    md_module = MD_module(configfile = sys.argv[1], debug = debug)
+    iteration_dump_file = open(sys.argv[3], "r")
+    md_module.setIteration(pickle.load(iteration_dump_file))
+    if debug:
+        if rank == 0:
+            sys.stderr.write("Number of MPI processes: {0}\n".format(size))
+            sys.stderr.flush()
+        comm.barrier()
+    # Every node works only on segments modulo their rank 
+    workcount = 0
+    md_skip_count = 0
+    for loop_bin in md_module.iteration:
+        for loop_segment in loop_bin:
+            if not loop_bin.isConverged():
+                if workcount % size == rank:
+                    # Run MD on this node
+                    md_module.RunSegmentMD(loop_segment, workcount, md_skip_count)
+            else:
+                md_skip_count += 1
+                if workcount % size == rank:
+                    # Run MD skip
+                    md_module.SkipSegmentMd(loop_segment, workcount, md_skip_count)
+            workcount += 1
+    if rank == 0:
+        sys.stderr.write("\n")
+        sys.stderr.flush()

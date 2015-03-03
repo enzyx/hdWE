@@ -1,4 +1,5 @@
 import os
+import shutil
 import glob
 from iteration import Iteration
 
@@ -8,23 +9,31 @@ def prepare(work_dir, starting_structure, append, debug):
     Creates the directory structure. Copies the starting configuration
     into the bin_refcoords folder as the first bin.
     """
-    # Create directories if necessary
+    # Create directories if necessary   
     if append == False:
+        # Get the backup index 
+        backup_index = -1
         for sub_dir in ['run', 'log', 'debug']:
             if sub_dir=='debug' and debug==False:
-                break
+                continue
             dir_tmp = work_dir + sub_dir
             if os.path.exists(dir_tmp):
-                if glob.glob(dir_tmp + '.bak.*'):
-                    backups = glob.glob(dir_tmp + '.bak.*')
-                    backup_number = int(sorted(backups)[-1].split(".")[-1]) + 1
-                else:
-                    backup_number = 1
-                os.rename(dir_tmp, dir_tmp + '.bak.' + str(backup_number))
+                backups = glob.glob(dir_tmp + '.bak.*')
+                backups = [int(backup.split(".")[-1]) for backup in backups]
+                tmp_index = int(sorted(backups)[-1]) + 1
+                if backup_index < tmp_index:
+                    backup_index = tmp_index
+                elif backup_index < 0:
+                    backup_index = 1
+        # Now move old data to backup and create empty new folders
+        for sub_dir in ['run', 'log', 'debug']:
+            if sub_dir=='debug' and debug==False:
+                continue
+            dir_tmp = work_dir + sub_dir
+            if backup_index >= 0:
+                os.rename(dir_tmp, dir_tmp + '.bak.' + str(backup_index))
             os.mkdir(dir_tmp)
-        os.system('cp ' + work_dir + starting_structure + ' ' + work_dir + 'run/' + '00000_00000_00000.rst7')
-        
-
+        shutil.copyfile(work_dir + starting_structure, work_dir + 'run/' + '00000_00000_00000.rst7')
 
 def create_initial_iteration(target_number_of_segments):
     """

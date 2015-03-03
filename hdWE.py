@@ -132,7 +132,6 @@ for iteration_counter in range(len(iterations), hdWE_parameters.max_iterations +
         
     # check which bins have to be rerun
     convergenceCheck.checkOutratesForConvergence(iterations, iteration, hdWE_parameters.reweighting_range, 1.5)
-				
 
     # Run MD
     md_module.RunMDs(iteration)
