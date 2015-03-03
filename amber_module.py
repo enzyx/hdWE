@@ -206,7 +206,7 @@ class MD_module():
         #Run cpptraj
         cpptraj_execute_string =' -p ' + self.amber_topology_path + \
                                 ' -i ' + cpptraj_infile_path
-        cpptraj_execute_string = cpptraj_execute_string + ' >> ' + self.workdir + 'log/cpptraj.log' 
+        cpptraj_execute_string = cpptraj_execute_string + ' > ' + self.workdir + 'log/cpptraj.log' 
         os.system('cpptraj ' + cpptraj_execute_string )
       
         #Load cpptraj output as numpy array
@@ -248,7 +248,7 @@ class MD_module():
         #Execute cpptraj
         cpptraj_execute_string =' -p ' + self.amber_topology_path + \
                                 ' -i ' + cpptraj_infile_path
-        cpptraj_execute_string = cpptraj_execute_string + ' >> ' + self.workdir + 'log/ana_calculatePMF_cpptraj.log' 
+        cpptraj_execute_string = cpptraj_execute_string + ' > ' + self.workdir + 'log/ana_calculatePMF_cpptraj.log' 
         os.system('cpptraj ' + cpptraj_execute_string )        
         
         #Load cpptraj output as numpy array
