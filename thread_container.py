@@ -33,3 +33,10 @@ class ThreadContainer:
         @return how many jobs are in the list
         """
         return len(self.jobs)
+    
+    def emptyQueue(self):
+        """
+        Remove all jobs from the queue without
+        running them.
+        """
+        self.jobs = []

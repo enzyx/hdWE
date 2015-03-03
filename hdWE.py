@@ -147,8 +147,8 @@ for iteration_counter in range(len(iterations), hdWE_parameters.max_iterations +
             this_bin.resampleSegments()
 
         
-
-				
+    # check which bins have to be rerun
+    convergenceCheck.checkOutratesForConvergence(iterations, iteration, hdWE_parameters.reweighting_range, 1.5)
 
     # Run MD
     md_module.RunMDs(iteration)
@@ -167,6 +167,6 @@ logger.close()
 #count total n of segments
 n_segments = 0
 for iteration_loop in iterations:
-     n_segments += iteration_loop.getNumberOfSegments()
+    n_segments += iteration_loop.getNumberOfSegments()
     
 print('hdWE completed. Total number of propagated segments: ' + str(n_segments) + '            ')
