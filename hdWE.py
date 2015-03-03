@@ -146,10 +146,6 @@ for iteration_counter in range(len(iterations), hdWE_parameters.max_iterations +
         for this_bin in iteration:
             this_bin.resampleSegments()
 
-        
-    # check which bins have to be rerun
-    convergenceCheck.checkOutratesForConvergence(iterations, iteration, hdWE_parameters.reweighting_range, 1.5)
-
     # Run MD
     md_module.RunMDs(iteration)
     # Append an iterations array
