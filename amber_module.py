@@ -229,8 +229,9 @@ class MD_module():
                                  cpptraj_reference_id_name_string))
         cpptraj_infile.close()
 
+
         #Run cpptraj
-        cpptraj_execute_string = ' -p {top} -i {inpath} >> {workdir}/log/cpptraj.log'.format(
+        cpptraj_execute_string = ' -p {top} -i {inpath} > {workdir}/log/cpptraj.log'.format(
                                                             top=self.amber_topology_path, 
                                                             inpath=cpptraj_infile_path,
                                                             workdir=self.workdir)
@@ -258,7 +259,7 @@ class MD_module():
             os.remove(cpptraj_output_path)
         
         return coordinates
-    
+        
     def ana_calcCoordinateOfSegment(self, segment, cpptraj_lines):
         """
         Calculates the value of a coordinate corresponding to a segment and defined

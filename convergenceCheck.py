@@ -1,9 +1,9 @@
 from __future__ import print_function
 import numpy as np
 import constants
-import analysis_operations
 
-def checkOutratesForConvergence(iterations, current_iteration, convergence_range, max_rate_rmsf):
+def checkOutratesForConvergence(iterations, current_iteration, convergence_range, 
+                                segments_per_bin, max_rate_rmsf):
     '''
         checks outgoing rates of all bins for convergence. 
         If all outgoing rates are converged the bin is
@@ -80,9 +80,11 @@ def checkOutratesForConvergence(iterations, current_iteration, convergence_range
                             relative_rmsf = rmsf/mean
                         #~ print ("rmsf/mean for {bin}->{binout}: {rrmsf}".format(bin=bin_index, binout=target_bin_index, rrmsf=relative_rmsf))
 
-                        if relative_rmsf >= max_rate_rmsf:
-                            b_converged = False
-                            break
+                        #Exlude bin rates from convergence check that are below the transition resolution
+                        #which is given by ~ 1/segments_per_bin
+                        if relative_rmsf >= max_rate_rmsf and mean > 0.5 / segments_per_bin:
+                           b_converged = False
+                           break
 
                     if b_converged:
                         current_iteration.bins[bin_index].setConverged(True)
