@@ -109,9 +109,9 @@ class MD_module():
         amber_start_coords_path = self.workdir + 'run/' + segment.getParentNameString() + '.rst7'
         amber_end_coords_path   = self.workdir + 'run/' + segment.getNameString()       + '.rst7'
         
-        skip_command_line       = 'ln -s' + \
-                                  '  ' + amber_start_coords_path + \
-                                  '  ' + amber_end_coords_path
+        skip_command_line       = 'ln {0} {1}'.format(
+                                                  amber_start_coords_path,
+                                                  amber_end_coords_path)
         return skip_command_line
     
         
