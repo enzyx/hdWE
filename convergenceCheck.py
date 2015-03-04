@@ -1,4 +1,5 @@
 from __future__ import print_function
+import sys
 import numpy as np
 import constants
 import analysis_operations
@@ -13,38 +14,44 @@ def checkOutratesForConvergence(iterations, current_iteration, convergence_range
         last <convergence_range> iterations is below threshold.
     '''
     iteration_counter = len(iterations) - 1
-    if iteration_counter > convergence_range:
-        rate_matrices = []
+    # if we can have converged bins
+    if iterations[iteration_counter].getId() - iterations[0].getId() >= convergence_range:
         """
            calculate mean rate matrices averaged 
            over the last <reweighting_range>:=rr, rr-1, rr-2 etc
            iterations
         """
-        # number of bins that exist long enough to have converged rates
-        n_bins_to_check = iterations[iteration_counter - \
-        							  convergence_range].getNumberOfBins()
-        #~ print ("checking {} bins".format(n_bins_to_check))
-
+        rate_matrices = []
         # calculate mean rate matrices
         for i in range(convergence_range):
             rate_matrices.append(iterations[iteration_counter - convergence_range + i].RateMatrix())
             #~ print(rate_matrices[-1])
-        	
+            
+        # bins that exist long enough to have converged rates
+        bins_to_check = iterations[iteration_counter - \
+        							  convergence_range].bins[:]
         #check for rate-converged bins        
-        for bin_index in range(n_bins_to_check): # for every bin that exists long enough to have converged rates
-            if not current_iteration.bins[bin_index].isConverged():
+        # for every bin that exists long enough to have converged rates
+        for _bin in bins_to_check:
+            bin_index = _bin.getId()
+            if not iterations[-1].bins[bin_index].isConverged():
+                # check if all rates have existed for <convergence_range>
                 b_all_rates_exist = True
-                # get all rates
-                # rates is an array of rates to all bins
+                # rates is an array of rates to all target_bins
                 all_bin_rates = []
-                # get rates to all bins that in the last matrix.
+                # get rates to all bins that are in the latest matrix.
                 for target_bin_index in range(len(rate_matrices[-1][bin_index])):
-                    all_bin_rates.append(np.array([ m[bin_index][target_bin_index] \
-                                                    for m in rate_matrices\
-                                                    if len(m[bin_index]) > target_bin_index ]))
-                    if  np.amax(all_bin_rates[-1]) > constants.num_boundary and len(all_bin_rates[-1]) != convergence_range:                                                     
-                        # some non-zero rates haven't been measured long enough
-                        b_all_rates_exist = False
+                    _bin_outrates = []
+                    for m in rate_matrices:
+                        if len(m[bin_index]) > target_bin_index:
+                            _bin_outrates.append(m[bin_index][target_bin_index])
+                        else:
+                            _bin_outrates.append(0.0)
+                    all_bin_rates.append(np.array(_bin_outrates))
+                    #~ if  np.amax(all_bin_rates[-1]) > constants.num_boundary and len(all_bin_rates[-1]) != convergence_range:                                                     
+                        #~ # some non-zero rates haven't been measured long enough
+                        #~ # might be wrong as they might have been created any time but weren't so the rate was 0
+                        #~ b_all_rates_exist = False
                         
                 # debug output
                 #~ if bin_index == 0:
@@ -78,15 +85,19 @@ def checkOutratesForConvergence(iterations, current_iteration, convergence_range
                                               "Case not handled correctly yet.")
                         else:
                             relative_rmsf = rmsf/mean
-                        #~ print ("rmsf/mean for {bin}->{binout}: {rrmsf}".format(bin=bin_index, binout=target_bin_index, rrmsf=relative_rmsf))
-
+                        
+                        #~ sys.stdout.write("{0:02d}->{1:02d} mean: {2:.3f} rel_rmsf: {3:.3f}\n".format(
+                            #~ bin_index, 
+                            #~ target_bin_index,
+                            #~ mean,
+                            #~ relative_rmsf))
                         if relative_rmsf >= max_rate_rmsf:
                             b_converged = False
                             break
-
+                            
                     if b_converged:
                         current_iteration.bins[bin_index].setConverged(True)
-                        print ("\nBin {} is converged".format(bin_index))
+                        print ("Bin {} is converged\n".format(bin_index))
                 					
         #~ print ("rates[0]:")				
         #~ print (rates[0])
