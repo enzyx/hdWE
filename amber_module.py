@@ -265,15 +265,20 @@ class MD_module():
         """
         Returns a NxM matrix with RMSD entries bins x segments
         """
-        if self.parallelization_mode == "mpi":
+        if self.parallelization_mode == "serial":
             self.iteration = iteration
-            rmsd_matrix = numpy.array([])
+            rmsd_matrix = numpy.array([[0]*iteration.getNumberOfBins()]*iteration.getNumberOfSegments())
             
             # calculate entries
+            i = 0
             for bin_loop in self.iteration:
                 for segment in bin_loop:
-                    rmsd_matrix.append( self.calcRmsdToBins(segment, self.iteration.bins))
-            print(rmsd_matrix) 
+                    coordinates = self.calcRmsdToBins(segment, self.iteration.bins)
+                    # fill matrix
+                    for j in range(coordinates):
+                        rmsd_matrix[i][j] = coordinates[j]
+                    i += 1
+            print(rmsd_matrix)
             return rmsd_matrix
 
     
