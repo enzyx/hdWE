@@ -192,12 +192,13 @@ class MD_module():
             # Call myself with MPI...
             if self.debug:
                 print("Switching to MPI for MD now...")
-            os.system(self.mpirun + ' ' + 
-                      sys.executable + ' ' +
-                      os.path.realpath(__file__) + ' ' + 
-                      self.configfile + ' ' + 
-                      str(self.debug) + ' ' + 
-                      iteration_dump_filename)
+            os.system("{0} {1} {2} {3} {4} {5} {6}".format(self.mpirun, 
+                                  sys.executable,
+                                  os.path.realpath(__file__),
+                                  "MPIMD",
+                                  self.configfile, 
+                                  iteration_dump_filename,
+                                  str(self.debug)))
 
         
     def calcRmsdToBins(self, segment, bins):
@@ -259,7 +260,23 @@ class MD_module():
             os.remove(cpptraj_output_path)
         
         return coordinates
-        
+    
+    def calcRmsdSegmentsToBinsMatrix(self, iteration):
+        """
+        Returns a NxM matrix with RMSD entries bins x segments
+        """
+        if self.parallelization_mode == "mpi":
+            self.iteration = iteration
+            rmsd_matrix = numpy.array([])
+            
+            # calculate entries
+            for bin_loop in self.iteration:
+                for segment in bin_loop:
+                    rmsd_matrix.append( self.calcRmsdToBins(segment, self.iteration.bins))
+            print(rmsd_matrix) 
+            return rmsd_matrix
+
+    
     def ana_calcCoordinateOfSegment(self, segment, cpptraj_lines):
         """
         Calculates the value of a coordinate corresponding to a segment and defined
@@ -297,16 +314,12 @@ class MD_module():
         
         return coordinate_value
 
-# Call only in MPI mode
-if __name__ == "__main__":
-    from mpi4py import MPI
-    comm = MPI.COMM_WORLD
-    rank = comm.Get_rank()
-    size = comm.Get_size()
+
+def doMPIMD(configfile, iteration_dump_file_path, debug):
     # Read in the call arguments
-    configfile               = sys.argv[1]
-    debug                    = bool(str(sys.argv[2]) == "True")
-    iteration_dump_file_path = sys.argv[3]
+    configfile               = configfile
+    iteration_dump_file_path = iteration_dump_file_path
+    debug                    = bool(debug == "True")
     # Initialize MD module
     md_module = MD_module(configfile = configfile, debug = debug)
     iteration_dump_file = open(iteration_dump_file_path, "r")
@@ -339,3 +352,21 @@ if __name__ == "__main__":
         # Remove the iteration dump file
         if not debug:
             os.remove(iteration_dump_file_path)
+
+def doMPICalcRmsdMatrix(asdf):
+    pass
+
+# Call only in MPI mode
+if __name__ == "__main__":
+    from mpi4py import MPI
+    comm = MPI.COMM_WORLD
+    rank = comm.Get_rank()
+    size = comm.Get_size()
+    
+    if sys.argv[1] == "MPIMD":
+        doMPIMD(configfile=sys.argv[2], 
+                iteration_dump_file_path=sys.argv[3], 
+                debug=sys.argv[4])
+    elif sys.argv[1] == "MPIRMSDMATRIX":
+        doMPICalcRmsdMatrix(configfile=sys.argv[2])
+        

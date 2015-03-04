@@ -88,6 +88,7 @@ for iteration_counter in range(len(iterations), hdWE_parameters.max_iterations +
     max_bin_probability = parent_iteration.getMaxBinProbability()
     
     # Sort segments in bins. Generate new bin if required
+    md_module.calcRmsdSegmentsToBinsMatrix(parent_iteration)
     for parent_bin in parent_iteration:
         for segment in parent_bin:
             coordinates = md_module.calcRmsdToBins(segment, iteration.bins)
