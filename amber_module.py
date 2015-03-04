@@ -109,9 +109,9 @@ class MD_module():
         amber_start_coords_path = self.workdir + 'run/' + segment.getParentNameString() + '.rst7'
         amber_end_coords_path   = self.workdir + 'run/' + segment.getNameString()       + '.rst7'
         
-        skip_command_line       = 'ln -s' + \
-                                  '  ' + amber_start_coords_path + \
-                                  '  ' + amber_end_coords_path
+        skip_command_line       = 'ln {0} {1}'.format(
+                                                  amber_start_coords_path,
+                                                  amber_end_coords_path)
         return skip_command_line
     
         
@@ -201,34 +201,41 @@ class MD_module():
 
         
     def calcRmsdToBins(self, segment, bins):
-        """Calculates the coordinate values of a segment with respect to all
+        """
+        Calculates the coordinate values of a segment with respect to all
         existing bin reference coordinates and returns them in a numpy array.
         The array entries are in the same order as the bins.
         """
 
         #Write the cpptraj infile
-        segment_name_string=segment.getNameString() 
+        segment_name_string = segment.getNameString() 
         
-        cpptraj_infile_path=self.workdir + segment_name_string + '.cpptraj_in'
-        cpptraj_infile=open(cpptraj_infile_path,'w')
-        cpptraj_infile.write('trajin ' + self.workdir + 'run/' + segment_name_string + '.rst7' + '\n')     
-        cpptraj_output_path = self.workdir + segment_name_string + '.cpptraj_output'
+        cpptraj_infile_path = "{workdir}/{segment}.cpptraj_in".format(workdir=self.workdir, 
+                                                                      segment=segment_name_string)
+        cpptraj_infile      = open(cpptraj_infile_path, 'w')
+        cpptraj_infile.write('trajin {workdir}/run/{segment}.rst7\n'.format(workdir=self.workdir, 
+                                                                            segment=segment_name_string))  
+        cpptraj_output_path = "{workdir}/{segment}.cpptraj_output".format(workdir=self.workdir, 
+                                                                          segment=segment_name_string)   
+        
         for bin_loop in range(0,len(bins)):
-            reference_bin_name_string         = self.workdir + 'run/' + bins[bin_loop].getReferenceNameString() + '.rst7 '
-            cpptraj_reference_id_name_string  = '[reference_id_' + str(bin_loop).zfill(5) + ']'
+            reference_bin_name_string         = "{workdir}/run/{segment}.rst7".format(workdir=self.workdir, 
+                                                                                      segment=bins[bin_loop].getReferenceNameString())
+            cpptraj_reference_id_name_string  = '[reference_id_{0:05d}]'.format(bin_loop)
 
-            cpptraj_infile.write('reference ' + reference_bin_name_string + cpptraj_reference_id_name_string + '\n')
-            cpptraj_infile.write('rms ' + 'bin_' + str(bin_loop).zfill(5) + ' ' + \
-                                 self.amber_coordinate_mask + ' out ' +  cpptraj_output_path + \
-                                 ' ref ' + cpptraj_reference_id_name_string + '\n')
+            cpptraj_infile.write('reference {0} {1}\n'.format(reference_bin_name_string, cpptraj_reference_id_name_string))
+            cpptraj_infile.write('rms in_{0:05d} {1} out {2} ref {3}\n'.format(bin_loop,
+                                 self.amber_coordinate_mask, cpptraj_output_path,
+                                 cpptraj_reference_id_name_string))
         cpptraj_infile.close()
 
 
         #Run cpptraj
-        cpptraj_execute_string =' -p ' + self.amber_topology_path + \
-                                ' -i ' + cpptraj_infile_path
-        cpptraj_execute_string = cpptraj_execute_string + ' > ' + self.workdir + 'log/cpptraj.log' 
-        os.system('cpptraj ' + cpptraj_execute_string )
+        cpptraj_execute_string = ' -p {top} -i {inpath} > {workdir}/log/cpptraj.log'.format(
+                                                            top=self.amber_topology_path, 
+                                                            inpath=cpptraj_infile_path,
+                                                            workdir=self.workdir)
+        os.system('cpptraj {execute}'.format(execute=cpptraj_execute_string))
       
         #Load cpptraj output as numpy array
         try:
@@ -237,12 +244,14 @@ class MD_module():
             coordinates = numpy.delete(coordinates, 0)
         except:
             #TODO What should happen then?
-            print('amber_module error: cpptraj output ' + cpptraj_output_path + ' can not be found or loaded.')
+            print('amber_module error: cpptraj output {0} can not '\
+                  'be found or loaded.'.format(cpptraj_output_path))
         
         #Check if cpptraj output is correct
         if not (len(coordinates)==len(bins)):
             #TODO What should happen then?
-            print('amber_module error: cpptraj output ' + cpptraj_output_path + ' does not have the correct number of entries.' )
+            print("amber_module error: cpptraj output {0} does not " \
+                  "have the correct number of entries.".format(cpptraj_output_path))
 
         #Remove temporary files
         if not self.debug:
@@ -269,7 +278,7 @@ class MD_module():
         #Execute cpptraj
         cpptraj_execute_string =' -p ' + self.amber_topology_path + \
                                 ' -i ' + cpptraj_infile_path
-        cpptraj_execute_string = cpptraj_execute_string + ' > ' + self.workdir + 'log/ana_calculatePMF_cpptraj.log' 
+        cpptraj_execute_string = cpptraj_execute_string + ' >> ' + self.workdir + 'log/ana_calculatePMF_cpptraj.log' 
         os.system('cpptraj ' + cpptraj_execute_string )        
         
         #Load cpptraj output as numpy array
@@ -294,9 +303,13 @@ if __name__ == "__main__":
     comm = MPI.COMM_WORLD
     rank = comm.Get_rank()
     size = comm.Get_size()
-    debug = bool(str(sys.argv[2]) == "True")
-    md_module = MD_module(configfile = sys.argv[1], debug = debug)
-    iteration_dump_file = open(sys.argv[3], "r")
+    # Read in the call arguments
+    configfile               = sys.argv[1]
+    debug                    = bool(str(sys.argv[2]) == "True")
+    iteration_dump_file_path = sys.argv[3]
+    # Initialize MD module
+    md_module = MD_module(configfile = configfile, debug = debug)
+    iteration_dump_file = open(iteration_dump_file_path, "r")
     md_module.setIteration(pickle.load(iteration_dump_file))
     if debug:
         if rank == 0:
@@ -316,10 +329,13 @@ if __name__ == "__main__":
                 md_skip_count += 1
                 if workcount % size == rank:
                     # Run MD skip
-                    md_module.SkipSegmentMd(loop_segment, workcount, md_skip_count)
+                    md_module.SkipSegmentMD(loop_segment, workcount, md_skip_count)
             workcount += 1
     if rank == 0:
         sys.stderr.write("\n")
         if debug:
             sys.stderr.write("Finishing MPI\n")
         sys.stderr.flush()
+        # Remove the iteration dump file
+        if not debug:
+            os.remove(iteration_dump_file_path)
