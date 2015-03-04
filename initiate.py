@@ -14,24 +14,28 @@ def prepare(work_dir, starting_structure, append, debug):
         # Get the backup index 
         backup_index = -1
         for sub_dir in ['run', 'log', 'debug']:
-            if sub_dir=='debug' and debug==False:
-                continue
             dir_tmp = work_dir + sub_dir
             if os.path.exists(dir_tmp):
-                backups = glob.glob(dir_tmp + '.bak.*')
-                backups = [int(backup.split(".")[-1]) for backup in backups]
-                tmp_index = int(sorted(backups)[-1]) + 1
-                if backup_index < tmp_index:
-                    backup_index = tmp_index
-                elif backup_index < 0:
+                if backup_index < 0:
                     backup_index = 1
+                backups = glob.glob(dir_tmp + '.bak.*')
+                try:
+                    backups = [int(backup.split(".")[-1]) for backup in backups]
+                    tmp_index = int(sorted(backups)[-1]) + 1
+                    if backup_index < tmp_index:
+                        backup_index = tmp_index                  
+                except IndexError:
+                    continue
         # Now move old data to backup and create empty new folders
-        for sub_dir in ['run', 'log', 'debug']:
-            if sub_dir=='debug' and debug==False:
-                continue
+        for sub_dir in ['run', 'log', 'debug']:               
             dir_tmp = work_dir + sub_dir
-            if backup_index >= 0:
-                os.rename(dir_tmp, dir_tmp + '.bak.' + str(backup_index))
+            try:
+                if backup_index >= 0:
+                    os.rename(dir_tmp, "{0}.bak.{1}".format(dir_tmp, backup_index))
+            except OSError:
+                print "Could not backup directory {0}".format(dir_tmp)
+            if sub_dir=='debug' and not debug:
+                continue
             os.mkdir(dir_tmp)
         shutil.copyfile(work_dir + starting_structure, work_dir + 'run/' + '00000_00000_00000.rst7')
 

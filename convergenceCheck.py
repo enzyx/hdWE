@@ -2,7 +2,6 @@ from __future__ import print_function
 import sys
 import numpy as np
 import constants
-import analysis_operations
 
 def checkOutratesForConvergence(iterations, current_iteration, convergence_range, max_rate_rmsf):
     '''

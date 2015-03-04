@@ -7,7 +7,6 @@ import sys
 import ConfigParser
 import argparse
 import numpy
-import json
 import initiate
 from iteration import Iteration
 from logger import Logger
@@ -16,7 +15,6 @@ import reweighting
 import convergenceCheck
 from thread_container import ThreadContainer
 from hdWE_parameters import HdWEParameters
-from analysis_operations import meanRateMatrix
 
 ###### Parse command line ###### 
 
@@ -98,7 +96,6 @@ for iteration_counter in range(len(iterations), hdWE_parameters.max_iterations +
             if (min_coordinate <= hdWE_parameters.coordinate_threshold or 
                segment.getProbability() < hdWE_parameters.minimal_probability*max_bin_probability or 
                iteration.getNumberOfBins() >= hdWE_parameters.max_bins):
-                   
                 bin_id = numpy.argmin(coordinates)
                 iteration.bins[bin_id].generateSegment(probability=segment.getProbability(),
                                                   parent_bin_id=segment.getBinId(),
@@ -112,7 +109,29 @@ for iteration_counter in range(len(iterations), hdWE_parameters.max_iterations +
                 iteration.bins[bin_id].generateSegment(probability=segment.getProbability(),
                                                   parent_bin_id=segment.getBinId(),
                                                   parent_segment_id=segment.getId())
-    # Split and merge (Manu)
+
+                                               
+    #reweight Bin Probabilities (Has to happen before resampling)
+    if iteration.getNumberOfBins() > 1:
+        if hdWE_parameters.reweighting_range > 0:
+            reweighting.reweightBinProbabilities(iterations, hdWE_parameters.reweighting_range)
+
+    #print('\nRate Matrix Check:')
+    #print(iteration.RateMatrix()) 
+
+    # check which bins have to be rerun
+    #TODO ab wann? Range hier muss nicht notwendingerweise reweighting range sein.
+    if iteration_counter > 10:    
+        convergenceCheck.checkOutratesForConvergence(iterations, iteration, 
+                                                     hdWE_parameters.reweighting_range,
+                                                     hdWE_parameters.segments_per_bin, 
+                                                     1.5)
+
+
+
+
+    # Split and merge
+    #TODO kann man das evtl. noch in eine einzelne Funktion verpacken?
     # Parallel
     if config.get('hdWE','number-of-threads') > 1:
         thread_container = ThreadContainer()
@@ -127,31 +146,30 @@ for iteration_counter in range(len(iterations), hdWE_parameters.max_iterations +
         for this_bin in iteration:
             this_bin.resampleSegments()
 
-    if args.debug: 
-        print("The overall probabiliy is {0:05f}".format(iteration.getProbability()))
-        
-    # check which bins have to be rerun
-    convergenceCheck.checkOutratesForConvergence(iterations, iteration, hdWE_parameters.reweighting_range, 1.5)
-
     # Run MD
     md_module.RunMDs(iteration)
-
+    # Append an iterations array
     iterations.append(iteration)
 
-    #reweight Bin Probabilities
-    if iteration.getNumberOfBins() > 1:
-        if hdWE_parameters.reweighting_range > 0:
-            reweighting.reweightBinProbabilities(iterations, hdWE_parameters.reweighting_range)
+    if args.debug: 
+        print("The overall probabiliy is {0:05f}".format(iteration.getProbability()))
 
     
-    # log iteration (Rainer)
+    # log iteration 
     logger.logIteration(iteration)
-    
-logger.close()
+
+    #count total n of segments during iterations
+    n_segments = 0
+    for iteration_loop in iterations:
+        n_segments += iteration_loop.getNumberOfPropagatedSegments()
+    print('\nTotal number of propagated segments: ' + str(n_segments) + '            ')
 
 #count total n of segments
 n_segments = 0
 for iteration_loop in iterations:
-    n_segments += iteration_loop.getNumberOfSegments()
-    
-print('hdWE completed. Total number of propagated segments: ' + str(n_segments) + '            ')
+    n_segments += iteration_loop.getNumberOfPropagatedSegments()
+print('\nhdWE completed. Total number of propagated segments: ' + str(n_segments) + '            ')
+   
+logger.close()
+
+
