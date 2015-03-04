@@ -121,7 +121,7 @@ for iteration_counter in range(len(iterations), hdWE_parameters.max_iterations +
 
     # check which bins have to be rerun
     #TODO ab wann? Range hier muss nicht notwendingerweise reweighting range sein.
-    if iteration_counter > 5:    
+    if iteration_counter > 10:    
         convergenceCheck.checkOutratesForConvergence(iterations, iteration, 
                                                      hdWE_parameters.reweighting_range,
                                                      hdWE_parameters.segments_per_bin, 
@@ -157,12 +157,19 @@ for iteration_counter in range(len(iterations), hdWE_parameters.max_iterations +
     
     # log iteration 
     logger.logIteration(iteration)
-    
-logger.close()
+
+    #count total n of segments during iterations
+    n_segments = 0
+    for iteration_loop in iterations:
+        n_segments += iteration_loop.getNumberOfPropagatedSegments()
+    print('\nTotal number of propagated segments: ' + str(n_segments) + '            ')
 
 #count total n of segments
 n_segments = 0
 for iteration_loop in iterations:
-    n_segments += iteration_loop.getNumberOfSegments()
-    
-print('hdWE completed. Total number of propagated segments: ' + str(n_segments) + '            ')
+    n_segments += iteration_loop.getNumberOfPropagatedSegments()
+print('\nhdWE completed. Total number of propagated segments: ' + str(n_segments) + '            ')
+   
+logger.close()
+
+

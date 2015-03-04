@@ -60,9 +60,8 @@ def checkOutratesForConvergence(iterations, current_iteration, convergence_range
                         #~ else:
                             #~ relative_rmsf = rmsf/mean
                         #~ print (rates, ", mean", mean, ", rmsf", rmsf, ", relative_rmsf", relative_rmsf)
-                
                 if b_all_rates_exist:
-                    #~ print ("all rates present. checking convergence of rates for bin", bin_index)
+                    print ("all rates present. checking convergence of rates for bin", bin_index)
                     b_converged = True    
                     for target_bin_index,rates in enumerate(all_bin_rates):
                         mean = np.mean(rates)
