@@ -223,7 +223,7 @@ if args.rates:
     
     sys.stdout.write("non-zero mean rates of last iteration\n"+
                      "for bin {_bin}:\n".format(_bin=args.bin_index))
-    sys.stdout.write("target \t mean\n")
+    sys.stdout.write("target bin \t mean\n")
     means = iteration_datasets[-1].getBinData(args.bin_index).getMeans()
     for target_index, mean in enumerate(means):
         if mean > constants.num_boundary and target_index != args.bin_index:
@@ -313,8 +313,11 @@ if args.rates:
                             target_number_of_segments=parent_iteration.getTargetNumberOfSegments(),
                             outrates_converged = False)
             convergenceCheck.checkOutratesForConvergence(iterations[:it_counter+1], dummy_iteration, args.conv_range, args.rmsf_threshold)
-        if dummy_iteration.bins[args.bin_index].isConverged():
-            bin_converged[it_counter] = 1.0
+            if len(dummy_iteration.bins) > args.bin_index \
+               and dummy_iteration.bins[args.bin_index].isConverged():
+                bin_converged[it_counter] = 1.0
+
+        # color for convergence
         c_conv = [0.0] * len(iterations)
         for i,convergence in enumerate(bin_converged):
             if convergence == 1.0:
