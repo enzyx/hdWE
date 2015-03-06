@@ -308,10 +308,9 @@ class MD_module():
         """
         Returns a NxM matrix with RMSD entries segments x bins
         """
+        self.setIteration(iteration)
         if self.parallelization_mode in ["serial", "thread"]:
-            self.iteration = iteration
             rmsd_matrix = numpy.zeros((iteration.getNumberOfSegments(), iteration.getNumberOfBins()))
-            
             # calculate entries
             i = 0
             for bin_loop in self.iteration:
