@@ -140,7 +140,7 @@ def findConvegenceEvents(iterations):
 
 ###### Parse command line ###### 
 parser = argparse.ArgumentParser(description=
-    'Checks when bins were closed.')
+    'Checks when bins were closed or if rates converged. ')
 parser.add_argument('-b', '--first_it', dest="first_iteration",
                     type=int, default=0, metavar='INT',
                     help="First iteration to use.")                    
@@ -165,21 +165,24 @@ parser.add_argument('-i', '--bin_index', dest="bin_index",
                    type=int, default=0, metavar="INT",
                    help="Index of bin for outrate-calculation.")
 parser.add_argument('-c', '--convergence_range', dest="conv_range", 
-                   type=int, default=5, metavar="INT",
-                   help="convergence range. How many previous iterations are taken into account for the mean.")                                                    
+                   type=int, nargs='?', default=False, metavar="INT",
+                   help="Convergence range. optional, if not set logfile value will be used.")                                                    
 parser.add_argument('-t', '--threshold', dest="rmsf_threshold", 
-                   type=float, default=1.5, metavar="FLOAT",
-                   help="threshold of convergence for relative rmsf.")                                
+                   type=float, nargs='?', default=False, metavar="FLOAT",
+                   help="threshold of convergence for relative rmsf. optional.")                                
 # Initialize
 args = parser.parse_args()
                   
 ################################
 
-# Get the iterations from logger module
+# Get the iterations and parameters
 logger = Logger(args.logfile)
+logged_param_string = logger.getHdWEParameterString()
 iterations = logger.loadIterations(first = args.first_iteration, 
                                     last = args.last_iteration)
 logger.close()
+hdWE_parameters = HdWEParameters()
+hdWE_parameters.loadJsonParams(logged_param_string)
 
 if args.when:  
     (closed_bin, closing_iteration) = findConvegenceEvents(iterations)
@@ -211,6 +214,16 @@ if args.rates:
     iteration_datasets = []
     n_bins = iterations[-1].getNumberOfBins()
     
+    # get parameters
+    if args.conv_range:
+        conv_range = args.conv_range
+    else:
+        conv_range = hdWE_parameters.convergence_range
+    if args.rmsf_threshold:
+        rmsf_threshold = args.rmsf_threshold
+    else:
+        rmsf_threshold = hdWE_parameters.convergence_threshold
+
     for iteration in iterations:
         iteration_datasets.append(iterationData(iteration))
         
@@ -218,12 +231,12 @@ if args.rates:
         if len(it_data.bin_data) > args.bin_index:
             it_data.bin_data[args.bin_index].calculateMeans(iteration_datasets, 
                                                         n_bins, 
-                                                        args.conv_range, 
-                                                        args.rmsf_threshold)
+                                                        conv_range, 
+                                                        rmsf_threshold)
     
     sys.stdout.write("non-zero mean rates of last iteration\n"+
                      "for bin {_bin}:\n".format(_bin=args.bin_index))
-    sys.stdout.write("target \t mean\n")
+    sys.stdout.write("target bin \t mean\n")
     means = iteration_datasets[-1].getBinData(args.bin_index).getMeans()
     for target_index, mean in enumerate(means):
         if mean > constants.num_boundary and target_index != args.bin_index:
@@ -265,19 +278,20 @@ if args.rates:
             # color it green/red/orange below thres/above thres/at 1/nsteps
             c = [""] * len(rel_rmsfs)        
             for i,rr in enumerate(rel_rmsfs):
-                if rr <= args.rmsf_threshold:
+                if rr <= rmsf_threshold:
                     c[i]  = "green"
-                elif rr == np.sqrt(args.conv_range - 1.0):
+                elif rr == np.sqrt(conv_range - 1.0):
                     c[i] = "orange"
                 else:
                     c[i]  = "red"
             # check for small rates
-            #~ for i,mean in enumerate(means):
-                #~ if mean > constants.num_boundary:
-                    #~ for iteration in iterations:
-                        #~ if iteration.getId() == iter_data.getId():
+            for i,mean in enumerate(means):
+                if mean > constants.num_boundary:
+                    for iteration in iterations:
+                        if iteration.getId() == iter_data.getId():
                             #~ if mean < iteration.bins[i].getProbability()/iteration.bins[i].getNumberOfSegments():
-                                #~ c[i] = "blue"
+                            if mean < 0.5/iteration.bins[i].getTargetNumberOfSegments():
+                                c[i] = "blue"
             #size
             size = [0] * len(means)
             for i,mean in enumerate(means):
@@ -312,9 +326,12 @@ if args.rates:
                             reference_segment_id=parent_bin.getReferenceSegmentId(),
                             target_number_of_segments=parent_iteration.getTargetNumberOfSegments(),
                             outrates_converged = False)
-            convergenceCheck.checkOutratesForConvergence(iterations[:it_counter+1], dummy_iteration, args.conv_range, args.rmsf_threshold)
-        if dummy_iteration.bins[args.bin_index].isConverged():
-            bin_converged[it_counter] = 1.0
+            convergenceCheck.checkOutratesForConvergence(iterations[:it_counter+1], dummy_iteration, conv_range, rmsf_threshold)
+            if len(dummy_iteration.bins) > args.bin_index \
+               and dummy_iteration.bins[args.bin_index].isConverged():
+                bin_converged[it_counter] = 1.0
+
+        # color for convergence
         c_conv = [0.0] * len(iterations)
         for i,convergence in enumerate(bin_converged):
             if convergence == 1.0:
@@ -332,6 +349,6 @@ if args.rates:
         
 
         ax.scatter(x,y, s=50, color=c_conv, label = 'convergence', marker='s')
-    sys.stdout.write('\033[1m' + 'Plotting data...' + '\033[0m\n')            
-    plt.show() 
+        sys.stdout.write('\033[1m' + 'Plotting data...' + '\033[0m\n')            
+        plt.show() 
         
