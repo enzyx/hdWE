@@ -38,9 +38,13 @@ class binData(object):
         for it_data in it_datas:
             if it_data.getId() >= self.iteration_index - convergence_range \
                and it_data.getId() < self.iteration_index \
-               and len(it_data.rate_matrix) > self.bin_index\
-               and len(it_data.rate_matrix[self.bin_index]) > target_bin_index  :
+               and len(it_data.rate_matrix) > self.bin_index:
+               
+                if len(it_data.rate_matrix[self.bin_index]) > target_bin_index  :   
                     conv_rates.append( it_data.rate_matrix[self.bin_index][target_bin_index] )
+                else:
+                    # bin wasn't created yet (but could have been, just didn't, so the rate before was 0.0)
+                    conv_rates.append( 0.0 )
         return np.array(conv_rates)
 
     def calculateMeans(self, iterationData, max_bins, convergence_range, rmsf_threshold):
@@ -60,10 +64,6 @@ class binData(object):
                     self.means.append(np.mean( conv_rates ))
                     # rmsf (sqrt, mean, square)    
                     self.rmsfs.append(np.sqrt(np.mean(np.square( conv_rates - self.means[-1] ))))
-                    #~ print ("\nrates taken into account, the mean and rmsf:")
-                    #~ print (conv_rates)
-                    #~ print (self.means[-1])
-                    #~ print (self.rmsfs[-1])
                     #relative rmsf
                     if self.means[-1] >= constants.num_boundary:
                         self.rel_rmsfs.append(float(self.rmsfs[-1]/self.means[-1]))
@@ -81,7 +81,7 @@ class binData(object):
         return self.rmsfs
         
     def getRelRMSFs(self):
-        return self.rel_rmsfs    
+        return self.rel_rmsfs  
             
 class iterationData(object):
     """
@@ -140,7 +140,7 @@ def findConvegenceEvents(iterations):
 
 ###### Parse command line ###### 
 parser = argparse.ArgumentParser(description=
-    'Checks when bins were closed.')
+    'Checks when bins were closed or if rates converged. ')
 parser.add_argument('-b', '--first_it', dest="first_iteration",
                     type=int, default=0, metavar='INT',
                     help="First iteration to use.")                    
@@ -165,27 +165,30 @@ parser.add_argument('-i', '--bin_index', dest="bin_index",
                    type=int, default=0, metavar="INT",
                    help="Index of bin for outrate-calculation.")
 parser.add_argument('-c', '--convergence_range', dest="conv_range", 
-                   type=int, default=5, metavar="INT",
-                   help="convergence range. How many previous iterations are taken into account for the mean.")                                                    
+                   type=int, nargs='?', default=False, metavar="INT",
+                   help="Convergence range. optional, if not set logfile value will be used.")                                                    
 parser.add_argument('-t', '--threshold', dest="rmsf_threshold", 
-                   type=float, default=1.5, metavar="FLOAT",
-                   help="threshold of convergence for relative rmsf.")                                
+                   type=float, nargs='?', default=False, metavar="FLOAT",
+                   help="threshold of convergence for relative rmsf. optional.")                                
 # Initialize
 args = parser.parse_args()
                   
 ################################
 
-# Get the iterations from logger module
+# Get the iterations and parameters
 logger = Logger(args.logfile)
+logged_param_string = logger.getHdWEParameterString()
 iterations = logger.loadIterations(first = args.first_iteration, 
                                     last = args.last_iteration)
 logger.close()
+hdWE_parameters = HdWEParameters()
+hdWE_parameters.loadJsonParams(logged_param_string)
 
 if args.when:  
     (closed_bin, closing_iteration) = findConvegenceEvents(iterations)
                 
     if len(closed_bin) == 0:
-        sys.stderr.write('\033[1m' + "No closed bins" + '\033[0m\n')
+        sys.stderr.write('\033[1m' + "No bins converged." + '\033[0m\n')
         sys.exit()
     sys.stdout.write('\033[1m' + 'closed bins:' + '\033[0m\n')
     sys.stdout.write("bin \t closed at iteration\n")     
@@ -211,6 +214,16 @@ if args.rates:
     iteration_datasets = []
     n_bins = iterations[-1].getNumberOfBins()
     
+    # get parameters
+    if args.conv_range:
+        conv_range = args.conv_range
+    else:
+        conv_range = hdWE_parameters.convergence_range
+    if args.rmsf_threshold:
+        rmsf_threshold = args.rmsf_threshold
+    else:
+        rmsf_threshold = hdWE_parameters.convergence_threshold
+
     for iteration in iterations:
         iteration_datasets.append(iterationData(iteration))
         
@@ -218,16 +231,25 @@ if args.rates:
         if len(it_data.bin_data) > args.bin_index:
             it_data.bin_data[args.bin_index].calculateMeans(iteration_datasets, 
                                                         n_bins, 
-                                                        args.conv_range, 
-                                                        args.rmsf_threshold)
+                                                        conv_range, 
+                                                        rmsf_threshold)
+    
+    sys.stdout.write("non-zero mean rates of last iteration\n"+
+                     "for bin {_bin}:\n".format(_bin=args.bin_index))
+    sys.stdout.write("target bin \t mean\n")
+    means = iteration_datasets[-1].getBinData(args.bin_index).getMeans()
+    for target_index, mean in enumerate(means):
+        if mean > constants.num_boundary and target_index != args.bin_index:
+            sys.stdout.write("{0} \t {1:.5f}\n".format(target_index, mean))
+            
 
     if args.plot:
-        sys.stdout.write('\033[1m' + 'Plotting data...' + '\033[0m\n')
+        sys.stdout.write('\033[1m' + 'preparing data for plotting...' + '\033[0m\n')
         f, ax = plt.subplots(1,1)
-        ax.set_xlim([0, len(iterations)])
+        ax.set_xlim([0, iterations[-1].getId() + 1])
         ax.set_xlabel('iteration')
         ax.set_ylabel('bin')
-        ax.grid()
+        #~ ax.grid()
         
         # find out maximum rate for point sizing
         max_mean = 0.0
@@ -241,11 +263,14 @@ if args.rates:
 
         # plot of rate convergencies
         for iter_data in iteration_datasets:
-            means = iter_data.getBinData(args.bin_index).getRelRMSFs()
-            rmsfs = iter_data.getBinData(args.bin_index).getRMSFs()
-            rel_rmsfs = iter_data.getBinData(args.bin_index).getRelRMSFs()
-            y = np.arange(0,len(rel_rmsfs))
-            x = [iter_data.getId() for i in range(len(means))]
+            bin_data = iter_data.getBinData(args.bin_index)
+            # plot all bins except the outrate bin
+            means = [mean for i,mean in enumerate(bin_data.getMeans()) if i != bin_data.getId()]
+            rmsfs = [rmsf for i,rmsf in enumerate(bin_data.getRMSFs()) if i != bin_data.getId()]
+            rel_rmsfs = [rel_rmsf for i,rel_rmsf in enumerate(bin_data.getRelRMSFs()) if i != bin_data.getId()]
+            y = [i for i,mean in enumerate(bin_data.getMeans()) if i != bin_data.getId()]
+            y = np.arange(0,len(iter_data.bin_data))
+            x = [iter_data.getId() for i in range(len(y))]
             #~ print ("target {}: xrange {}-{}".format(target_index, x[0], x[-1]))
 
 
@@ -253,15 +278,77 @@ if args.rates:
             # color it green/red/orange below thres/above thres/at 1/nsteps
             c = [""] * len(rel_rmsfs)        
             for i,rr in enumerate(rel_rmsfs):
-                if rr <= args.rmsf_threshold:
-                    c[i]  = "g"
-                elif rr == np.sqrt(args.conv_range - 1.0):
+                if rr <= rmsf_threshold:
+                    c[i]  = "green"
+                elif rr == np.sqrt(conv_range - 1.0):
                     c[i] = "orange"
                 else:
-                    c[i]  = "r"
-            ax.scatter(x, y, s=10*means/max_mean, color=c, label = 'relative rmsf')
+                    c[i]  = "red"
+            # check for small rates
+            for i,mean in enumerate(means):
+                if mean > constants.num_boundary:
+                    for iteration in iterations:
+                        if iteration.getId() == iter_data.getId():
+                            #~ if mean < iteration.bins[i].getProbability()/iteration.bins[i].getNumberOfSegments():
+                            if mean < 0.5/iteration.bins[i].getTargetNumberOfSegments():
+                                c[i] = "blue"
+            #size
+            size = [0] * len(means)
+            for i,mean in enumerate(means):
+                if mean > constants.num_boundary:
+                    size[i] = 5
+                if mean > 0.01:
+                    size[i] = 10
+                if mean > 0.1:
+                    size[i] = 20
+                
+            #~ ax.scatter(x, y, s=50*means/max_mean, color=c, marker="o", label = 'relative rmsf')
+            ax.scatter(x, y, s=size, color=c, marker="o", label = 'relative rmsf')
             #~ ax.get_yaxis().set_ticks([])
-            #~ ax.legend(loc="lower left")            
+            #~ ax.legend(loc="lower left")  
             
-    plt.show() 
+            
+        # run our simulation check:
+        sys.stdout.write('\033[1m' + 'running convergenceCheck...' + '\033[0m\n')
+
+        bin_converged = [0.0] * len(iterations)
+        for it_counter,iteration in enumerate(iterations):
+            sys.stdout.write('checking iteration {}\r'.format(it_counter))
+            sys.stdout.flush()
+            
+            #create dummy iteration where convergenceCheck will set its convergence flag
+            dummy_iteration = Iteration(iteration.getId())
+            parent_iteration = iteration
+            # Generate all previous bins for dummy iteration, but set them unconverged
+            for parent_bin in parent_iteration:
+                dummy_iteration.generateBin(reference_iteration_id=parent_bin.getReferenceIterationId(),
+                            reference_bin_id=parent_bin.getReferenceBinId(),
+                            reference_segment_id=parent_bin.getReferenceSegmentId(),
+                            target_number_of_segments=parent_iteration.getTargetNumberOfSegments(),
+                            outrates_converged = False)
+            convergenceCheck.checkOutratesForConvergence(iterations[:it_counter+1], dummy_iteration, conv_range, rmsf_threshold)
+            if len(dummy_iteration.bins) > args.bin_index \
+               and dummy_iteration.bins[args.bin_index].isConverged():
+                bin_converged[it_counter] = 1.0
+
+        # color for convergence
+        c_conv = [0.0] * len(iterations)
+        for i,convergence in enumerate(bin_converged):
+            if convergence == 1.0:
+                c_conv[i]  = "g"
+            else:
+                c_conv[i] = "red"
+        x = [ iteration.getId() for iteration in iterations ]
+        y = [-5] * len(bin_converged)
+        
+        # set convergence label
+        #~ labels = [item.get_text() for item in ax.get_yticklabels()]
+        #~ labels[1] = 'Convergence'
+
+        #~ ax.set_yticklabels(labels)
+        
+
+        ax.scatter(x,y, s=50, color=c_conv, label = 'convergence', marker='s')
+        sys.stdout.write('\033[1m' + 'Plotting data...' + '\033[0m\n')            
+        plt.show() 
         

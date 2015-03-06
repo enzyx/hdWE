@@ -230,6 +230,15 @@ class Bin(object):
         @return Current number of segments
         """
         return len(self.segments)
+        
+    def getNumberOfPropagatedSegments(self):
+        """
+        @return Current number of segments if converged is false.
+        """
+        if self.isConverged() == False:
+            return len(self.segments)
+        else:
+            return 0
     
     def getTargetNumberOfSegments(self):
         """

@@ -80,6 +80,15 @@ class Iteration(object):
             __number_of_segments += __bin.getNumberOfSegments()
         return __number_of_segments
 
+    def getNumberOfPropagatedSegments(self):
+        """
+        Returns the current number of propagated(not converged) segments.
+        """
+        __number_of_segments = 0
+        for __bin in self.bins:
+            __number_of_segments += __bin.getNumberOfPropagatedSegments()
+        return __number_of_segments
+        
     def getTargetNumberOfSegments(self):
         """
         Returns the current number of segments

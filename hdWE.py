@@ -24,9 +24,13 @@ parser =argparse.ArgumentParser(description=__doc__,
 parser.add_argument('-c', '--conf', type=str, dest="configfile", 
                     metavar="FILE", required=False, default='hdWE.conf',
                     help="The hdWE configuration file")      
-parser.add_argument("--append", dest="append", action='store_true', 
+prev_data = parser.add_mutually_exclusive_group()
+prev_data.add_argument("--append", dest="append", action='store_true', 
                     default=False,
                     help="continue previous iterations with parameters from conf file.")  
+prev_data.add_argument("--overwrite", dest="overwrite", action='store_true', 
+                    default=False,
+                    help="overwrite previous simulation data.")  
 parser.add_argument('--debug', dest="debug", action="store_true",
                     default=False, help="Turn debugging on")
 
@@ -47,6 +51,15 @@ iterations = []
 hdWE_parameters = HdWEParameters()
 hdWE_parameters.loadConfParameters(config, args.debug)
 
+# Setup the workdir
+initiate.prepare(hdWE_parameters.workdir,
+                 hdWE_parameters.logfile, 
+                 hdWE_parameters.starting_structure, 
+                 args.overwrite, 
+                 args.append, 
+                 args.debug)
+
+
 # Initialize the logger
 logger = Logger(filename=hdWE_parameters.logfile, 
                 append=args.append,
@@ -55,8 +68,7 @@ logger.logParameters(hdWE_parameters)
 if args.append:
     iterations = logger.loadIterations()  
 
-# Setup the workdir and initiate iterations
-initiate.prepare(hdWE_parameters.workdir, hdWE_parameters.starting_structure, args.append, args.debug)
+# initiate iterations
 if len(iterations)==0:
     iterations.append(initiate.create_initial_iteration(hdWE_parameters.segments_per_bin))
     logger.logIteration(iterations[0])
@@ -163,16 +175,13 @@ for iteration_counter in range(len(iterations), hdWE_parameters.max_iterations +
         if hdWE_parameters.reweighting_range > 0:
             reweighting.reweightBinProbabilities(iterations, hdWE_parameters.reweighting_range)
 
-    #print('\nRate Matrix Check:')
-    #print(iteration.RateMatrix()) 
 
     # check which bins have to be rerun
-    #TODO ab wann? Range hier muss nicht notwendingerweise reweighting range sein.
-    if iteration_counter > 5:    
-        convergenceCheck.checkOutratesForConvergence(iterations, iteration, 
-                                                     hdWE_parameters.reweighting_range,
-                                                     hdWE_parameters.segments_per_bin, 
-                                                     1.5)
+    if iteration_counter > hdWE_parameters.convergence_range:    
+        convergenceCheck.checkOutratesForConvergence(iterations, 
+                                                     iteration, 
+                                                     hdWE_parameters.convergence_range,
+                                                     hdWE_parameters.convergence_threshold)
 
 
 
@@ -204,12 +213,29 @@ for iteration_counter in range(len(iterations), hdWE_parameters.max_iterations +
     
     # log iteration 
     logger.logIteration(iteration)
-    
-logger.close()
+
+    #count total n of segments during iterations
+    n_segments = 0
+    for iteration_loop in iterations:
+        n_segments += iteration_loop.getNumberOfPropagatedSegments()
+    print('\nTotal number of propagated segments: ' + str(n_segments) + '            ')
+
+
+    all_converged = True
+    for bin_loop in iteration:
+        if bin_loop.isConverged() == False:
+            all_converged = False
+    if all_converged == True:
+        print('\nExploring Mode: All bins are converged                                         ')
+        break        
+
 
 #count total n of segments
 n_segments = 0
 for iteration_loop in iterations:
-    n_segments += iteration_loop.getNumberOfSegments()
-    
-print('hdWE completed. Total number of propagated segments: ' + str(n_segments) + '            ')
+    n_segments += iteration_loop.getNumberOfPropagatedSegments()
+print('\nhdWE completed. Total number of propagated segments: ' + str(n_segments) + '            ')
+   
+logger.close()
+
+

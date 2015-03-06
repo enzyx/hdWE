@@ -38,17 +38,6 @@ class Logger():
     def __init__(self, filename, append = True, debug = False):
         self.logfilename = filename
         self.debug = debug
-        
-        # backup log file
-        if not (append):
-            if os.path.isfile(filename):
-                #~ if os.path.isfile(filename + '.bak*'):
-                if glob.glob(filename + '.bak.*'):
-                    backups = glob.glob(filename + '.bak.*')
-                    backup_number = int(sorted(backups)[-1].split(".")[-1]) + 1
-                else:
-                    backup_number = 1
-                os.rename(filename, filename+".bak." + str(backup_number))
 
         # open logfile
         self.logfile = open(self.logfilename, "a+")

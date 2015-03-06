@@ -1,42 +1,60 @@
-import os
+import os, sys
 import shutil
 import glob
 from iteration import Iteration
 
 
-def prepare(work_dir, starting_structure, append, debug):
+def prepare(work_dir, logfile, starting_structure, overwrite, append, debug):
     """
     Creates the directory structure. Copies the starting configuration
     into the bin_refcoords folder as the first bin.
     """
-    # Create directories if necessary   
+    sub_dirs = ['run', 'log', 'debug']
+    # Create directories if necessary 
     if append == False:
-        # Get the backup index 
-        backup_index = -1
-        for sub_dir in ['run', 'log', 'debug']:
-            dir_tmp = work_dir + sub_dir
-            if os.path.exists(dir_tmp):
-                if backup_index < 0:
-                    backup_index = 1
-                backups = glob.glob(dir_tmp + '.bak.*')
+        if not overwrite:
+            # Get the backup index 
+            backup_index = -1
+            for sub_dir in sub_dirs:
+                dir_tmp = work_dir + sub_dir
+                if os.path.exists(dir_tmp):
+                    if backup_index < 0:
+                        backup_index = 1
+                    backups = glob.glob(dir_tmp + '.bak.*')
+                    try:
+                        backups = [int(backup.split(".")[-1]) for backup in backups]
+                        tmp_index = int(sorted(backups)[-1]) + 1
+                        if backup_index < tmp_index:
+                            backup_index = tmp_index                  
+                    except IndexError:
+                        continue
+            
+            # backup log file
+            if os.path.isfile(logfile):
+                os.rename(logfile, logfile+".bak." + str(backup_index))
+                
+            # Now move old data to backup
+            for sub_dir in sub_dirs:               
+                dir_tmp = work_dir + sub_dir
                 try:
-                    backups = [int(backup.split(".")[-1]) for backup in backups]
-                    tmp_index = int(sorted(backups)[-1]) + 1
-                    if backup_index < tmp_index:
-                        backup_index = tmp_index                  
-                except IndexError:
-                    continue
-        # Now move old data to backup and create empty new folders
-        for sub_dir in ['run', 'log', 'debug']:               
-            dir_tmp = work_dir + sub_dir
-            try:
-                if backup_index >= 0:
-                    os.rename(dir_tmp, "{0}.bak.{1}".format(dir_tmp, backup_index))
-            except OSError:
-                print "Could not backup directory {0}".format(dir_tmp)
+                    if backup_index >= 0:
+                        os.rename(dir_tmp, "{0}.bak.{1}".format(dir_tmp, backup_index))
+                except OSError:
+                    print "Could not backup directory {0}".format(dir_tmp)
+                    
+        # delete old simulation data if overwrite flag is set
+        if overwrite:
+            for sub_dir in sub_dirs:
+                dir_tmp = work_dir + sub_dir
+                if os.path.exists(dir_tmp):
+                    shutil.rmtree(dir_tmp)
+            os.remove(logfile)
+                
+        # setup new folders and startfile
+        for sub_dir in sub_dirs:
             if sub_dir=='debug' and not debug:
                 continue
-            os.mkdir(dir_tmp)
+            os.mkdir(work_dir + sub_dir)
         shutil.copyfile(work_dir + starting_structure, work_dir + 'run/' + '00000_00000_00000.rst7')
 
 def create_initial_iteration(target_number_of_segments):
