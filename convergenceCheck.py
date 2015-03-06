@@ -23,7 +23,7 @@ def checkOutratesForConvergence(iterations, current_iteration, convergence_range
         rate_matrices = []
         # calculate mean rate matrices
         for i in range(convergence_range):
-            rate_matrices.append(iterations[iteration_counter - convergence_range + i].RateMatrix())
+            rate_matrices.append(iterations[iteration_counter - (convergence_range - 1) + i].RateMatrix())
             #~ print(rate_matrices[-1])
             
         # bins that exist long enough to have converged rates
@@ -47,10 +47,6 @@ def checkOutratesForConvergence(iterations, current_iteration, convergence_range
                         else:
                             _bin_outrates.append(0.0)
                     all_bin_rates.append(np.array(_bin_outrates))
-                    #~ if  np.amax(all_bin_rates[-1]) > constants.num_boundary and len(all_bin_rates[-1]) != convergence_range:                                                     
-                        #~ # some non-zero rates haven't been measured long enough
-                        #~ # might be wrong as they might have been created any time but weren't so the rate was 0
-                        #~ b_all_rates_exist = False
                         
                 # debug output
                 #~ if bin_index == 0:
@@ -66,37 +62,36 @@ def checkOutratesForConvergence(iterations, current_iteration, convergence_range
                         #~ else:
                             #~ relative_rmsf = rmsf/mean
                         #~ print (rates, ", mean", mean, ", rmsf", rmsf, ", relative_rmsf", relative_rmsf)
-                
-                if b_all_rates_exist:
-                    #~ print ("all rates present. checking convergence of rates for bin", bin_index)
-                    b_converged = True    
-                    for target_bin_index,rates in enumerate(all_bin_rates):
-                        mean = np.mean(rates)
-                        rmsf = np.sqrt(np.mean(np.square(rates - mean)))
-                        if mean < constants.num_boundary:
-                            if rmsf < constants.num_boundary:
-                                relative_rmsf = 0.0
-                            else:
-                                # in the exotic case that the mean is basically zero 
-                                # but the rmsf isn't we don't consider it converged
-                                relative_rmsf = max_rate_rmsf
-                                print ("relative_rmsf({}) > num_boundary but mean{} < num_boundary!.".format(rmsf, mean) + 
-                                              "Case not handled correctly yet.")
+               
+                # check convergence
+                b_converged = True    
+                for target_bin_index,rates in enumerate(all_bin_rates):
+                    mean = np.mean(rates)
+                    rmsf = np.sqrt(np.mean(np.square(rates - mean)))
+                    if mean < constants.num_boundary:
+                        if rmsf < constants.num_boundary:
+                            relative_rmsf = 0.0
                         else:
-                            relative_rmsf = rmsf/mean
+                            # in the exotic case that the mean is basically zero 
+                            # but the rmsf isn't we don't consider it converged
+                            relative_rmsf = max_rate_rmsf
+                            print ("relative_rmsf({}) > num_boundary but mean{} < num_boundary!.".format(rmsf, mean) + 
+                                            "Case not handled correctly yet.")
+                    else:
+                        relative_rmsf = rmsf/mean
+                    
+                    #~ sys.stdout.write("{0:02d}->{1:02d} mean: {2:.3f} rel_rmsf: {3:.3f}\n".format(
+                        #~ bin_index, 
+                        #~ target_bin_index,
+                        #~ mean,
+                        #~ relative_rmsf))
+                    if relative_rmsf >= max_rate_rmsf and mean > 0.5/_bin.getTargetNumberOfSegments() :
+                        b_converged = False
+                        break
                         
-                        #~ sys.stdout.write("{0:02d}->{1:02d} mean: {2:.3f} rel_rmsf: {3:.3f}\n".format(
-                            #~ bin_index, 
-                            #~ target_bin_index,
-                            #~ mean,
-                            #~ relative_rmsf))
-                        if relative_rmsf >= max_rate_rmsf:
-                            b_converged = False
-                            break
-                            
-                    if b_converged:
-                        current_iteration.bins[bin_index].setConverged(True)
-                        print ("Bin {} is converged\n".format(bin_index))
+                if b_converged:
+                    current_iteration.bins[bin_index].setConverged(True)
+                    print ("Bin {} is converged\n".format(bin_index))
                 					
         #~ print ("rates[0]:")				
         #~ print (rates[0])

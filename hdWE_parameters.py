@@ -77,8 +77,8 @@ class HdWEParameters():
         self.md_package            = param_dict.get("md_package")              # str
         self.reweighting_range     = param_dict.get("reweighting_range")       # int
         self.starting_structure    = param_dict.get("starting_structure")      # str
-        self.convergence_range     = param_dict.get("convergence-range")       # int
-        self.convergence_threshold = param_dict.get("convergence-threshold")   # float
+        self.convergence_range     = param_dict.get("convergence_range")       # int
+        self.convergence_threshold = param_dict.get("convergence_threshold")   # float
         
     def getLogString(self):
         return json.dumps(self.__dict__, sort_keys=True)
