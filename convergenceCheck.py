@@ -1,9 +1,8 @@
 from __future__ import print_function
-import sys
 import numpy as np
 import constants
 
-def checkOutratesForConvergence(iterations, current_iteration, convergence_range, segments_per_bin, max_rate_rmsf):
+def checkOutratesForConvergence(iterations, current_iteration, convergence_range, max_rate_rmsf):
     '''
         checks outgoing rates of all bins for convergence. 
         If all outgoing rates are converged the bin is
