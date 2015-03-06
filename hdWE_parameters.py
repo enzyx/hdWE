@@ -18,6 +18,8 @@ class HdWEParameters():
                          coordinate_threshold,
                          max_bins,
                          starting_structure,
+                         convergence_check_range,
+                         convergence_check_threshold,
                          logfile = "hdWE.log",
                          debug = False,
                          reweighting_range = 0):
@@ -31,6 +33,8 @@ class HdWEParameters():
         self.debug                = bool(debug)                  # bool
         self.md_package           = str(md_package)              # str
         self.reweighting_range    = int(reweighting_range)       # int
+        self.convergence_check_range     = int(convergence_check_range)       # int
+        self.convergence_check_threshold = int(convergence_check_threshold)   #float
         self.starting_structure   = str(starting_structure)      # str
         
     def loadConfParameters(self, config, debug=False):
@@ -54,8 +58,10 @@ class HdWEParameters():
         self.max_bins             = int(config.get('hdWE','max-bins'))
         self.logfile              = self.workdir + str(config.get('hdWE','logfile'))
         self.debug                = debug
-        self.reweighting_range    = int((config.get('hdWE','reweighting-range')))
-        self.starting_structure   = str((config.get('hdWE','starting-structure')))
+        self.reweighting_range    = int(config.get('hdWE','reweighting-range'))
+        self.convergence_check_range     = int(config.get('hdWE','convergence-check-range'))       
+        self.convergence_check_threshold = float(config.get('hdWE','convergence-check-threshold'))   
+        self.starting_structure   = str(config.get('hdWE','starting-structure'))
         
     def loadJsonParams(self, json_string):
         param_dict = json.loads(json_string)
@@ -71,7 +77,9 @@ class HdWEParameters():
         self.md_package           = param_dict.get("md_package")              # str
         self.reweighting_range    = param_dict.get("reweighting_range")       # int
         self.starting_structure   = param_dict.get("starting_structure")      # str
-
+        self.convergence_check_range     = param_dict.get("convergence-check-range")     # int      
+        self.convergence_check_threshold = param_dict.get("convergence-check-threshold") # float
+        
     def getLogString(self):
         return json.dumps(self.__dict__, sort_keys=True)
         

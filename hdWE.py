@@ -116,16 +116,12 @@ for iteration_counter in range(len(iterations), hdWE_parameters.max_iterations +
         if hdWE_parameters.reweighting_range > 0:
             reweighting.reweightBinProbabilities(iterations, hdWE_parameters.reweighting_range)
 
-    #print('\nRate Matrix Check:')
-    #print(iteration.RateMatrix()) 
 
     # check which bins have to be rerun
-    #TODO ab wann? Range hier muss nicht notwendingerweise reweighting range sein.
-    if iteration_counter > 10:    
-        convergenceCheck.checkOutratesForConvergence(iterations, iteration, 
-                                                     hdWE_parameters.reweighting_range,
-                                                     hdWE_parameters.segments_per_bin, 
-                                                     1.5)
+    convergenceCheck.checkOutratesForConvergence(iterations, iteration, 
+                                                 hdWE_parameters.convergence_check_range,
+                                                 hdWE_parameters.segments_per_bin, 
+                                                 hdWE_parameters.convergence_check_threshold)
 
 
 
@@ -163,6 +159,16 @@ for iteration_counter in range(len(iterations), hdWE_parameters.max_iterations +
     for iteration_loop in iterations:
         n_segments += iteration_loop.getNumberOfPropagatedSegments()
     print('\nTotal number of propagated segments: ' + str(n_segments) + '            ')
+
+
+    all_converged = True
+    for bin_loop in iteration:
+        if bin_loop.isConverged() == False:
+            all_converged = False
+    if all_converged == True:
+        print('\nExploring Mode: All bins are converged                                         ')
+        break        
+
 
 #count total n of segments
 n_segments = 0

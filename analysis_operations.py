@@ -95,9 +95,11 @@ def getMeanRateMatrixWithConvergedOutrates(iterations, begin, end):
         for bin_loop in iteration_loop:
             if not bin_loop.isConverged():
                 iteration_of_convergence[bin_loop.getId()] = iteration_loop.getId()
-    
+    print(iteration_of_convergence)
+    print(iteration_of_convergence)
+    print(iterations[-1].getId())
     for bin_loop in iterations[-1]:
-        if bin_loop.getId() == iteration_of_convergence[bin_loop.getId()]:
+        if not bin_loop.isConverged():
             continue
         temp_mean_rate_matrix = meanRateMatrix(iterations,
                                 iteration_of_convergence[bin_loop.getId()]-delta,

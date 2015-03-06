@@ -18,8 +18,11 @@ def reweightBinProbabilities(iterations, iteration_range):
         mean_rate_matrix= analysis_operations.getMeanRateMatrixWithConvergedOutrates(iterations, iteration_counter - iteration_range, iteration_counter)
         print('\nOld Bin Probabilities:')
         print(analysis_operations.meanBinProbabilities(iterations, iteration_counter, iteration_counter)) 
-        #print('\nTotal Mean Rate Matrix:')
-        #print(mean_rate_matrix)   
+        print('\nTotal Mean Rate Matrix:')
+        print(iterations[-1].getId())
+        print(mean_rate_matrix)
+        for x in range(0,len(mean_rate_matrix)):
+            print(sum(mean_rate_matrix[x,:]))
         
         for skip_number_of_latest_bins in range(0,iteration_range):
             last_bin_number=iterations[iteration_counter - skip_number_of_latest_bins].getNumberOfBins()

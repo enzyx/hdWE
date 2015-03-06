@@ -3,7 +3,7 @@ import sys
 import numpy as np
 import constants
 
-def checkOutratesForConvergence(iterations, current_iteration, convergence_range, max_rate_rmsf):
+def checkOutratesForConvergence(iterations, current_iteration, convergence_range, segments_per_bin, max_rate_rmsf):
     '''
         checks outgoing rates of all bins for convergence. 
         If all outgoing rates are converged the bin is
@@ -23,7 +23,7 @@ def checkOutratesForConvergence(iterations, current_iteration, convergence_range
         rate_matrices = []
         # calculate mean rate matrices
         for i in range(convergence_range):
-            rate_matrices.append(iterations[iteration_counter - convergence_range + i].RateMatrix())
+            rate_matrices.append(iterations[iteration_counter - ( convergence_range - 1 ) + i].RateMatrix())
             #~ print(rate_matrices[-1])
             
         # bins that exist long enough to have converged rates
@@ -66,7 +66,6 @@ def checkOutratesForConvergence(iterations, current_iteration, convergence_range
                         #~ else:
                             #~ relative_rmsf = rmsf/mean
                         #~ print (rates, ", mean", mean, ", rmsf", rmsf, ", relative_rmsf", relative_rmsf)
-                
                 if b_all_rates_exist:
                     #~ print ("all rates present. checking convergence of rates for bin", bin_index)
                     b_converged = True    
@@ -90,7 +89,7 @@ def checkOutratesForConvergence(iterations, current_iteration, convergence_range
                             #~ target_bin_index,
                             #~ mean,
                             #~ relative_rmsf))
-                        if relative_rmsf >= max_rate_rmsf:
+                        if relative_rmsf >= max_rate_rmsf and mean > 0.5 / segments_per_bin:
                             b_converged = False
                             break
                             
