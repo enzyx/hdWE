@@ -173,7 +173,7 @@ for iteration_counter in range(len(iterations), hdWE_parameters.max_iterations +
     #reweight Bin Probabilities (Has to happen before resampling)
     if iteration.getNumberOfBins() > 1:
         if hdWE_parameters.reweighting_range > 0:
-            reweighting.reweightBinProbabilities(iterations, hdWE_parameters.reweighting_range)
+            reweighting.reweightBinProbabilities(iterations, iteration, hdWE_parameters.reweighting_range)
 
 
     # check which bins have to be rerun

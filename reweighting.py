@@ -3,7 +3,7 @@ import numpy
 import constants
 import analysis_operations
 
-def reweightBinProbabilities(iterations, iteration_range):
+def reweightBinProbabilities(iterations, iteration, iteration_range):
     '''
     Reweights the bin probabilities according to the steady state equations, using
     the mean rates over the last iteration_range iterations. 
@@ -19,12 +19,8 @@ def reweightBinProbabilities(iterations, iteration_range):
         print('\nOld Bin Probabilities:')
         print(analysis_operations.meanBinProbabilities(iterations, iteration_counter, iteration_counter)) 
         print('\nTotal Mean Rate Matrix:')
-        print(iterations[-1].getId())
         print(mean_rate_matrix)
-        for x in range(0,len(mean_rate_matrix)):
-            print(sum(mean_rate_matrix[x,:]))
-        
-        for skip_number_of_latest_bins in range(0,iteration_range):
+        for skip_number_of_latest_bins in range(0,iteration_range+1):
             last_bin_number=iterations[iteration_counter - skip_number_of_latest_bins].getNumberOfBins()
             skipped_bins = iterations[iteration_counter].getNumberOfBins() - last_bin_number
 
@@ -51,12 +47,12 @@ def reweightBinProbabilities(iterations, iteration_range):
                 else:
                     #Assign the new probabilities to bins. Keep relative segment probabilities within bins.
                     for i in range(0,len(bin_probs_from_rates)):
-                        reweight_factor = bin_probs_from_rates[i] / iterations[iteration_counter].bins[i].getProbability()
-                        if iterations[iteration_counter].bins[i].getNumberOfSegments() > 0:
-                            for segment_loop in iterations[iteration_counter].bins[i]:
+                        reweight_factor = bin_probs_from_rates[i] / iteration.bins[i].getProbability()
+                        if iteration.bins[i].getNumberOfSegments() > 0:
+                            for segment_loop in iteration.bins[i]:
                                 segment_loop.setProbability(segment_loop.getProbability() * reweight_factor)
                         else:
-                            iterations[iteration_counter].bins[i].respawnSegmentFromReference(bin_probs_from_rates[i])
+                            iteration.bins[i].respawnSegmentFromReference(bin_probs_from_rates[i])
                     print('Success.')            
                     #print('Reduced Mean Rate Matrix:')
                     #print(mean_rate_matrix) 
