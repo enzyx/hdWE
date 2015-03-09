@@ -251,8 +251,8 @@ class MD_module():
                                                             top=self.amber_topology_path, 
                                                             inpath=cpptraj_infile_path)
         os.system('cpptraj {execute}'.format(execute=cpptraj_execute_string))
-        cpptraj_outfile.seek(0)
-        
+        if not self.debug: cpptraj_outfile.seek(0)
+                
         #Load cpptraj output as numpy array
         try:
             coordinates = numpy.loadtxt(cpptraj_outfile_path) 
@@ -270,7 +270,7 @@ class MD_module():
                   "have the correct number of entries.".format(cpptraj_outfile_path))
 
         #Remove temporary files
-        cpptraj_outfile.close()
+        if not self.debug: cpptraj_outfile.close()
         cpptraj_infile.close()
         
         return coordinates
