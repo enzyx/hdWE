@@ -85,6 +85,7 @@ if(hdWE_parameters.md_package.lower() == "gromacs"):
 
 # Loop
 for iteration_counter in range(len(iterations), hdWE_parameters.max_iterations + 1):
+    # Create new iteration
     iteration = Iteration(iteration_counter)
     parent_iteration = iterations[iteration_counter - 1]
     # Generate all previous bins for new iteration
@@ -137,7 +138,8 @@ for iteration_counter in range(len(iterations), hdWE_parameters.max_iterations +
         convergenceCheck.checkOutratesForConvergence(iterations, 
                                                      iteration, 
                                                      hdWE_parameters.convergence_range,
-                                                     hdWE_parameters.convergence_threshold)
+                                                     hdWE_parameters.convergence_threshold,
+                                                     args.debug)
 
 
 
