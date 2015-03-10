@@ -78,9 +78,9 @@ def checkOutratesForConvergence(iterations, current_iteration, convergence_range
                         
                 if b_converged:
                     current_iteration.bins[bin_index].setConverged(True)
-                    print ("Bin {bin_id} is converged")
+                    print ("Bin {bin_id} is converged".format(bin_id = bin_index))
                     if debug:
-                        print("{nconv} rates from {nrates} converged. rest neglectable)".format(bin_id = bin_index, nconv=non_zero_rates-neglected_rates, nrates=non_zero_rates))
+                        print("{nconv} rates from {nrates} converged. rest neglectable)".format(nconv=non_zero_rates-neglected_rates, nrates=non_zero_rates))
                 					
         #~ print ("rates[0]:")				
         #~ print (rates[0])
