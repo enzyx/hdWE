@@ -18,6 +18,8 @@ class HdWEParameters():
                          coordinate_threshold,
                          max_bins,
                          starting_structure,
+                         convergence_check_range,
+                         convergence_check_threshold,
                          logfile = "hdWE.log",
                          debug = False,
                          reweighting_range = 0,
@@ -36,7 +38,7 @@ class HdWEParameters():
         self.starting_structure    = str(starting_structure)      # str
         self.convergence_range     = int(convergence_range)       # int
         self.convergence_threshold = float(convergence_threshold) # float
-                
+
     def loadConfParameters(self, config, debug=False):
         """
         load hdWE parameters from config file

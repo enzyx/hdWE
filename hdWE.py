@@ -101,39 +101,83 @@ for iteration_counter in range(len(iterations), hdWE_parameters.max_iterations +
     max_bin_probability = parent_iteration.getMaxBinProbability()
     
     # Sort segments in bins. Generate new bin if required
+    rmsd_matrix = md_module.calcRmsdSegmentsToBinsMatrix(parent_iteration)
+    segment_id = 0
+    new_bins   = []
     for parent_bin in parent_iteration:
         for segment in parent_bin:
-            coordinates = md_module.calcRmsdToBins(segment, iteration.bins)
-            min_coordinate = numpy.min(coordinates)
+            min_coordinate = numpy.min(rmsd_matrix[segment_id])
             # Sort Segment into appropriate bin
             if (min_coordinate <= hdWE_parameters.coordinate_threshold or 
                segment.getProbability() < hdWE_parameters.minimal_probability*max_bin_probability or 
                iteration.getNumberOfBins() >= hdWE_parameters.max_bins):
-                bin_id = numpy.argmin(coordinates)
+                bin_id = numpy.argmin(rmsd_matrix[segment_id])
                 iteration.bins[bin_id].generateSegment(probability=segment.getProbability(),
                                                   parent_bin_id=segment.getBinId(),
                                                   parent_segment_id=segment.getId())
             # If necessary create new bin
             else:
-                bin_id = iteration.generateBin(reference_iteration_id=segment.getIterationId(),
+                # Check if this segment fits into one of the new bins first
+                is_segment_handled = False
+                if len(new_bins) > 0:
+                    rmsds = md_module.calcRmsdToBins(segment, new_bins)
+                    min_coordinate = numpy.min(rmsds)
+                    if min_coordinate <= hdWE_parameters.coordinate_threshold:
+                        bin_id = new_bins[numpy.argmin(rmsds)].getId()
+                        iteration.bins[bin_id].generateSegment(probability=segment.getProbability(),
+                                                  parent_bin_id=segment.getBinId(),
+                                                  parent_segment_id=segment.getId())
+                        is_segment_handled = True
+                        if args.debug:
+                            print("Segment {0} fits in new bin {1}".format(
+                                        segment.getNameString(), 
+                                        new_bins[numpy.argmin(rmsds)].getId()))
+                if not is_segment_handled:
+                    # Ok seems that we need a new bin
+                    bin_id = iteration.generateBin(reference_iteration_id=segment.getIterationId(),
                                       reference_bin_id=segment.getBinId(),
                                       reference_segment_id=segment.getId(),
                                       target_number_of_segments=hdWE_parameters.segments_per_bin)
-                iteration.bins[bin_id].generateSegment(probability=segment.getProbability(),
+                    iteration.bins[bin_id].generateSegment(probability=segment.getProbability(),
                                                   parent_bin_id=segment.getBinId(),
                                                   parent_segment_id=segment.getId())
+                    new_bins.append(iteration.bins[bin_id])
+                    if args.debug:
+                        print("created new bin {0} from segment ({1})".format(
+                                        new_bins[-1].getId(), 
+                                        segment.getNameString()))
+            segment_id += 1
+# 
+#     for parent_bin in parent_iteration:
+#         for segment in parent_bin:
+#             coordinates = md_module.calcRmsdToBins(segment, iteration.bins)
+#             min_coordinate = numpy.min(coordinates)
+#             # Sort Segment into appropriate bin
+#             if (min_coordinate <= hdWE_parameters.coordinate_threshold or 
+#                segment.getProbability() < hdWE_parameters.minimal_probability*max_bin_probability or 
+#                iteration.getNumberOfBins() >= hdWE_parameters.max_bins):
+#                 bin_id = numpy.argmin(coordinates)
+#                 iteration.bins[bin_id].generateSegment(probability=segment.getProbability(),
+#                                                   parent_bin_id=segment.getBinId(),
+#                                                   parent_segment_id=segment.getId())
+#             # If necessary create new bin
+#             else:
+#                 bin_id = iteration.generateBin(reference_iteration_id=segment.getIterationId(),
+#                                       reference_bin_id=segment.getBinId(),
+#                                       reference_segment_id=segment.getId(),
+#                                       target_number_of_segments=hdWE_parameters.segments_per_bin)
+#                 iteration.bins[bin_id].generateSegment(probability=segment.getProbability(),
+#                                                   parent_bin_id=segment.getBinId(),
+#                                                   parent_segment_id=segment.getId())
 
-                                               
+
     #reweight Bin Probabilities (Has to happen before resampling)
     if iteration.getNumberOfBins() > 1:
         if hdWE_parameters.reweighting_range > 0:
-            reweighting.reweightBinProbabilities(iterations, hdWE_parameters.reweighting_range)
+            reweighting.reweightBinProbabilities(iterations, iteration, hdWE_parameters.reweighting_range)
 
-    #print('\nRate Matrix Check:')
-    #print(iteration.RateMatrix()) 
 
     # check which bins have to be rerun
-    #TODO ab wann? Range hier muss nicht notwendingerweise reweighting range sein.
     if iteration_counter > hdWE_parameters.convergence_range:    
         convergenceCheck.checkOutratesForConvergence(iterations, 
                                                      iteration, 
@@ -177,6 +221,16 @@ for iteration_counter in range(len(iterations), hdWE_parameters.max_iterations +
     for iteration_loop in iterations:
         n_segments += iteration_loop.getNumberOfPropagatedSegments()
     print('\nTotal number of propagated segments: ' + str(n_segments) + '            ')
+
+
+    all_converged = True
+    for bin_loop in iteration:
+        if bin_loop.isConverged() == False:
+            all_converged = False
+    if all_converged == True:
+        print('\nExploring Mode: All bins are converged                                         ')
+        break        
+
 
 #count total n of segments
 n_segments = 0

@@ -47,8 +47,8 @@ def prepare(work_dir, logfile, starting_structure, overwrite, append, debug):
             for sub_dir in sub_dirs:
                 dir_tmp = work_dir + sub_dir
                 if os.path.exists(dir_tmp):
-                    shutil.rmtree(dir_tmp)
-            os.remove(logfile)
+                    shutil.rmtree(dir_tmp, ignore_errors=True)
+            if os.path.exists(logfile): os.remove(logfile)
                 
         # setup new folders and startfile
         for sub_dir in sub_dirs:

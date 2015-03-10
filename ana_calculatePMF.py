@@ -108,8 +108,8 @@ for i in range(0,len(coordinates[:,0])):
 for i in range(0,len(bin_coordinates[:,0])):
     index       = int( (bin_coordinates[i,0] - hist_min) / dcoord )
     #maximum bin coord entry shall not be in an extra bin:
-    if index==args.number_of_bins:
-        index = index - 1
+    if index>=args.number_of_bins:
+        index = args.number_of_bins - 1
     hist[index,4] = hist[index,4] + 1
 #Assign the bin positions and calculate free energy:
 for i in range(0,args.number_of_bins):
