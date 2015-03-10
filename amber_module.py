@@ -55,8 +55,35 @@ class MD_module():
         self.iteration = iteration
     
     def RunSegmentMD(self, segment, MD_run_count, MD_skip_count):
-        """Function that runs one single segment MD."""
-        command_line = self.AmberCommandLineString(segment)
+        """
+        Function that runs one single segment MD.
+        """
+        amber_start_coords_path = "{0}/run/{1}.rst7".format(self.workdir, segment.getParentNameString()) 
+        amber_end_coords_path   = "{0}/run/{1}.rst7".format(self.workdir, segment.getNameString()) 
+        
+        if self.debug:
+            amber_info_path         = "{0}/run/{1}.inf".format(self.workdir, segment.getNameString())
+            amber_outfile_path      = "{0}/run/{1}.out".format(self.workdir, segment.getNameString())
+            amber_trajectory_path   = "{0}/run/{1}.nc".format(self.workdir, segment.getNameString())
+        else:
+            amber_info_path         = '/dev/null'
+            amber_trajectory_path   = '/dev/null'
+            #amber_outfile_path      = '/dev/null'
+            #TODO: Strange bug on REX allows only info and traj to be /dev/null
+            amber_outfile    = tempfile.NamedTemporaryFile(suffix=segment.getNameString(), prefix=".out", delete=True)
+            amber_outfile_path    = amber_outfile.name
+        
+        command_line = self.amber_binary + ' -O' + \
+                                  ' -p '   + self.amber_topology_path + \
+                                  ' -i '   + self.amber_infile_path + \
+                                  ' -c '   + amber_start_coords_path + \
+                                  ' -o '   + amber_outfile_path + \
+                                  ' -x '   + amber_trajectory_path + \
+                                  ' -inf ' + amber_info_path + \
+                                  ' -r '   + amber_end_coords_path
+                                    
+        
+
         #Command line for debugging
         if self.debug:
             os.system('echo {0} >> {1}/debug/amber_command_lines.log'.format(command_line, self.workdir))
@@ -71,7 +98,11 @@ class MD_module():
         if self.debug:
             logfile.write(self.MdLogString(segment, status = 1 ))
             logfile.close()
-
+        
+        # Remove outfiles
+        if not self.debug:
+            amber_outfile.close()
+        
     def SkipSegmentMD(self, segment, MD_run_count, MD_skip_count):
         """Function that runs one single segment MD."""
         command_line = self.SkipCommandLineString(segment)
@@ -91,27 +122,7 @@ class MD_module():
         """Returns the command line for an amber run corresponding to the 
         given indices and binary.
         """
-        amber_start_coords_path = "{0}/run/{1}.rst7".format(self.workdir, segment.getParentNameString()) 
-        amber_end_coords_path   = "{0}/run/{1}.rst7".format(self.workdir, segment.getNameString()) 
-        
-        if self.debug:
-            amber_info_path         = "{0}/run/{1}.inf".format(self.workdir, segment.getNameString())
-            amber_outfile_path      = "{0}/run/{1}.out".format(self.workdir, segment.getNameString())
-            amber_trajectory_path   = "{0}/run/{1}.nc".format(self.workdir, segment.getNameString())
-        else:
-            amber_outfile_path      = '/dev/null'
-            amber_trajectory_path   = '/dev/null'
-            amber_info_path         = '/dev/null'
-    
-        amber_command_line      = self.amber_binary + ' -O' + \
-                                  ' -p '   + self.amber_topology_path + \
-                                  ' -i '   + self.amber_infile_path + \
-                                  ' -c '   + amber_start_coords_path + \
-                                  ' -o '   + amber_outfile_path + \
-                                  ' -x '   + amber_trajectory_path + \
-                                  ' -inf ' + amber_info_path + \
-                                  ' -r '   + amber_end_coords_path
-                                    
+
         return amber_command_line
     
     def SkipCommandLineString(self, segment):
@@ -239,6 +250,7 @@ class MD_module():
                                  cpptraj_reference_id_name_string))
         # Write changes to files but do not close
         cpptraj_infile.seek(0)
+        cpptraj_infile.flush()
 
         #Run cpptraj
         if self.debug:
@@ -262,7 +274,7 @@ class MD_module():
             #TODO What should happen then?
             print('amber_module error: cpptraj output {0} can not '\
                   'be found or loaded.'.format(cpptraj_outfile_path))
-        
+            
         #Check if cpptraj output is correct
         if not (len(coordinates)==len(bins)):
             #TODO What should happen then?
