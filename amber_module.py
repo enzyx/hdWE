@@ -8,6 +8,7 @@ from datetime import datetime
 from thread_container import ThreadContainer
 import pickle
 import tempfile
+import uuid
 
 class MD_module():
     
@@ -70,8 +71,9 @@ class MD_module():
             amber_trajectory_path   = '/dev/null'
             #amber_outfile_path      = '/dev/null'
             #TODO: Strange bug on REX allows only info and traj to be /dev/null
-            amber_outfile    = tempfile.NamedTemporaryFile(suffix=segment.getNameString(), prefix=".out", delete=True)
-            amber_outfile_path    = amber_outfile.name
+            #amber_outfile    = tempfile.NamedTemporaryFile(suffix=segment.getNameString(), prefix=".out", delete=True)
+            #amber_outfile_path    = amber_outfile.name
+            amber_outfile_path     = '/tmp/{0}_{1}.out'.format(segment.getNameString(), uuid.uuid1()) 
         
         command_line = self.amber_binary + ' -O' + \
                                   ' -p '   + self.amber_topology_path + \
@@ -90,18 +92,20 @@ class MD_module():
                       
         #Log and Run MD
         if self.debug:
-            logfile = open(self.workdir + 'log/' + self.iteration.getNameString() + '.MD_log','a')
-            logfile.write(self.MdLogString(segment, status = 0 ))
+            logfile = open("{0}/log/{1}.MD_log".format(self.workdir, self.iteration.getNameString()),'a')
+            logfile.write(self.MdLogString(segment, status = 0))
         sys.stdout.write(self.writeMdStatus(segment, MD_run_count, MD_skip_count))
         sys.stdout.flush()
+        # Run MD
         os.system(command_line)
         if self.debug:
             logfile.write(self.MdLogString(segment, status = 1 ))
             logfile.close()
         
-        # Remove outfiles
+        # Remove out file
         if not self.debug:
-            amber_outfile.close()
+            try: os.remove(amber_outfile_path)
+            except OSError: pass
         
     def SkipSegmentMD(self, segment, MD_run_count, MD_skip_count):
         """Function that runs one single segment MD."""
@@ -118,15 +122,9 @@ class MD_module():
         os.system(command_line)
         logfile.close()
     
-    def AmberCommandLineString(self, segment):
-        """Returns the command line for an amber run corresponding to the 
-        given indices and binary.
-        """
-
-        return amber_command_line
-    
     def SkipCommandLineString(self, segment):
-        """Returns the command line for linking segment restart files of skipped bins to next iteration.
+        """
+        Returns the command line for linking segment restart files of skipped bins to next iteration.
         """
         amber_start_coords_path = self.workdir + 'run/' + segment.getParentNameString() + '.rst7'
         amber_end_coords_path   = self.workdir + 'run/' + segment.getNameString()       + '.rst7'
@@ -219,25 +217,22 @@ class MD_module():
 
         #Write the cpptraj infile
         segment_name_string = segment.getNameString() 
+        UUID = uuid.uuid1()
         
         if self.debug:
             cpptraj_infile_path = "{workdir}/{segment}.cpptraj_in".format(workdir=self.workdir, 
                                                                       segment=segment_name_string)
-            cpptraj_infile      = open(cpptraj_infile_path, 'w')
         else:
-            cpptraj_infile = tempfile.NamedTemporaryFile(prefix=segment_name_string + "_", 
-                                                         suffix=".cpptraj_in")
-            cpptraj_infile_path = cpptraj_infile.name
+            cpptraj_infile_path = "/tmp/{0}_{1}.cpptraj_in".format(segment_name_string, UUID)
         
+        cpptraj_infile      = open(cpptraj_infile_path, 'w')
         cpptraj_infile.write('trajin {workdir}/run/{segment}.rst7\n'.format(workdir=self.workdir, 
                                                                             segment=segment_name_string))
         if self.debug:  
-            cpptraj_outfile_path = "{workdir}/{segment}.cpptraj_output".format(workdir=self.workdir, 
+            cpptraj_outfile_path = "{workdir}/{segment}.cpptraj_out".format(workdir=self.workdir, 
                                                                       segment=segment_name_string)
         else:
-            cpptraj_outfile = tempfile.NamedTemporaryFile(prefix=segment_name_string + "_",
-                                                          suffix=".cpptraj_output")
-            cpptraj_outfile_path = cpptraj_outfile.name
+            cpptraj_outfile_path = "/tmp/{0}_{1}.cpptraj_out".format(segment_name_string, UUID)
         
         for bin_loop in range(0,len(bins)):
             reference_bin_name_string         = "{workdir}/run/{segment}.rst7".format(workdir=self.workdir, 
@@ -248,9 +243,8 @@ class MD_module():
             cpptraj_infile.write('rms in_{0:05d} {1} out {2} ref {3}\n'.format(bin_loop,
                                  self.amber_coordinate_mask, cpptraj_outfile_path,
                                  cpptraj_reference_id_name_string))
-        # Write changes to files but do not close
-        cpptraj_infile.seek(0)
-        cpptraj_infile.flush()
+        # Write changes to file
+        cpptraj_infile.close()
 
         #Run cpptraj
         if self.debug:
@@ -263,7 +257,6 @@ class MD_module():
                                                             top=self.amber_topology_path, 
                                                             inpath=cpptraj_infile_path)
         os.system('cpptraj {execute}'.format(execute=cpptraj_execute_string))
-        if not self.debug: cpptraj_outfile.seek(0)
                 
         #Load cpptraj output as numpy array
         try:
@@ -282,8 +275,11 @@ class MD_module():
                   "have the correct number of entries.".format(cpptraj_outfile_path))
 
         #Remove temporary files
-        if not self.debug: cpptraj_outfile.close()
-        cpptraj_infile.close()
+        if not self.debug: 
+            try: 
+                os.remove(cpptraj_outfile_path)
+                os.remove(cpptraj_infile_path)
+            except OSError: pass
         
         return coordinates
     
