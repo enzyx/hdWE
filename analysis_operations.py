@@ -26,7 +26,7 @@ def meanRateMatrix(iterations, begin, end):
     for i in range(0,len(mean_rate_matrix)):
         if bin_exists_since[i] > 0:
             for j in range(0,len(mean_rate_matrix)):
-                 mean_rate_matrix[i,j] =  mean_rate_matrix[i,j] / bin_exists_since[i]
+                mean_rate_matrix[i,j] =  mean_rate_matrix[i,j] / bin_exists_since[i]
              
     return mean_rate_matrix
     
@@ -89,7 +89,7 @@ def getMeanRateMatrixWithConvergedOutrates(iterations, reweighting_range):
     (In this way the outrates of converged bins can be recalculated from the information
     in the logfile and they dont have to be explicitly saved.)
     """
-    end   = len(iterations - 1)
+    end   = len(iterations) - 1
     begin = int( end * (1.0 - reweighting_range) )
     mean_rate_matrix = meanRateMatrix(iterations, begin, end)
     # get iterations of convergence
