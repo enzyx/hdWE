@@ -6,8 +6,8 @@ def meanRateMatrix(iterations, begin, end):
     """
     Calculates the mean values of the bin-to-bin rates over a given
     range of iterations  (end iteration is including) and returns the mean rate Matrix.
-    The mean value of outrates of bins that do not exists over the full iteration range  is calculated
-    only over the existing iterations.
+    The mean value of outrates of bins that do not exists over the full iteration range is calculated
+    only over the existing iterations in order to not underestimate them.
     """
     # Initialize mean rate matrix
     mean_rate_matrix = numpy.zeros([iterations[end].getNumberOfBins(), iterations[end].getNumberOfBins()], float)  
@@ -26,7 +26,7 @@ def meanRateMatrix(iterations, begin, end):
     for i in range(0,len(mean_rate_matrix)):
         if bin_exists_since[i] > 0:
             for j in range(0,len(mean_rate_matrix)):
-                 mean_rate_matrix[i,j] =  mean_rate_matrix[i,j] / bin_exists_since[i]
+                mean_rate_matrix[i,j] =  mean_rate_matrix[i,j] / bin_exists_since[i]
              
     return mean_rate_matrix
     
@@ -34,7 +34,6 @@ def meanBinProbabilities(iterations, begin, end):
     """
     Calculates the mean bin probabilities over a given
     range of iterations  (end iteration is including).
-    It is assumed that bins are only added during iterating.
     """
     n_iterations = end - begin +1
     # Initialize bin probabilities
@@ -81,14 +80,18 @@ def BinProbabilitiesFromRates(rate_matrix):
     
     return bin_probabilities
     
-def getMeanRateMatrixWithConvergedOutrates(iterations, begin, end):
+def getMeanRateMatrixWithConvergedOutrates(iterations, reweighting_range):
     """
-    Calculates the mean Rate Matrix over a range of iterations goining back from
+    Calculates the mean Rate Matrix over a range of iterations going back from
     the iteration at which the outrate was converged.
+    The iteration_range is adapted to the iteration the bins was converged.
+    Thus, once a bin is converged, the outrates stay the same.
+    (In this way the outrates of converged bins can be recalculated from the information
+    in the logfile and they dont have to be explicitly saved.)
     """
-    
+    end   = len(iterations) - 1
+    begin = int( end * (1.0 - reweighting_range) )
     mean_rate_matrix = meanRateMatrix(iterations, begin, end)
-    delta = end-begin
     # get iterations of convergence
     iteration_of_convergence = numpy.zeros([iterations[end].getNumberOfBins()],int)
     for iteration_loop in iterations:
@@ -97,9 +100,11 @@ def getMeanRateMatrixWithConvergedOutrates(iterations, begin, end):
                 iteration_of_convergence[bin_loop.getId()] = iteration_loop.getId()
     for bin_loop in iterations[-1]:
         if bin_loop.isConverged():
+            end_tmp   = iteration_of_convergence[bin_loop.getId()]
+            begin_tmp = int( end * (1.0 - reweighting_range) )
             temp_mean_rate_matrix = meanRateMatrix(iterations,
-                                    iteration_of_convergence[bin_loop.getId()]-delta,
-                                    iteration_of_convergence[bin_loop.getId()])
+                                    begin_tmp,
+                                    end_tmp)
             for i in range(len(temp_mean_rate_matrix[0,:])):
                 mean_rate_matrix[bin_loop.getId(),i] = temp_mean_rate_matrix[bin_loop.getId(),i]
             for i in range(len(temp_mean_rate_matrix[0,:]),len(mean_rate_matrix)):
