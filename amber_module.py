@@ -126,25 +126,14 @@ class MD_module():
         """
         Returns the command line for linking segment restart files of skipped bins to next iteration.
         """
-        skip_command_line = ''
-        for file_tag in ['.rst7', '.nc']:
-            amber_start_coords_path = self.workdir + 'run/' + segment.getParentNameString() + file_tag
-            amber_end_coords_path   = self.workdir + 'run/' + segment.getNameString()       + file_tag
-            
-            skip_command_line       += ' && ln {0} {1}'.format(
-                                                      amber_start_coords_path,
-                                                      amber_end_coords_path)
-        return skip_command_line[3:]
-    
+        amber_start_coords_path = self.workdir + 'run/' + segment.getParentNameString() + '.rst7'
+        amber_end_coords_path   = self.workdir + 'run/' + segment.getNameString()       + '.rst7'
         
-    def RemoveMdOutput(self, segment):
-        """Removes unnecessary MD output files.
-        """
-        amber_outfile_path      =  self.workdir + 'run/' + segment.getNameString()       + '.out'
-        #amber_trajectory_path   =  self.workdir + 'run/' + segment.getNameString()       + '.nc'
-        os.remove(amber_outfile_path)
-        #os.remove(amber_trajectory_path)
-    
+        skip_command_line       = 'ln {0} {1}'.format(
+                                                  amber_start_coords_path,
+                                                  amber_end_coords_path)
+        return skip_command_line
+        
     def MdLogString(self, segment,status):
         """Returns a string containing system time for MD run logging."""
         if status==0:
@@ -373,7 +362,7 @@ class MD_module():
                 self.removeRmsdMatrixDumpFile()
             return rmsd_matrix
     
-    def ana_calcCoordinateOfSegment(self, segment, cpptraj_lines, use_trajectory):
+    def ana_calcCoordinateOfSegment(self, segment, cpptraj_lines):
         """
         Calculates the value of a coordinate corresponding to a segment and defined
         in cpptraj_line via cpptraj.
@@ -383,18 +372,15 @@ class MD_module():
         segment_name_string = segment.getNameString() 
         cpptraj_infile_path = self.workdir + segment_name_string + '.ana_calculatePMF_cpptraj_in'
         cpptraj_output_path = self.workdir + segment_name_string + '.ana_calculatePMF_cpptraj_output'
-        cpptraj_infile=open(cpptraj_infile_path,'w')
-        if use_trajectory == False:
-            cpptraj_infile.write('trajin ' + self.workdir + 'run/' + segment_name_string + '.rst7' + '\n')
-        else:
-            cpptraj_infile.write('trajin ' + self.workdir + 'run/' + segment_name_string + '.nc' + '\n')            
+        cpptraj_infile      = open(cpptraj_infile_path,'w')
+        cpptraj_infile.write('trajin ' + self.workdir + 'run/' + segment_name_string + '.rst7' + '\n')
         cpptraj_infile.writelines(cpptraj_lines + ' out ' + cpptraj_output_path )
         cpptraj_infile.close()
         
         #Execute cpptraj
         cpptraj_execute_string =' -p ' + self.amber_topology_path + \
                                 ' -i ' + cpptraj_infile_path
-        cpptraj_execute_string = cpptraj_execute_string + ' > ' + self.workdir + 'log/ana_calculatePMF_cpptraj.log' 
+        cpptraj_execute_string = cpptraj_execute_string + ' >> ' + self.workdir + 'log/ana_calculatePMF_cpptraj.log' 
         os.system('cpptraj ' + cpptraj_execute_string )        
         
         #Load cpptraj output as numpy array
@@ -408,11 +394,10 @@ class MD_module():
         if not self.debug:
             os.remove(cpptraj_infile_path)
             os.remove(cpptraj_output_path)
-
-        if use_trajectory == False:
-            return  [coordinates[1]]
-        else:
-            return  coordinates[:,1]
+            
+        coordinate_value = coordinates[1]
+        
+        return coordinate_value
 
 
 def doMPIMD(configfile, debug):
