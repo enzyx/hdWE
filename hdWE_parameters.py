@@ -34,7 +34,7 @@ class HdWEParameters():
         self.max_bins              = int(max_bins)                # int
         self.debug                 = bool(debug)                  # bool
         self.md_package            = str(md_package)              # str
-        self.reweighting_range     = int(reweighting_range)       # int
+        self.reweighting_range     = float(reweighting_range)     # float
         self.starting_structure    = str(starting_structure)      # str
         self.convergence_range     = int(convergence_range)       # int
         self.convergence_threshold = float(convergence_threshold) # float
@@ -60,7 +60,7 @@ class HdWEParameters():
         self.max_bins              = int(config.get('hdWE','max-bins'))
         self.logfile               = self.workdir + str(config.get('hdWE','logfile'))
         self.debug                 = debug
-        self.reweighting_range     = int((config.get('hdWE','reweighting-range')))
+        self.reweighting_range     = float((config.get('hdWE','reweighting-range')))
         self.starting_structure    = str((config.get('hdWE','starting-structure')))
         self.convergence_range     = int((config.get('hdWE','convergence-range')))
         self.convergence_threshold = float((config.get('hdWE','convergence-threshold')))
@@ -77,7 +77,7 @@ class HdWEParameters():
         self.max_bins              = param_dict.get("max_bins")                # int
         self.debug                 = param_dict.get("debug")                   # bool
         self.md_package            = param_dict.get("md_package")              # str
-        self.reweighting_range     = param_dict.get("reweighting_range")       # int
+        self.reweighting_range     = param_dict.get("reweighting_range")       # float
         self.starting_structure    = param_dict.get("starting_structure")      # str
         self.convergence_range     = param_dict.get("convergence_range")       # int
         self.convergence_threshold = param_dict.get("convergence_threshold")   # float
