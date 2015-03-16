@@ -523,4 +523,3 @@ if __name__ == "__main__":
     if sys.argv[1] == "MPIRMSD":
         doMPICalcRmsdMatrix(configfile=sys.argv[2],
                             debug=sys.argv[3])
-        

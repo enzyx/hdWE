@@ -49,7 +49,7 @@ iterations = []
 
 # Initialize the parameter container
 hdWE_parameters = HdWEParameters()
-hdWE_parameters.loadConfParameters(config, args.debug)
+hdWE_parameters.loadConfParameters(config, args.configfile, args.debug)
 
 # Setup the workdir
 initiate.prepare(hdWE_parameters.workdir,

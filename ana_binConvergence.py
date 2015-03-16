@@ -179,12 +179,11 @@ args = parser.parse_args()
 
 # Get the iterations and parameters
 logger = Logger(args.logfile)
-logged_param_string = logger.getHdWEParameterString()
 iterations = logger.loadIterations(first = args.first_iteration, 
                                     last = args.last_iteration)
+hdWE_parameters = logger.loadHdWEParameters()
 logger.close()
-hdWE_parameters = HdWEParameters()
-hdWE_parameters.loadJsonParams(logged_param_string)
+
 
 if args.when:  
     (closed_bin, closing_iteration) = findConvegenceEvents(iterations)
