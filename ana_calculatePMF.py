@@ -37,6 +37,9 @@ parser.add_argument('-N', '--number_of_bins', dest="number_of_bins",
 parser.add_argument('-i', '--cpptraj_lines_file', dest="cpptraj_lines_file_path", 
                     type=str,   required=True,
                     help="File containig cpptraj syntax that defines the reaction coordinate.")
+parser.add_argument('-y', dest="use_trajectory", action="store_true",
+                    default=False, help="use conformations from the trajectories, not only the end conformation")                    
+                    
 # Initialize
 print('\033[1mCalculating PMF\033[0m (Free Energy is given in kcal/mol at 298K).')      
 args = parser.parse_args()
@@ -60,8 +63,10 @@ cpptraj_lines_file.close()
 
 #Calculate the coordinate values and store them together with
 #the trajectory probability into coordinates 
-coordinates     = numpy.zeros([0,2])
-coordinates_tmp = numpy.zeros([1,2])
+coordinates         = numpy.zeros([0,2])
+coordinates_tmp     = numpy.zeros([1,2])
+coordinates_tmp_tmp = numpy.zeros([1,2])
+
 first_it = iterations[0].getId()
 last_it  = iterations[-1].getId()
  
@@ -72,9 +77,12 @@ for iteration_loop in iterations:
                          ', Bin ' +  str(bin_loop.getId()+1).zfill(5) + '/ ' + str(iteration_loop.getNumberOfBins()).zfill(5) + '\r' )
         sys.stdout.flush()  
         for segment_loop in bin_loop:
-            coordinates_tmp[0,0] = md_module.ana_calcCoordinateOfSegment(segment_loop, cpptraj_lines)
-            coordinates_tmp[0,1] = segment_loop.getProbability()  
-            coordinates          = numpy.append(coordinates, coordinates_tmp, axis=0)
+            coordinates_tmp_tmp = md_module.ana_calcCoordinateOfSegment(segment_loop, cpptraj_lines, args.use_trajectory)
+            probability_tmp = segment_loop.getProbability()
+            for i in range(0,len(coordinates_tmp_tmp)):
+                coordinates_tmp[0,0] = coordinates_tmp_tmp[i]
+                coordinates_tmp[0,1] = probability_tmp
+                coordinates          = numpy.append(coordinates_tmp, coordinates, axis=0)
 
 #Calculate the coordinate values of the bin reference structures
 bin_coordinates     = numpy.zeros([0,1])
@@ -87,7 +95,7 @@ for bin_loop in iterations[-1]:
                   iteration_id = bin_loop.getReferenceIterationId(),
                   bin_id       = bin_loop.getReferenceBinId(),
                   segment_id   = bin_loop.getReferenceSegmentId() )
-    bin_coordinates_tmp[0] = md_module.ana_calcCoordinateOfSegment(segment_tmp, cpptraj_lines)
+    bin_coordinates_tmp[0] = md_module.ana_calcCoordinateOfSegment(segment_tmp, cpptraj_lines, False)
     bin_coordinates        = numpy.append(bin_coordinates, bin_coordinates_tmp, axis=0) 
 
 #Calculate the weighted histogram and PMF     
