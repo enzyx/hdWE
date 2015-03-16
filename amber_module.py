@@ -1,5 +1,5 @@
 from __future__ import print_function
-import os
+import os, shutil
 import ConfigParser
 import numpy
 import threading
@@ -7,6 +7,7 @@ import sys
 from datetime import datetime
 from thread_container import ThreadContainer
 import pickle
+import tempfile
 
 class MD_module():
     
@@ -28,7 +29,7 @@ class MD_module():
         self.configfile = configfile
         config = ConfigParser.ConfigParser()
         config.read(configfile)
-        self.workdir               = config.get('hdWE','workdir')        
+        self.workdir               = config.get('hdWE','workdir')
         self.amber_topology_path   = self.workdir + config.get('amber','topology-path')
         self.amber_infile_path     = self.workdir + config.get('amber','infile-path')
         self.amber_coordinate_mask = config.get('amber','coordinate-mask')
@@ -43,8 +44,7 @@ class MD_module():
         self.iteration             = None
         self.ITERATION_DUMP_FNAME  = self.workdir + '/run/iteration.dump'
         self.RMSD_MATRIX_DUMP_FNAME= self.workdir + '/run/rmsd_matrix.dump'
-       
-       
+                       
         # check topology and infile:
         if not os.path.isfile(self.amber_topology_path):
             raise Exception("No topology found at given path.")
@@ -55,23 +55,54 @@ class MD_module():
         self.iteration = iteration
     
     def RunSegmentMD(self, segment, MD_run_count, MD_skip_count):
-        """Function that runs one single segment MD."""
-        command_line = self.AmberCommandLineString(segment)
+        """
+        Function that runs one single segment MD.
+        """
+        amber_start_coords_path = "{0}/run/{1}.rst7".format(self.workdir, segment.getParentNameString()) 
+        amber_end_coords_path   = "{0}/run/{1}.rst7".format(self.workdir, segment.getNameString()) 
+        
+        if self.debug:
+            amber_info_path         = "{0}/run/{1}.inf".format(self.workdir, segment.getNameString())
+            amber_outfile_path      = "{0}/run/{1}.out".format(self.workdir, segment.getNameString())
+            amber_trajectory_path   = "{0}/run/{1}.nc".format(self.workdir, segment.getNameString())
+        else:
+            amber_info_path         = '/dev/null'
+            amber_trajectory_path   = '/dev/null'
+            #amber_outfile_path      = '/dev/null'
+            #TODO: Strange bug on REX allows only info and traj to be /dev/null
+            amber_outfile    = tempfile.NamedTemporaryFile(suffix=segment.getNameString(), prefix=".out", delete=True)
+            amber_outfile_path    = amber_outfile.name
+        
+        command_line = self.amber_binary + ' -O' + \
+                                  ' -p '   + self.amber_topology_path + \
+                                  ' -i '   + self.amber_infile_path + \
+                                  ' -c '   + amber_start_coords_path + \
+                                  ' -o '   + amber_outfile_path + \
+                                  ' -x '   + amber_trajectory_path + \
+                                  ' -inf ' + amber_info_path + \
+                                  ' -r '   + amber_end_coords_path
+                                    
+        
+
         #Command line for debugging
-        if self.debug==True:
-                os.system('echo ' + command_line + \
-                          ' >> ' + self.workdir + 'debug/amber_command_lines.log')
+        if self.debug:
+            os.system('echo {0} >> {1}/debug/amber_command_lines.log'.format(command_line, self.workdir))
+                      
         #Log and Run MD
-        logfile = open(self.workdir + 'log/' + self.iteration.getNameString() + '.MD_log','a')
-        logfile.write(self.MdLogString(segment, status = 0 ))
+        if self.debug:
+            logfile = open(self.workdir + 'log/' + self.iteration.getNameString() + '.MD_log','a')
+            logfile.write(self.MdLogString(segment, status = 0 ))
         sys.stdout.write(self.writeMdStatus(segment, MD_run_count, MD_skip_count))
         sys.stdout.flush()
         os.system(command_line)
-        logfile.write(self.MdLogString(segment, status = 1 ))
-        logfile.close()
+        if self.debug:
+            logfile.write(self.MdLogString(segment, status = 1 ))
+            logfile.close()
+        
+        # Remove outfiles
         if not self.debug:
-            self.RemoveMdOutput(segment)
-
+            amber_outfile.close()
+        
     def SkipSegmentMD(self, segment, MD_run_count, MD_skip_count):
         """Function that runs one single segment MD."""
         command_line = self.SkipCommandLineString(segment)
@@ -91,19 +122,7 @@ class MD_module():
         """Returns the command line for an amber run corresponding to the 
         given indices and binary.
         """
-        amber_start_coords_path = self.workdir + 'run/' + segment.getParentNameString() + '.rst7'
-        amber_outfile_path      = self.workdir + 'run/' + segment.getNameString()       + '.out'
-        amber_trajectory_path   = self.workdir + 'run/' + segment.getNameString()       + '.nc'
-        amber_end_coords_path   = self.workdir + 'run/' + segment.getNameString()       + '.rst7'
-    
-        amber_command_line      = self.amber_binary + ' -O' + \
-                                  ' -p ' + self.amber_topology_path + \
-                                  ' -i ' + self.amber_infile_path + \
-                                  ' -c ' + amber_start_coords_path + \
-                                  ' -o ' + amber_outfile_path + \
-                                  ' -x ' + amber_trajectory_path + \
-                                  ' -r ' + amber_end_coords_path
-                                    
+
         return amber_command_line
     
     def SkipCommandLineString(self, segment):
@@ -212,13 +231,24 @@ class MD_module():
         #Write the cpptraj infile
         segment_name_string = segment.getNameString() 
         
-        cpptraj_infile_path = "{workdir}/{segment}.cpptraj_in".format(workdir=self.workdir, 
+        if self.debug:
+            cpptraj_infile_path = "{workdir}/{segment}.cpptraj_in".format(workdir=self.workdir, 
                                                                       segment=segment_name_string)
-        cpptraj_infile      = open(cpptraj_infile_path, 'w')
+            cpptraj_infile      = open(cpptraj_infile_path, 'w')
+        else:
+            cpptraj_infile = tempfile.NamedTemporaryFile(prefix=segment_name_string + "_", 
+                                                         suffix=".cpptraj_in")
+            cpptraj_infile_path = cpptraj_infile.name
+        
         cpptraj_infile.write('trajin {workdir}/run/{segment}.rst7\n'.format(workdir=self.workdir, 
-                                                                            segment=segment_name_string))  
-        cpptraj_output_path = "{workdir}/{segment}.cpptraj_output".format(workdir=self.workdir, 
-                                                                          segment=segment_name_string)   
+                                                                            segment=segment_name_string))
+        if self.debug:  
+            cpptraj_outfile_path = "{workdir}/{segment}.cpptraj_output".format(workdir=self.workdir, 
+                                                                      segment=segment_name_string)
+        else:
+            cpptraj_outfile = tempfile.NamedTemporaryFile(prefix=segment_name_string + "_",
+                                                          suffix=".cpptraj_output")
+            cpptraj_outfile_path = cpptraj_outfile.name
         
         for bin_loop in range(0,len(bins)):
             reference_bin_name_string         = "{workdir}/run/{segment}.rst7".format(workdir=self.workdir, 
@@ -227,38 +257,44 @@ class MD_module():
 
             cpptraj_infile.write('reference {0} {1}\n'.format(reference_bin_name_string, cpptraj_reference_id_name_string))
             cpptraj_infile.write('rms in_{0:05d} {1} out {2} ref {3}\n'.format(bin_loop,
-                                 self.amber_coordinate_mask, cpptraj_output_path,
+                                 self.amber_coordinate_mask, cpptraj_outfile_path,
                                  cpptraj_reference_id_name_string))
-        cpptraj_infile.close()
-
+        # Write changes to files but do not close
+        cpptraj_infile.seek(0)
+        cpptraj_infile.flush()
 
         #Run cpptraj
-        cpptraj_execute_string = ' -p {top} -i {inpath} > {workdir}/log/cpptraj.log'.format(
+        if self.debug:
+            cpptraj_execute_string = ' -p {top} -i {inpath} > {workdir}/log/cpptraj.log'.format(
                                                             top=self.amber_topology_path, 
                                                             inpath=cpptraj_infile_path,
                                                             workdir=self.workdir)
+        else:
+            cpptraj_execute_string = ' -p {top} -i {inpath} > /dev/null'.format(
+                                                            top=self.amber_topology_path, 
+                                                            inpath=cpptraj_infile_path)
         os.system('cpptraj {execute}'.format(execute=cpptraj_execute_string))
-      
+        if not self.debug: cpptraj_outfile.seek(0)
+                
         #Load cpptraj output as numpy array
         try:
-            coordinates = numpy.loadtxt(cpptraj_output_path) 
+            coordinates = numpy.loadtxt(cpptraj_outfile_path) 
             #Delete the first entry which refers to the frame index
             coordinates = numpy.delete(coordinates, 0)
         except:
             #TODO What should happen then?
             print('amber_module error: cpptraj output {0} can not '\
-                  'be found or loaded.'.format(cpptraj_output_path))
-        
+                  'be found or loaded.'.format(cpptraj_outfile_path))
+            
         #Check if cpptraj output is correct
         if not (len(coordinates)==len(bins)):
             #TODO What should happen then?
             print("amber_module error: cpptraj output {0} does not " \
-                  "have the correct number of entries.".format(cpptraj_output_path))
+                  "have the correct number of entries.".format(cpptraj_outfile_path))
 
         #Remove temporary files
-        if not self.debug:
-            os.remove(cpptraj_infile_path)
-            os.remove(cpptraj_output_path)
+        if not self.debug: cpptraj_outfile.close()
+        cpptraj_infile.close()
         
         return coordinates
     
@@ -348,15 +384,14 @@ class MD_module():
         """
         
         #Write the cpptraj infile
-        segment_name_string=segment.getNameString() 
-        cpptraj_infile_path=self.workdir + segment_name_string + '.ana_calculatePMF_cpptraj_in'
+        segment_name_string = segment.getNameString() 
+        cpptraj_infile_path = self.workdir + segment_name_string + '.ana_calculatePMF_cpptraj_in'
         cpptraj_output_path = self.workdir + segment_name_string + '.ana_calculatePMF_cpptraj_output'
         cpptraj_infile=open(cpptraj_infile_path,'w')
         if use_trajectory == False:
             cpptraj_infile.write('trajin ' + self.workdir + 'run/' + segment_name_string + '.rst7' + '\n')
         else:
             cpptraj_infile.write('trajin ' + self.workdir + 'run/' + segment_name_string + '.nc' + '\n')            
-        
         cpptraj_infile.writelines(cpptraj_lines + ' out ' + cpptraj_output_path )
         cpptraj_infile.close()
         

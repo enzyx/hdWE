@@ -3,6 +3,8 @@ import argparse
 import sys
 import ConfigParser
 import matplotlib.pyplot as plt         ## plot library
+import matplotlib.lines as mlines
+import matplotlib.patches as mpatches
 import numpy as np
 import constants
 from iteration import Iteration
@@ -305,8 +307,6 @@ if args.rates:
             #~ ax.scatter(x, y, s=50*means/max_mean, color=c, marker="o", label = 'relative rmsf')
             ax.scatter(x, y, s=size, color=c, marker="o", label = 'relative rmsf')
             #~ ax.get_yaxis().set_ticks([])
-            #~ ax.legend(loc="lower left")  
-            
             
         # run our simulation check:
         sys.stdout.write('\033[1m' + 'running convergenceCheck...' + '\033[0m\n')
@@ -335,20 +335,42 @@ if args.rates:
         c_conv = [0.0] * len(iterations)
         for i,convergence in enumerate(bin_converged):
             if convergence == 1.0:
-                c_conv[i]  = "g"
+                c_conv[i]  = "green"
             else:
                 c_conv[i] = "red"
         x = [ iteration.getId() for iteration in iterations ]
         y = [-5] * len(bin_converged)
-        
-        # set convergence label
-        #~ labels = [item.get_text() for item in ax.get_yticklabels()]
-        #~ labels[1] = 'Convergence'
 
-        #~ ax.set_yticklabels(labels)
+        ax.scatter(x,y, s=50, color=c_conv, marker='s', label = 'convergence')
+        #~ legend_handles = mlines.Line2D(range(1), range(1), color="green", marker='o', label="converged rate")
+        #~ line2 = mlines.Line2D(range(1), range(1), color="white", marker='o',markerfacecolor="green")
+        #~ ax.legend(handles = legend_handles, loc="upper left")  
+        red_patch = mpatches.Patch(color='red', label='The red data')
+        #~ plt.legend(handles=[red_patch])
+        #~ ax.legend(handles=[red_patch], loc="upper left")
+        #~ ax.legend()
         
-
-        ax.scatter(x,y, s=50, color=c_conv, label = 'convergence', marker='s')
+        #works
+        #~ proxy = [plt.Rectangle((0,0),1,1,fc = "r") for i in range(2)]
+        #~ plt.legend(proxy, ["range(2-3)", "range(3-4)", "range(4-6)"])
+        mark1 = mlines.Line2D(range(1), range(1), color="white", marker='o', markerfacecolor="green")
+        mark2 = mlines.Line2D(range(1), range(1), color="white", marker='o', markerfacecolor="red")
+        mark3 = mlines.Line2D(range(1), range(1), color="white", marker='o', markerfacecolor="orange")
+        mark4 = mlines.Line2D(range(1), range(1), color="white", marker='o', markerfacecolor="blue")
+        mark5 = mlines.Line2D(range(1), range(1), color="white", marker='o', markerfacecolor="green", markersize=2)
+        mark6 = mlines.Line2D(range(1), range(1), color="white", marker='o', markerfacecolor="green", markersize=4)
+        mark7 = mlines.Line2D(range(1), range(1), color="white", marker='o', markerfacecolor="green", markersize=8)
+        mark8 = mlines.Line2D(range(1), range(1), color="white", marker='s', markerfacecolor="green", markersize=10)
+        mark9 = mlines.Line2D(range(1), range(1), color="white", marker='s', markerfacecolor="red", markersize=10)
+        ax.legend((mark5,mark6,mark7,mark8,mark9,mark1,mark2,mark3,mark4),
+                  ('rate > 0.1', 'rate > 0.01', 'rate < 0.01', 
+                   'bin converged', 'bin not converged', 'rate converged','rate not converged', 'just one rate', 
+                   'low mean rate'),
+                  numpoints=1, 
+                  ncol = 2,
+                  loc="upper left")
+    
+        
         sys.stdout.write('\033[1m' + 'Plotting data...' + '\033[0m\n')            
         plt.show() 
         

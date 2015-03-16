@@ -162,7 +162,8 @@ for iteration_counter in range(len(iterations), hdWE_parameters.max_iterations +
         convergenceCheck.checkOutratesForConvergence(iterations, 
                                                      iteration, 
                                                      hdWE_parameters.convergence_range,
-                                                     hdWE_parameters.convergence_threshold)
+                                                     hdWE_parameters.convergence_threshold,
+                                                     args.debug)
 
 
 
