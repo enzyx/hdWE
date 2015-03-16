@@ -45,6 +45,8 @@ class MD_module():
         self.iteration             = None
         self.ITERATION_DUMP_FNAME  = self.workdir + '/run/iteration.dump'
         self.RMSD_MATRIX_DUMP_FNAME= self.workdir + '/run/rmsd_matrix.dump'
+        
+        self.keep_trajectory_files = bool(config.get('hdWE', 'keep_trajectory_files').lower() == "true")
                        
         # check topology and infile:
         if not os.path.isfile(self.amber_topology_path):
@@ -67,13 +69,17 @@ class MD_module():
             amber_outfile_path      = "{0}/run/{1}.out".format(self.workdir, segment.getNameString())
             amber_trajectory_path   = "{0}/run/{1}.nc".format(self.workdir, segment.getNameString())
         else:
-            amber_info_path         = '/dev/null'
-            amber_trajectory_path   = '/dev/null'
+            #amber_info_path         = '/dev/null'
+            #amber_trajectory_path   = '/dev/null'
             #amber_outfile_path      = '/dev/null'
             #TODO: Strange bug on REX allows only info and traj to be /dev/null
-            #amber_outfile    = tempfile.NamedTemporaryFile(suffix=segment.getNameString(), prefix=".out", delete=True)
-            #amber_outfile_path    = amber_outfile.name
-            amber_outfile_path     = '/tmp/{0}_{1}.out'.format(segment.getNameString(), uuid.uuid1()) 
+            amber_info_path         = '/tmp/{0}_{1}.inf'.format(segment.getNameString(), uuid.uuid1())
+            amber_outfile_path      = '/tmp/{0}_{1}.out'.format(segment.getNameString(), uuid.uuid1()) 
+            amber_trajectory_path   = '/tmp/{0}_{1}.nc'.format(segment.getNameString(), uuid.uuid1()) 
+        
+        # Overwrite the previous settings
+        if self.keep_trajectory_files:
+            amber_trajectory_path   = "{0}/run/{1}.nc".format(self.workdir, segment.getNameString())
         
         command_line = self.amber_binary + ' -O' + \
                                   ' -p '   + self.amber_topology_path + \
@@ -94,18 +100,23 @@ class MD_module():
         if self.debug:
             logfile = open("{0}/log/{1}.MD_log".format(self.workdir, self.iteration.getNameString()),'a')
             logfile.write(self.MdLogString(segment, status = 0))
-        sys.stdout.write(self.writeMdStatus(segment, MD_run_count, MD_skip_count))
-        sys.stdout.flush()
+        
         # Run MD
         os.system(command_line)
+        
         if self.debug:
             logfile.write(self.MdLogString(segment, status = 1 ))
             logfile.close()
         
-        # Remove out file
+        # Remove out files
         if not self.debug:
             try: os.remove(amber_outfile_path)
             except OSError: pass
+            try: os.remove(amber_info_path)
+            except OSError: pass
+            if not self.keep_trajectory_files:
+                try: os.remove(amber_trajectory_path)
+                except OSError: pass            
         
     def SkipSegmentMD(self, segment, MD_run_count, MD_skip_count):
         """Function that runs one single segment MD."""
@@ -117,8 +128,8 @@ class MD_module():
         #Log and Run MD
         logfile = open(self.workdir + 'log/' + self.iteration.getNameString() + '.MD_log','a')
         logfile.write(self.MdLogString(segment, status = 2 ))
-        sys.stdout.write(self.writeMdStatus(segment, MD_run_count, MD_skip_count))
-        sys.stdout.flush()
+        #sys.stdout.write(self.writeMdStatus(segment, MD_run_count, MD_skip_count))
+        #sys.stdout.flush()
         os.system(command_line)
         logfile.close()
     
@@ -126,14 +137,20 @@ class MD_module():
         """
         Returns the command line for linking segment restart files of skipped bins to next iteration.
         """
-        amber_start_coords_path = self.workdir + 'run/' + segment.getParentNameString() + '.rst7'
-        amber_end_coords_path   = self.workdir + 'run/' + segment.getNameString()       + '.rst7'
+        amber_start_coords_path = self.workdir + '/run/' + segment.getParentNameString() + '.rst7'
+        amber_end_coords_path   = self.workdir + '/run/' + segment.getNameString()       + '.rst7'
         
         skip_command_line       = 'ln {0} {1}'.format(
                                                   amber_start_coords_path,
                                                   amber_end_coords_path)
         return skip_command_line
-        
+    
+    def isSegmentFile(self, segment):
+        """
+        Returns true if the segment file exists in the run folder on the filesystem
+        """
+        return os.path.isfile(self.workdir + '/run/' + segment.getNameString() + '.rst7')
+    
     def MdLogString(self, segment,status):
         """Returns a string containing system time for MD run logging."""
         if status==0:
@@ -146,12 +163,18 @@ class MD_module():
         
     def writeMdStatus(self, segment, MD_run_count, MD_skip_count):
         """Writes the actual WE run status in a string."""
+        
         number_MD_runs = self.iteration.getNumberOfSegments()
         string = '\033[1mhdWE Status:\033[0m ' + 'Iteration ' + self.iteration.getNameString() + \
                  ' Number of bins ' + str(self.iteration.getNumberOfBins()) + \
                  ' Segment ' + str(MD_run_count).zfill(5) + '/' + str(number_MD_runs).zfill(5) + \
                  ' Skipped segments: ' + str(MD_skip_count).zfill(6) + '\r'
         return string
+    
+    def printMdStatus(self, segment, MD_run_count, MD_skip_count):
+        """Writes the actual WE run status to stdout."""
+        sys.stdout.write(self.writeMdStatus(segment, MD_run_count, MD_skip_count))
+        sys.stdout.flush()  
     
     def RunMDs(self, iteration):
         """Propagates the trajectories corresponding to an iteration using amber."""
@@ -165,12 +188,14 @@ class MD_module():
                     for segment_loop in bin_loop:
                         MD_run_count  += 1
                         self.RunSegmentMD(segment_loop, MD_run_count, MD_skip_count)
+                        self.printMdStatus(segment_loop, MD_run_count, MD_skip_count)
                 else:
                     for segment_loop in bin_loop:
                         MD_skip_count += 1  
                         MD_run_count  += 1
-                        self.SkipSegmentMD(segment_loop, MD_run_count, MD_skip_count)                    
-                    
+                        self.SkipSegmentMD(segment_loop, MD_run_count, MD_skip_count)
+                        self.printMdStatus(segment_loop, MD_run_count, MD_skip_count)                 
+                  
         #Thread Parallel Run   
         if self.parallelization_mode=='thread':
             MD_run_count  = 0
@@ -184,15 +209,17 @@ class MD_module():
                                                                     args=(segment_loop, MD_run_count, MD_skip_count, )))
                         if thread_container.getNumberOfJobs() >= self.number_of_threads:
                             thread_container.runJobs()
+                        self.printMdStatus(segment_loop, MD_run_count, MD_skip_count)
                 else:
                     for segment_loop in bin_loop:
                         MD_skip_count += 1
                         MD_run_count  += 1
                         self.SkipSegmentMD(segment_loop, MD_run_count, MD_skip_count)     
-                        
+                        self.printMdStatus(segment_loop, MD_run_count, MD_skip_count)
             # Finish jobs in queue
             thread_container.runJobs()
-        
+            self.printMdStatus(segment_loop, MD_run_count, MD_skip_count)
+            
         #MPI parallel run
         if self.parallelization_mode == 'mpi':
             # dump the iteration object to a file
@@ -431,11 +458,18 @@ def doMPIMD(configfile, debug):
                     # Run MD skip
                     md_module.SkipSegmentMD(loop_segment, workcount, md_skip_count)
             workcount += 1
+            # Log if rank 0
+            if rank == 0:
+                md_module.printMdStatus(loop_segment, workcount, md_skip_count)
+                
+    # Wait for all processes to finish
+    comm.barrier()
     if rank == 0:
-        sys.stderr.write("\n")
+        md_module.printMdStatus(loop_segment, workcount, md_skip_count)
+        sys.stdout.write("\n")
         if debug:
-            sys.stderr.write("Finishing MPI\n")
-        sys.stderr.flush()
+            sys.stdout.write("Finishing MPI\n")
+        sys.stdout.flush()
         # Remove the iteration dump file
         if not debug:
             md_module.removeIterationDumpFile()
