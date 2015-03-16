@@ -3,20 +3,20 @@ import numpy
 import constants
 import analysis_operations
 
-def reweightBinProbabilities(iterations, iteration, iteration_range_fraction):
+def reweightBinProbabilities(iterations, iteration, reweighting_range):
     '''
     Reweights the bin probabilities according to the steady state equations, using
-    the mean rates over the last iteration_range iterations. 
-    If a new bin was created within the last iteration, this bin is omitted for the reweighting,
-    because out-rate is yet available. 
+    the mean rates over the last reweighting_range*len(iteration) iterations. 
+    If the steady state equation matrix is singular, the bins added in the latest iterations are successively
+    skipped for reweighting until the steady state equations can be solved.
     The total probablity of the reweighted bins is not changed.
     The bin probablities of skipped bins are not changed.
     '''
     
-    iteration_range = int(len(iterations) * iteration_range_fraction)
+    iteration_range = int(len(iterations) * reweighting_range)
     iteration_counter = len(iterations) - 1
     #get Rate Matrix, averaged over the last iteration_range iterations
-    mean_rate_matrix= analysis_operations.getMeanRateMatrixWithConvergedOutrates(iterations, iteration_counter - iteration_range, iteration_counter)
+    mean_rate_matrix= analysis_operations.getMeanRateMatrixWithConvergedOutrates(iterations, reweighting_range)
     print('\nOld Bin Probabilities:')
     print(analysis_operations.meanBinProbabilities(iterations, iteration_counter, iteration_counter)) 
     print('Using the last ' + str(iteration_range) + ' iterations for reweighting.')
