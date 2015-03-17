@@ -53,7 +53,7 @@ hdWE_parameters.loadConfParameters(config, args.configfile, args.debug)
 
 # Setup the workdir
 initiate.prepare(hdWE_parameters.workdir,
-                 hdWE_parameters.logfile, 
+                 hdWE_parameters.jobname, 
                  hdWE_parameters.starting_structure, 
                  args.overwrite, 
                  args.append, 
@@ -61,7 +61,7 @@ initiate.prepare(hdWE_parameters.workdir,
 
 
 # Initialize the logger
-logger = Logger(filename=hdWE_parameters.logfile, 
+logger = Logger(filename="{jn}.log".format(jn=hdWE_parameters.jobname), 
                 append=args.append,
                 debug=args.debug)
 logger.logParameters(hdWE_parameters)

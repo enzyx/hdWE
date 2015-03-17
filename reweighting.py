@@ -59,7 +59,11 @@ def reweightBinProbabilities(iterations, iteration, reweighting_range):
                 #print('Reduced Mean Rate Matrix:')
                 #print(mean_rate_matrix) 
                 print('Reweighted Bin Probabilities (Omitting latest ' + str(skipped_bins) + ' bins):')
-                print(bin_probs_from_rates)            
+                print(bin_probs_from_rates)
+                new_prob_sum=0.0
+                for prob in bin_probs_from_rates:
+                    new_prob_sum += prob
+                print ("total new probability: {0:.6f}".format(new_prob_sum))
                 return
         except:
             print('Singular rate matrix.')

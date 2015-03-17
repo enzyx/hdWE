@@ -17,7 +17,7 @@ class Logger():
         logger = Logger(logfilename = "logfile.log")
         
         # log a set of command line arguments
-        logger.logArguments(args)
+        logger.logParameters(args)
         
         # log an array of iterations
         logger.logIterations(iterations)
@@ -25,8 +25,8 @@ class Logger():
         # log a single iteration
         logger.logIteration(iteration)
         
-        # load arguments from the logfile:
-        logger.loadArguments(args)
+        # load parameters from the logfile:
+        logger.loadHdWEParameters(args)
         
         # load (correctly) logged iterations
         read_iterations = logger.load_iterations()

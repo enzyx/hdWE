@@ -20,14 +20,14 @@ class HdWEParameters():
                          starting_structure,
                          convergence_check_range,
                          convergence_check_threshold,
-                         logfile = "hdWE.log",
+                         jobname = "hdWE",
                          configfile = "hdWE.conf",
                          debug = False,
                          reweighting_range = 0,
                          convergence_range = 0,
                          convergence_threshold = 0):
         self.workdir               = str(workdir)                # str, DIR
-        self.logfile               = str(logfile)                 # str, FILE
+        self.jobname               = str(jobname)                 # str
         self.configfile            = str(configfile)              # str, FILE
         self.max_iterations        = int(max_iterations)          # int
         self.coordinate_threshold  = float(coordinate_threshold)  # float
@@ -61,7 +61,7 @@ class HdWEParameters():
         self.minimal_probability   = float(config.get('hdWE','minimal-probability'))
         self.coordinate_threshold  = float(config.get('hdWE','threshold'))
         self.max_bins              = int(config.get('hdWE','max-bins'))
-        self.logfile               = self.workdir + str(config.get('hdWE','logfile'))
+        self.jobname               = str(config.get('hdWE','jobname'))
         self.configfile            = configfile
         self.reweighting_range     = float((config.get('hdWE','reweighting-range')))
         self.starting_structure    = str((config.get('hdWE','starting-structure')))
@@ -73,7 +73,7 @@ class HdWEParameters():
         param_dict = json.loads(json_string)
         self.workdir               = param_dict.get("workdir")                   # str, DIR
         self.guaranteeWorkdirSlash()
-        self.logfile               = self.workdir + param_dict.get("logfile")    # str, FILE
+        self.jobname               = self.workdir + param_dict.get("jobname")    # str
         self.configfile            = self.workdir + param_dict.get("configfile") # str, FILE
         self.max_iterations        = param_dict.get("max_iterations")            # int
         self.coordinate_threshold  = param_dict.get("coordinate_threshold")      # float
