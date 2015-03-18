@@ -4,12 +4,13 @@ import glob
 from iteration import Iteration
 
 
-def prepare(work_dir, logfile, starting_structure, overwrite, append, debug):
+def prepare(work_dir, jobname, starting_structure, overwrite, append, debug):
     """
     Creates the directory structure. Copies the starting configuration
     into the bin_refcoords folder as the first bin.
     """
-    sub_dirs = ['run', 'log', 'debug']
+    sub_dirs = ['{}-run'.format(jobname), '{}-log'.format(jobname), '{}-debug'.format(jobname)]
+    logfile = "{0}.log".format(jobname)
     # Create directories if necessary 
     if append == False:
         if not overwrite:
@@ -52,10 +53,10 @@ def prepare(work_dir, logfile, starting_structure, overwrite, append, debug):
                 
         # setup new folders and startfile
         for sub_dir in sub_dirs:
-            if sub_dir=='debug' and not debug:
+            if 'debug' in sub_dir and not debug:
                 continue
             os.mkdir(work_dir + sub_dir)
-        shutil.copyfile(work_dir + starting_structure, work_dir + 'run/' + '00000_00000_00000.rst7')
+        shutil.copyfile(work_dir + starting_structure, "{wd}/{jn}-run/00000_00000_00000.rst7".format(wd=work_dir, jn=jobname))
 
 def create_initial_iteration(target_number_of_segments):
     """

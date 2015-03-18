@@ -3,7 +3,7 @@ import numpy
 import constants
 import analysis_operations
 
-def reweightBinProbabilities(iterations, reweighting_range):
+def reweightBinProbabilities(iterations, reweighting_range, workdir, jobname):
     '''
     Reweights the bin probabilities according to the steady state equations, using
     the mean rates over the last reweighting_range*len(iteration) iterations. 
@@ -15,7 +15,7 @@ def reweightBinProbabilities(iterations, reweighting_range):
     
     iteration_range = int(len(iterations) * reweighting_range)
     iteration_counter = len(iterations) - 1
-    logfile=open('log/reweighting_'+str(iteration_counter).zfill(5),'w+')
+    logfile=open(workdir+jobname+'-log/reweighting'+str(iteration_counter).zfill(5),'w+')
     #check for empty bins    
     for bin_loop in iterations[-1].bins:
         if bin_loop.getNumberOfSegments() < 1:
@@ -69,7 +69,6 @@ def reweightBinProbabilities(iterations, reweighting_range):
                 #print('Reduced Mean Rate Matrix:')
                 #print(mean_rate_matrix) 
                 print('Reweighted Bin Probabilities (Omitting latest ' + str(skipped_bins) + ' bins):', file=logfile)
-                print(bin_probs_from_rates, file=logfile)            
                 return
         except:
             print('Singular rate matrix.', file=logfile)

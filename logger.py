@@ -6,7 +6,7 @@ import json
 from segment import Segment
 from bin import Bin
 from iteration import Iteration
-
+from hdWE_parameters import HdWEParameters
 
 class Logger():
     """
@@ -17,7 +17,7 @@ class Logger():
         logger = Logger(logfilename = "logfile.log")
         
         # log a set of command line arguments
-        logger.logArguments(args)
+        logger.logParameters(args)
         
         # log an array of iterations
         logger.logIterations(iterations)
@@ -25,8 +25,8 @@ class Logger():
         # log a single iteration
         logger.logIteration(iteration)
         
-        # load arguments from the logfile:
-        logger.loadArguments(args)
+        # load parameters from the logfile:
+        logger.loadHdWEParameters(args)
         
         # load (correctly) logged iterations
         read_iterations = logger.load_iterations()
@@ -56,6 +56,8 @@ class Logger():
             nbins = iteration.getNumberOfBins()))
         for _bin in iteration.bins:
             self._logBin(_bin)
+        self.logfile.write("completed iteration {it:05d}\n".format(\
+                            it = iteration.getId()))
         
     def logIterations(self, iterations):
         """
@@ -63,18 +65,14 @@ class Logger():
         """
         for iteration in iterations:
             self.logIteration(iteration)
-            
-    def getHdWEParameterString(self):
+    
+    def loadHdWEParameters(self):
         """
-        @return read in arguments
+        @return hdWEParameters instance with parameters from logfile
         """
-        # read in crucial arguments from logfile
-        for line in reversed(open(self.logfilename).readlines()):
-            if "hdWE_parameters" in line:
-                param_line = line.split("|")[1]
-                break
-                
-        return param_line
+        hdWE_parameters = HdWEParameters()
+        hdWE_parameters.loadLogfileParameters(self._getHdWEParameterString())
+        return hdWE_parameters
             
     def loadIterations(self, first=0, last=-1):
         """
@@ -85,6 +83,10 @@ class Logger():
         iteration = Iteration(-1)
         number_of_iterations_read = 0   # number of iterations read
         b_read_iteration = False        # True if iteration is to be read
+        
+        # read in hdWE parameters (e.g. for md module for file testing)
+        self._createOwnHdWEParameters()
+        
         with open(self.logfilename, "r") as readfile:
             file_lines = readfile.readlines()
             # compare arguments, suspended for now because the logger
@@ -102,15 +104,16 @@ class Logger():
                 if "hdWE_parameters" in line:
                     continue
                 
-                # read iterations
+                # only load itererations if completed flag exists
+                if line[0:9].lower() == "completed" and line.split()[-1] == "{id:05d}".format(id=iteration.getId()):
+                    if self.__checkIteration(iteration,
+                                             target_number_of_read_bins,
+                                             first,
+                                             last):
+                        iterations.append(iteration)
+                        
+                # read iteration
                 if line[0:9].lower() == "iteration":
-                    # check and append previous iteration if it's not the first one
-                    if number_of_iterations_read > 0:
-                        if self.__checkIteration(iteration,
-                                                  target_number_of_read_bins,
-                                                  first,
-                                                  last):
-                            iterations.append(iteration)
                     # parse iteration line    
                     iteration_line = line.split()
                     iteration=Iteration(int(iteration_line[1]))
@@ -134,13 +137,30 @@ class Logger():
                     # append bin
                     iteration.bins.append(read_bin)
 
-            # append last iteration
-            if iteration.getId() != -1:
-                if self.__checkIteration(iteration, target_number_of_read_bins, first, last):
-                    iterations.append(iteration)
         if self.debug:
             sys.stdout.write("finished reading iterations\n")    
         return iterations
+     
+    def _getHdWEParameterString(self):
+        """
+        @return read in arguments line
+        """
+        # read in arguments from logfile
+        for line in reversed(open(self.logfilename).readlines()):
+            if "hdWE_parameters" in line:
+                param_line = line.split("|")[1]
+                break
+                
+        return param_line
+    
+    def _createOwnHdWEParameters(self):
+        self.hdWE_parameters = self.loadHdWEParameters()
+        if self.hdWE_parameters.md_package.lower() == "amber":
+            from amber_module import MD_module
+            self.md_module = MD_module(configfile = self.hdWE_parameters.configfile,
+                                       debug = self.debug)
+        if self.hdWE_parameters.md_package.lower() == "gromacs": 
+            pass       
        
     def _logBin(self, _bin):
         """
@@ -350,19 +370,29 @@ class Logger():
         if iteration.getNumberOfBins() == target_number_of_read_bins:
             bNbins = True
         else:
-            raise Exception("read-in ERROR: Bin number mismatch: Iteration {it} had: {target},".format(\
-                        target = target_number_of_read_bins,
-                        it = iteration.getId())+
-                        " read {nbins} bins\n".format(\
-                            nbins = iteration.getNumberOfBins()))
+            sys.stderr.write("read-in error: Bin number mismatch: Iteration {it} expected: {target},"\
+                             " read {nbins} bins\n".format(
+                                target = target_number_of_read_bins,
+                                it = iteration.getId(),
+                                nbins = iteration.getNumberOfBins()))
         # check iteration probability
         if self.debug:
             if iteration.checkProbability():
                 bProbability = True
             else:
-                sys.stderr.write("Wrong total Iteration probability: {prob}\n".format(\
+                sys.stderr.write("read-in error: Wrong total Iteration probability: {prob}\n".format(\
                                 prob = iteration.getProbability())) 
-        # append iteration
-        if bNbins and bProbability and bRange:
+        # check iteration segment files
+        bAllFilesPresent = True
+        for segment in iteration.getSegments():
+                if not self.md_module.isSegmentFile(segment):
+                    bAllFilesPresent = False
+                    sys.stderr.write("read-in error: File missing for segment {}\n".format(\
+                                segment.getNameString()))
+                    break
+        #~ # append iteration
+        if bNbins and bProbability and bRange and bAllFilesPresent:
             return True
+        else:
+            sys.stderr.write("omitting iteration {it}\n".format(it=iteration.getId()))
         return False

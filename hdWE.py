@@ -49,11 +49,11 @@ iterations = []
 
 # Initialize the parameter container
 hdWE_parameters = HdWEParameters()
-hdWE_parameters.loadConfParameters(config, args.debug)
+hdWE_parameters.loadConfParameters(config, args.configfile, args.debug)
 
 # Setup the workdir
 initiate.prepare(hdWE_parameters.workdir,
-                 hdWE_parameters.logfile, 
+                 hdWE_parameters.jobname, 
                  hdWE_parameters.starting_structure, 
                  args.overwrite, 
                  args.append, 
@@ -61,7 +61,7 @@ initiate.prepare(hdWE_parameters.workdir,
 
 
 # Initialize the logger
-logger = Logger(filename=hdWE_parameters.logfile, 
+logger = Logger(filename="{jn}.log".format(jn=hdWE_parameters.jobname), 
                 append=args.append,
                 debug=args.debug)
 logger.logParameters(hdWE_parameters)
@@ -157,7 +157,9 @@ for iteration_counter in range(len(iterations), hdWE_parameters.max_iterations +
     #    (Has to happen before resampling)
     if iteration.getNumberOfBins() > 3 and hdWE_parameters.reweighting_range > 0.0:
             reweighting.reweightBinProbabilities(iterations,
-                                                 hdWE_parameters.reweighting_range)
+                                                 hdWE_parameters.reweighting_range,
+                                                 hdWE_parameters.workdir,
+                                                 hdWE_parameters.jobname)
     # 4. Check convergence of the bins
     if iteration_counter > hdWE_parameters.convergence_range:    
         convergenceCheck.checkOutratesForConvergence(iterations, 
