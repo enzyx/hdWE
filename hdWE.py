@@ -189,7 +189,7 @@ for iteration_counter in range(len(iterations), hdWE_parameters.max_iterations +
     md_module.RunMDs(iterations[-1])
     
     
-    # 7. Append and log iteration
+    # 7. log iteration
     logger.logIteration(iterations[-1])
 
 

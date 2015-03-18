@@ -406,11 +406,11 @@ class MD_module():
         cpptraj_output_path = self.workdir + segment_name_string + '.ana_calculatePMF_cpptraj_output'
         cpptraj_infile      = open(cpptraj_infile_path,'w')
         if use_trajectory == False:
-            cpptraj_infile.write('trajin ' + self.workdir + 'run/' + segment_name_string + '.rst7' + '\n').format(workdir=self.workdir, jn=self.jobname,
-                                                                                      segment=segment_name_string) 
+            cpptraj_infile.write('trajin {workdir}/{jn}-run/{segment}.rst7\n'.format(workdir=self.workdir, jn=self.jobname,
+                                                                                      segment=segment_name_string) )
         else:
-            cpptraj_infile.write('trajin ' + self.workdir + 'run/' + segment_name_string + '.nc' + '\n').format(workdir=self.workdir, jn=self.jobname,
-                                                                                      segment=segment_name_string)             
+            cpptraj_infile.write('trajin {workdir}/{jn}-run/{segment}.nc\n'.format(workdir=self.workdir, jn=self.jobname,
+                                                                                      segment=segment_name_string) )            
         cpptraj_infile.writelines(cpptraj_lines + ' out ' + cpptraj_output_path )
         cpptraj_infile.close()
         
