@@ -138,4 +138,3 @@ numpy.savetxt(args.output_path, hist, header = header_line)
 
 print('\n Output written to: ' + args.output_path)   
 
-

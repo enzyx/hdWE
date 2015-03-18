@@ -165,10 +165,10 @@ class MD_module():
         """Writes the actual WE run status in a string."""
         
         number_MD_runs = self.iteration.getNumberOfSegments()
-        string = '\033[1mhdWE Status:\033[0m ' + 'Iteration ' + self.iteration.getNameString() + \
+        string = '\r\033[1mhdWE Status:\033[0m ' + 'Iteration ' + self.iteration.getNameString() + \
                  ' Number of bins ' + str(self.iteration.getNumberOfBins()) + \
                  ' Segment ' + str(MD_run_count).zfill(5) + '/' + str(number_MD_runs).zfill(5) + \
-                 ' Skipped segments: ' + str(MD_skip_count).zfill(6) + '\r'
+                 ' Skipped segments: ' + str(MD_skip_count).zfill(6)
         return string
     
     def printMdStatus(self, segment, MD_run_count, MD_skip_count):
@@ -389,7 +389,7 @@ class MD_module():
                 self.removeRmsdMatrixDumpFile()
             return rmsd_matrix
     
-    def ana_calcCoordinateOfSegment(self, segment, cpptraj_lines):
+    def ana_calcCoordinateOfSegment(self, segment, cpptraj_lines, use_trajectory):
         """
         Calculates the value of a coordinate corresponding to a segment and defined
         in cpptraj_line via cpptraj.
@@ -400,7 +400,10 @@ class MD_module():
         cpptraj_infile_path = self.workdir + segment_name_string + '.ana_calculatePMF_cpptraj_in'
         cpptraj_output_path = self.workdir + segment_name_string + '.ana_calculatePMF_cpptraj_output'
         cpptraj_infile      = open(cpptraj_infile_path,'w')
-        cpptraj_infile.write('trajin ' + self.workdir + 'run/' + segment_name_string + '.rst7' + '\n')
+        if use_trajectory == False:
+            cpptraj_infile.write('trajin ' + self.workdir + 'run/' + segment_name_string + '.rst7' + '\n')
+        else:
+            cpptraj_infile.write('trajin ' + self.workdir + 'run/' + segment_name_string + '.nc' + '\n')            
         cpptraj_infile.writelines(cpptraj_lines + ' out ' + cpptraj_output_path )
         cpptraj_infile.close()
         
@@ -421,10 +424,11 @@ class MD_module():
         if not self.debug:
             os.remove(cpptraj_infile_path)
             os.remove(cpptraj_output_path)
-            
-        coordinate_value = coordinates[1]
-        
-        return coordinate_value
+         
+        if use_trajectory == False:   
+            return  [coordinates[1]]
+        else:
+            return coordinates[:,1]
 
 
 def doMPIMD(configfile, debug):
@@ -466,7 +470,7 @@ def doMPIMD(configfile, debug):
     comm.barrier()
     if rank == 0:
         md_module.printMdStatus(loop_segment, workcount, md_skip_count)
-        sys.stdout.write("\n")
+        #sys.stdout.write("\n")
         if debug:
             sys.stdout.write("Finishing MPI\n")
         sys.stdout.flush()

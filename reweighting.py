@@ -15,18 +15,26 @@ def reweightBinProbabilities(iterations, iteration, reweighting_range):
     
     iteration_range = int(len(iterations) * reweighting_range)
     iteration_counter = len(iterations) - 1
+    logfile=open('log/reweighting_'+str(iteration_counter).zfill(5),'w+')
+    #check for empty bins    
+    for bin_loop in iteration.bins:
+        if bin_loop.getNumberOfSegments() < 1:
+            print('At least one bin is empty. Skipping reweighting.', file=logfile)
+            return
     #get Rate Matrix, averaged over the last iteration_range iterations
     mean_rate_matrix= analysis_operations.getMeanRateMatrixWithConvergedOutrates(iterations, reweighting_range)
-    print('\nOld Bin Probabilities:')
-    print(analysis_operations.meanBinProbabilities(iterations, iteration_counter, iteration_counter)) 
-    print('Using the last ' + str(iteration_range) + ' iterations for reweighting.')
-    print('\nTotal Mean Rate Matrix:')
-    print(mean_rate_matrix)
+    #for j in range(len(mean_rate_matrix)):
+    #    print(sum(mean_rate_matrix[j,:]))
+    print('\nOld Bin Probabilities:', file=logfile)
+    print(analysis_operations.meanBinProbabilities(iterations, iteration_counter, iteration_counter), file=logfile) 
+    print('Using the last ' + str(iteration_range) + ' iterations for reweighting.', file=logfile)
+    print('\nTotal Mean Rate Matrix:', file=logfile)
+    print(mean_rate_matrix, file=logfile)
     for skip_number_of_latest_bins in range(0,iteration_range+1):
         last_bin_number=iterations[iteration_counter - skip_number_of_latest_bins].getNumberOfBins()
         skipped_bins = iterations[iteration_counter].getNumberOfBins() - last_bin_number
 
-        print('Trying to solve steady state equations, skipping the bins added in the last ' + str(skip_number_of_latest_bins) + ' iteration(s) (skipping  ' + str(skipped_bins) + ' bin(s) ):')
+        print('Trying to solve steady state equations, skipping the bins added in the last ' + str(skip_number_of_latest_bins) + ' iteration(s) (skipping  ' + str(skipped_bins) + ' bin(s) ):', file=logfile)
 
         #delete entries for only in the last iteration newly created bins
         mean_rate_matrix=numpy.delete(mean_rate_matrix,numpy.s_[last_bin_number:iterations[iteration_counter].getNumberOfBins()],0)       
@@ -34,7 +42,7 @@ def reweightBinProbabilities(iterations, iteration, reweighting_range):
         #get total Probability of the bins that will be reweighted
         prob_of_reweighted_bins = 0.0
         for i in range(0,last_bin_number):
-            prob_of_reweighted_bins += iterations[iteration_counter].bins[i].getProbability()
+            prob_of_reweighted_bins += iteration.bins[i].getProbability()
         try:
             #Try to solve the steady state equations:
             bin_probs_from_rates = analysis_operations.BinProbabilitiesFromRates(mean_rate_matrix)
@@ -45,24 +53,26 @@ def reweightBinProbabilities(iterations, iteration, reweighting_range):
             #Skip reweighting if a bin would become 0
             #(this could lead to trajectories with 0 probablity assigned)
             if numpy.min(bin_probs_from_rates) <= constants.num_boundary:
-                print('At least one Bin probablity would be zero.')
+                print('At least one Bin probablity would be zero.', file=logfile)
             else:
                 #Assign the new probabilities to bins. Keep relative segment probabilities within bins.
                 for i in range(0,len(bin_probs_from_rates)):
-                    reweight_factor = bin_probs_from_rates[i] / iteration.bins[i].getProbability()
+                    reweight_factor = 1.0 * bin_probs_from_rates[i] / iteration.bins[i].getProbability()
                     if iteration.bins[i].getNumberOfSegments() > 0:
                         for segment_loop in iteration.bins[i]:
                             segment_loop.setProbability(segment_loop.getProbability() * reweight_factor)
                     else:
-                        iteration.bins[i].respawnSegmentFromReference(bin_probs_from_rates[i])
-                print('Success.')            
+                        #TODO case not yet correctly handled
+                        pass
+                        #iteration.bins[i].respawnSegmentFromReference(bin_probs_from_rates[i])
+                print('Success.', file=logfile)            
                 #print('Reduced Mean Rate Matrix:')
                 #print(mean_rate_matrix) 
-                print('Reweighted Bin Probabilities (Omitting latest ' + str(skipped_bins) + ' bins):')
-                print(bin_probs_from_rates)            
+                print('Reweighted Bin Probabilities (Omitting latest ' + str(skipped_bins) + ' bins):', file=logfile)
+                print(bin_probs_from_rates, file=logfile)            
                 return
         except:
-            print('Singular rate matrix.')
+            print('Singular rate matrix.', file=logfile)
  
-    print('Singular rate matrix for skipping maximum number of latest bins. Skipping reweighting.')
+    print('Singular rate matrix for skipping maximum number of latest bins. Skipping reweighting.', file=logfile)
     return

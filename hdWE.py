@@ -149,14 +149,12 @@ for iteration_counter in range(len(iterations), hdWE_parameters.max_iterations +
                                         new_bins[-1].getId(), 
                                         segment.getNameString()))
             segment_id += 1
-
     # 3. Reweighting of bin probabilities
     #    (Has to happen before resampling)
     if iteration.getNumberOfBins() > 3 and hdWE_parameters.reweighting_range > 0.0:
             reweighting.reweightBinProbabilities(iterations,
                                                  iteration,
                                                  hdWE_parameters.reweighting_range)
-
     # 4. Check convergence of the bins
     if iteration_counter > hdWE_parameters.convergence_range:    
         convergenceCheck.checkOutratesForConvergence(iterations, 
@@ -195,13 +193,12 @@ for iteration_counter in range(len(iterations), hdWE_parameters.max_iterations +
     if args.debug: 
         print("The overall probabiliy is {0:05f}".format(iteration.getProbability()))
 
- 
     #count total n of segments during iterations
     n_segments = 0
     for iteration_loop in iterations:
         n_segments += iteration_loop.getNumberOfPropagatedSegments()
-    print('\nTotal number of propagated segments: ' + str(n_segments) + '            ')
-
+    sys.stdout.write(' (Total number of propagated segments: ' + str(n_segments)+ ')')
+    sys.stdout.flush()
 
     all_converged = True
     for bin_loop in iteration:
