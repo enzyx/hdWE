@@ -3,7 +3,7 @@ import sys
 import numpy as np
 import constants
 
-def checkOutratesForConvergence(iterations, current_iteration, convergence_range, max_rate_rmsf, debug):
+def checkOutratesForConvergence(iterations, convergence_range, max_rate_rmsf, debug):
     '''
         checks outgoing rates of all bins for convergence. 
         If all outgoing rates are converged the bin is
@@ -77,7 +77,7 @@ def checkOutratesForConvergence(iterations, current_iteration, convergence_range
                         non_zero_rates += 1
                         
                 if b_converged:
-                    current_iteration.bins[bin_index].setConverged(True)
+                    iterations[-1].bins[bin_index].setConverged(True)
                     print ("Bin {bin_id} is converged".format(bin_id = bin_index))
                     if debug:
                         print("{nconv} rates from {nrates} converged. rest neglectable)".format(nconv=non_zero_rates-neglected_rates, nrates=non_zero_rates))

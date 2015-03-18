@@ -149,16 +149,18 @@ for iteration_counter in range(len(iterations), hdWE_parameters.max_iterations +
                                         new_bins[-1].getId(), 
                                         segment.getNameString()))
             segment_id += 1
+    
+    #Append iteration that has now all bins here!        
+    iterations.append(iteration)            
+            
     # 3. Reweighting of bin probabilities
     #    (Has to happen before resampling)
     if iteration.getNumberOfBins() > 3 and hdWE_parameters.reweighting_range > 0.0:
             reweighting.reweightBinProbabilities(iterations,
-                                                 iteration,
                                                  hdWE_parameters.reweighting_range)
     # 4. Check convergence of the bins
     if iteration_counter > hdWE_parameters.convergence_range:    
         convergenceCheck.checkOutratesForConvergence(iterations, 
-                                                     iteration, 
                                                      hdWE_parameters.convergence_range,
                                                      hdWE_parameters.convergence_threshold,
                                                      args.debug)
@@ -170,7 +172,7 @@ for iteration_counter in range(len(iterations), hdWE_parameters.max_iterations +
     # Parallel
     if config.get('hdWE','number-of-threads') > 1:
         thread_container = ThreadContainer()
-        for this_bin in iteration:
+        for this_bin in iterations[-1]:
             thread_container.appendJob(threading.Thread(target=this_bin.resampleSegments))
             if thread_container.getNumberOfJobs() >= config.get('hdWE','number-of-threads'):
                 thread_container.runJobs()
@@ -178,20 +180,19 @@ for iteration_counter in range(len(iterations), hdWE_parameters.max_iterations +
         thread_container.runJobs()
     # Serial
     else:
-        for this_bin in iteration:
+        for this_bin in iterations[-1]:
             this_bin.resampleSegments()
 
     # 6. Run MDs
-    md_module.RunMDs(iteration)
+    md_module.RunMDs(iterations[-1])
     
     
     # 7. Append and log iteration
-    iterations.append(iteration)
-    logger.logIteration(iteration)
+    logger.logIteration(iterations[-1])
 
 
-    if args.debug: 
-        print("The overall probabiliy is {0:05f}".format(iteration.getProbability()))
+    #if args.debug: 
+    print("The overall probabiliy is {0:05f}".format(iterations[-1].getProbability()))
 
     #count total n of segments during iterations
     n_segments = 0
@@ -201,7 +202,7 @@ for iteration_counter in range(len(iterations), hdWE_parameters.max_iterations +
     sys.stdout.flush()
 
     all_converged = True
-    for bin_loop in iteration:
+    for bin_loop in iterations[-1]:
         if bin_loop.isConverged() == False:
             all_converged = False
     if all_converged == True:

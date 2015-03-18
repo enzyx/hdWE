@@ -3,7 +3,7 @@ import numpy
 import constants
 import analysis_operations
 
-def reweightBinProbabilities(iterations, iteration, reweighting_range):
+def reweightBinProbabilities(iterations, reweighting_range):
     '''
     Reweights the bin probabilities according to the steady state equations, using
     the mean rates over the last reweighting_range*len(iteration) iterations. 
@@ -17,7 +17,7 @@ def reweightBinProbabilities(iterations, iteration, reweighting_range):
     iteration_counter = len(iterations) - 1
     logfile=open('log/reweighting_'+str(iteration_counter).zfill(5),'w+')
     #check for empty bins    
-    for bin_loop in iteration.bins:
+    for bin_loop in iterations[-1].bins:
         if bin_loop.getNumberOfSegments() < 1:
             print('At least one bin is empty. Skipping reweighting.', file=logfile)
             return
@@ -42,7 +42,7 @@ def reweightBinProbabilities(iterations, iteration, reweighting_range):
         #get total Probability of the bins that will be reweighted
         prob_of_reweighted_bins = 0.0
         for i in range(0,last_bin_number):
-            prob_of_reweighted_bins += iteration.bins[i].getProbability()
+            prob_of_reweighted_bins += iterations[-1].bins[i].getProbability()
         try:
             #Try to solve the steady state equations:
             bin_probs_from_rates = analysis_operations.BinProbabilitiesFromRates(mean_rate_matrix)
@@ -57,9 +57,9 @@ def reweightBinProbabilities(iterations, iteration, reweighting_range):
             else:
                 #Assign the new probabilities to bins. Keep relative segment probabilities within bins.
                 for i in range(0,len(bin_probs_from_rates)):
-                    reweight_factor = 1.0 * bin_probs_from_rates[i] / iteration.bins[i].getProbability()
-                    if iteration.bins[i].getNumberOfSegments() > 0:
-                        for segment_loop in iteration.bins[i]:
+                    reweight_factor = 1.0 * bin_probs_from_rates[i] / iterations[-1].bins[i].getProbability()
+                    if iterations[-1].bins[i].getNumberOfSegments() > 0:
+                        for segment_loop in iterations[-1].bins[i]:
                             segment_loop.setProbability(segment_loop.getProbability() * reweight_factor)
                     else:
                         #TODO case not yet correctly handled
