@@ -69,6 +69,7 @@ def reweightBinProbabilities(iterations, reweighting_range, workdir, jobname):
                 #print('Reduced Mean Rate Matrix:')
                 #print(mean_rate_matrix) 
                 print('Reweighted Bin Probabilities (Omitting latest ' + str(skipped_bins) + ' bins):', file=logfile)
+                print(str(bin_probs_from_rates), file=logfile)
                 return
         except:
             print('Singular rate matrix.', file=logfile)

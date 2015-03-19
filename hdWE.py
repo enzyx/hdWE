@@ -155,7 +155,7 @@ for iteration_counter in range(len(iterations), hdWE_parameters.max_iterations +
             
     # 3. Reweighting of bin probabilities
     #    (Has to happen before resampling)
-    if iteration.getNumberOfBins() > 3 and hdWE_parameters.reweighting_range > 0.0:
+    if iteration.getNumberOfBins() > 1 and hdWE_parameters.reweighting_range > 0.0:
             reweighting.reweightBinProbabilities(iterations,
                                                  hdWE_parameters.reweighting_range,
                                                  hdWE_parameters.workdir,
@@ -193,14 +193,14 @@ for iteration_counter in range(len(iterations), hdWE_parameters.max_iterations +
     logger.logIteration(iterations[-1])
 
 
-    #if args.debug: 
-    print("The overall probabiliy is {0:05f}".format(iterations[-1].getProbability()))
+    if args.debug: 
+        print("The overall probabiliy is {0:05f}".format(iterations[-1].getProbability()))
 
     #count total n of segments during iterations
     n_segments = 0
     for iteration_loop in iterations:
         n_segments += iteration_loop.getNumberOfPropagatedSegments()
-    sys.stdout.write(' (Total number of propagated segments: ' + str(n_segments)+ ')')
+    sys.stdout.write(' (Total number of propagated segments: ' + str(n_segments-1)+ ')')
     sys.stdout.flush()
 
     all_converged = True
@@ -217,7 +217,7 @@ for iteration_counter in range(len(iterations), hdWE_parameters.max_iterations +
 n_segments = 0
 for iteration_loop in iterations:
     n_segments += iteration_loop.getNumberOfPropagatedSegments()
-print('\nhdWE completed. Total number of propagated segments: ' + str(n_segments) + '            ')
+print('\nhdWE completed. Total number of propagated segments: ' + str(n_segments-1) + '            ')
    
 logger.close()
 
