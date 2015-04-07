@@ -17,10 +17,10 @@ def reweightBinProbabilities(iterations, reweighting_range, workdir, jobname):
     iteration_counter = len(iterations) - 1
     logfile=open(workdir+jobname+'-log/reweighting'+str(iteration_counter).zfill(5),'w+')
     #check for empty bins    
-    for bin_loop in iterations[-1].bins:
-        if bin_loop.getNumberOfSegments() < 1:
-            print('At least one bin is empty. Skipping reweighting.', file=logfile)
-            return
+    #for bin_loop in iterations[-1].bins:
+    #    if bin_loop.getNumberOfSegments() < 1:
+    #        print('At least one bin is empty. Skipping reweighting.', file=logfile)
+    #        return
     #get Rate Matrix, averaged over the last iteration_range iterations
     mean_rate_matrix= analysis_operations.getMeanRateMatrixWithConvergedOutrates(iterations, reweighting_range)
     #for j in range(len(mean_rate_matrix)):
@@ -57,14 +57,15 @@ def reweightBinProbabilities(iterations, reweighting_range, workdir, jobname):
             else:
                 #Assign the new probabilities to bins. Keep relative segment probabilities within bins.
                 for i in range(0,len(bin_probs_from_rates)):
-                    reweight_factor = 1.0 * bin_probs_from_rates[i] / iterations[-1].bins[i].getProbability()
                     if iterations[-1].bins[i].getNumberOfSegments() > 0:
+                        reweight_factor = 1.0 * bin_probs_from_rates[i] / iterations[-1].bins[i].getProbability()
                         for segment_loop in iterations[-1].bins[i]:
                             segment_loop.setProbability(segment_loop.getProbability() * reweight_factor)
                     else:
                         #TODO case not yet correctly handled
-                        pass
-                        #iteration.bins[i].respawnSegmentFromReference(bin_probs_from_rates[i])
+                        #pass
+                        print('Created new segments in bin by reweighting')            
+                        iteration.bins[i].respawnSegmentFromReference(bin_probs_from_rates[i])
                 print('Success.', file=logfile)            
                 #print('Reduced Mean Rate Matrix:')
                 #print(mean_rate_matrix) 

@@ -193,8 +193,8 @@ for iteration_counter in range(len(iterations), hdWE_parameters.max_iterations +
     logger.logIteration(iterations[-1])
 
 
-    if args.debug: 
-        print("The overall probabiliy is {0:05f}".format(iterations[-1].getProbability()))
+    #if args.debug: 
+    print("The overall probabiliy is {0:05f}".format(iterations[-1].getProbability()))
 
     #count total n of segments during iterations
     n_segments = 0
