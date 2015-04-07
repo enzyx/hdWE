@@ -62,10 +62,8 @@ def reweightBinProbabilities(iterations, reweighting_range, workdir, jobname):
                         for segment_loop in iterations[-1].bins[i]:
                             segment_loop.setProbability(segment_loop.getProbability() * reweight_factor)
                     else:
-                        #TODO case not yet correctly handled
-                        #pass
                         print('Created new segments in bin by reweighting')            
-                        iteration.bins[i].respawnSegmentFromReference(bin_probs_from_rates[i])
+                        iterations[-1].bins[i].respawnSegmentFromReference(bin_probs_from_rates[i])
                 print('Success.', file=logfile)            
                 #print('Reduced Mean Rate Matrix:')
                 #print(mean_rate_matrix) 

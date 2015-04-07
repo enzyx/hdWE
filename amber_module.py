@@ -477,7 +477,7 @@ def doMPIMD(configfile, debug):
     comm.barrier()
     if rank == 0:
         md_module.printMdStatus(loop_segment, workcount, md_skip_count)
-        #sys.stdout.write("\n")
+        sys.stdout.write("\n")
         if debug:
             sys.stdout.write("Finishing MPI\n")
         sys.stdout.flush()

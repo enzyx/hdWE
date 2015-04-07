@@ -198,10 +198,10 @@ class Logger():
                 if set(('p', 'i', 'b', 's')) <= set(segment_dictionary):
     
                     # check for consistency: note that segment_dictionary.get('i') is the parent iteration!
-                    if int(self.newbin.getIterationId()) != int(segment_dictionary.get('i')+1):
-                        raise Exception("Iteration_Ids of segment ({seg}) and bin ({bin}) mismatch!".\
-                                        format(seg=int(segment_dictionary.get('i')+1),
-                                        bin=int(self.newbin.getIterationId())))
+                    #~ if int(self.newbin.getIterationId()) != int(segment_dictionary.get('i')+1):
+                        #~ raise Exception("Iteration_Ids of segment ({seg}) and bin ({bin}) mismatch!".\
+                                        #~ format(seg=int(segment_dictionary.get('i')+1),
+                                        #~ bin=int(self.newbin.getIterationId())))
     
                     self.newbin.generateSegment(\
                         probability = segment_dictionary.get('p'),
