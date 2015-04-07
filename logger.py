@@ -74,7 +74,7 @@ class Logger():
         hdWE_parameters.loadLogfileParameters(self._getHdWEParameterString())
         return hdWE_parameters
             
-    def loadIterations(self, first=0, last=-1):
+    def loadIterations(self, first=0, last=-1, bCheckFiles=True):
         """
             @return read-in iterations
         """
@@ -109,7 +109,8 @@ class Logger():
                     if self.__checkIteration(iteration,
                                              target_number_of_read_bins,
                                              first,
-                                             last):
+                                             last,
+                                             bCheckFiles):
                         iterations.append(iteration)
                         
                 # read iteration
@@ -355,7 +356,7 @@ class Logger():
             #~ bCheck = False
             
         return bCheck
-    def __checkIteration(self, iteration, target_number_of_read_bins, first, last):
+    def __checkIteration(self, iteration, target_number_of_read_bins, first, last, bCheckFiles):
         """
         @return True if iteration is complete (all bins and 1.0 Probability)
         """
@@ -384,12 +385,13 @@ class Logger():
                                 prob = iteration.getProbability())) 
         # check iteration segment files
         bAllFilesPresent = True
-        for segment in iteration.getSegments():
-                if not self.md_module.isSegmentFile(segment):
-                    bAllFilesPresent = False
-                    sys.stderr.write("read-in error: File missing for segment {}\n".format(\
-                                segment.getNameString()))
-                    break
+        if bCheckFiles:
+            for segment in iteration.getSegments():
+                    if not self.md_module.isSegmentFile(segment):
+                        bAllFilesPresent = False
+                        sys.stderr.write("read-in error: File missing for segment {}\n".format(\
+                                    segment.getNameString()))
+                        break
         #~ # append iteration
         if bNbins and bProbability and bRange and bAllFilesPresent:
             return True
