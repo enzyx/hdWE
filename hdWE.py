@@ -104,6 +104,8 @@ for iteration_counter in range(len(iterations), hdWE_parameters.max_iterations +
     coordinates = numpy.array([])
     max_bin_probability = parent_iteration.getMaxBinProbability()
     rmsd_matrix = md_module.calcRmsdSegmentsToBinsMatrix(parent_iteration)
+    # Save RMSD matrix 
+    #numpy.save("{0}/log/rmsd_matrix_{1:05d}.npy".format(hdWE_parameters.workdir, parent_iteration.getId()), rmsd_matrix)
     segment_id = 0
     new_bins   = []
     for parent_bin in parent_iteration:
