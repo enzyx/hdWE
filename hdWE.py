@@ -100,7 +100,8 @@ for iteration_counter in range(len(iterations), hdWE_parameters.max_iterations +
     # 2. Sorting of segments into bins
     #    - Calculate the rmsd of each segment to all existing bins.
     #    - Generate new bin if required
-
+    
+    print ("Sorting segments into bins")
     coordinates = numpy.array([])
     max_bin_probability = parent_iteration.getMaxBinProbability()
     rmsd_matrix = md_module.calcRmsdSegmentsToBinsMatrix(parent_iteration)
@@ -108,46 +109,68 @@ for iteration_counter in range(len(iterations), hdWE_parameters.max_iterations +
     new_bins   = []
     for parent_bin in parent_iteration:
         for segment in parent_bin:
+            is_segment_handled = False
             min_coordinate = numpy.min(rmsd_matrix[segment_id])
-            # Sort Segment into appropriate bin
+            min_target_bin_id = numpy.argmin(rmsd_matrix[segment_id])
+            first_coordinate_below_threshold = hdWE_parameters.coordinate_threshold + 1.0
+            first_target_bin_id = -1
+            # find first bin below threshold:
+            for target_bin_id, coordinate in enumerate(rmsd_matrix[segment_id]):
+                if coordinate <= hdWE_parameters.coordinate_threshold:
+                    first_coordinate_below_threshold = coordinate
+                    first_target_bin_id = target_bin_id
+                    break
+            min_coordinate = first_coordinate_below_threshold
+            min_target_bin_id = first_target_bin_id
+            # Sort Segment into appropriate bin                
             if (min_coordinate <= hdWE_parameters.coordinate_threshold or 
                segment.getProbability() < hdWE_parameters.minimal_probability*max_bin_probability or 
                iteration.getNumberOfBins() >= hdWE_parameters.max_bins):
-                bin_id = numpy.argmin(rmsd_matrix[segment_id])
+                bin_id = min_target_bin_id
                 iteration.bins[bin_id].generateSegment(probability=segment.getProbability(),
                                                   parent_bin_id=segment.getBinId(),
                                                   parent_segment_id=segment.getId())
+                is_segment_handled = True
             # If necessary create new bin
-            else:
-                # Check if this segment fits into one of the new bins first
-                is_segment_handled = False
-                if len(new_bins) > 0:
-                    rmsds = md_module.calcRmsdToBins(segment, new_bins)
-                    min_coordinate = numpy.min(rmsds)
-                    if min_coordinate <= hdWE_parameters.coordinate_threshold:
-                        bin_id = new_bins[numpy.argmin(rmsds)].getId()
-                        iteration.bins[bin_id].generateSegment(probability=segment.getProbability(),
-                                                  parent_bin_id=segment.getBinId(),
-                                                  parent_segment_id=segment.getId())
-                        is_segment_handled = True
-                        if args.debug:
-                            print("Segment {0} fits in new bin {1}".format(
-                                        segment.getNameString(), 
-                                        new_bins[numpy.argmin(rmsds)].getId()))
-                if not is_segment_handled:
-                    # Ok seems that we need a new bin
-                    bin_id = iteration.generateBin(reference_iteration_id=segment.getIterationId(),
-                                      reference_bin_id=segment.getBinId(),
-                                      reference_segment_id=segment.getId(),
-                                      target_number_of_segments=hdWE_parameters.segments_per_bin)
+            # Check if this segment fits into one of the new bins first
+            if not is_segment_handled and len(new_bins) > 0:
+                new_rmsds = md_module.calcRmsdToBins(segment, new_bins)
+                min_coordinate = numpy.min(new_rmsds)
+                first_coordinate_below_threshold = hdWE_parameters.coordinate_threshold + 1.0
+                first_target_bin_id = -1
+                # find first bin below threshold:
+                for target_bin_id, coordinate in enumerate(new_rmsds):
+                    if coordinate <= hdWE_parameters.coordinate_threshold:
+                        first_coordinate_below_threshold = coordinate
+                        first_target_bin_id = target_bin_id
+                        break
+                min_coordinate = first_coordinate_below_threshold
+                min_target_bin_id = first_target_bin_id
+                if min_coordinate <= hdWE_parameters.coordinate_threshold:
+                    bin_id = min_target_bin_id
                     iteration.bins[bin_id].generateSegment(probability=segment.getProbability(),
-                                                  parent_bin_id=segment.getBinId(),
-                                                  parent_segment_id=segment.getId())
-                    new_bins.append(iteration.bins[bin_id])
+                                                parent_bin_id=segment.getBinId(),
+                                                parent_segment_id=segment.getId())
+                    is_segment_handled = True
                     if args.debug:
-                        print("created new bin {0} from segment ({1})".format(
-                                        new_bins[-1].getId(), 
-                                        segment.getNameString()))
+                        print("Segment {0} fits in new bin {1}".format(
+                                    segment.getNameString(), 
+                                    new_bins[min_target_bin_id]))
+            if not is_segment_handled:
+                # Ok seems that we need a new bin
+                bin_id = iteration.generateBin(reference_iteration_id=segment.getIterationId(),
+                                    reference_bin_id=segment.getBinId(),
+                                    reference_segment_id=segment.getId(),
+                                    target_number_of_segments=hdWE_parameters.segments_per_bin)
+                iteration.bins[bin_id].generateSegment(probability=segment.getProbability(),
+                                                parent_bin_id=segment.getBinId(),
+                                                parent_segment_id=segment.getId())
+                new_bins.append(iteration.bins[bin_id])
+                is_segment_handled = True
+                if args.debug:
+                    print("created new bin {0} from segment ({1})".format(
+                                    new_bins[-1].getId(), 
+                                    segment.getNameString()))
             segment_id += 1
     
     #Append iteration that has now all bins here!        

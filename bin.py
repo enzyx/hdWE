@@ -44,8 +44,8 @@ class Bin(object):
     def respawnSegmentFromReference(self, probability):
         __segment = self.generateSegment(probability = probability,
                              parent_bin_id = self.getReferenceBinId(),
-                             parent_segment_id = self.getReferenceSegmentId())  
-        __segment.setParentIterationId(self.getReferenceIterationId())
+                             parent_segment_id = self.getReferenceSegmentId())                    
+        self.segments[__segment].setParentIterationId(self.getReferenceIterationId())
         self.setConverged(False)
         return __segment
         

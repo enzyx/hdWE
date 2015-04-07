@@ -470,14 +470,14 @@ def doMPIMD(configfile, debug):
                     md_module.SkipSegmentMD(loop_segment, workcount, md_skip_count)
             workcount += 1
             # Log if rank 0
-            #if rank == 0:
-                #md_module.printMdStatus(loop_segment, workcount, md_skip_count)
+            if rank == 0:
+                md_module.printMdStatus(loop_segment, workcount, md_skip_count)
                 
     # Wait for all processes to finish
     comm.barrier()
     if rank == 0:
-        #md_module.printMdStatus(loop_segment, workcount, md_skip_count)
-        #sys.stdout.write("\n")
+        md_module.printMdStatus(loop_segment, workcount, md_skip_count)
+        sys.stdout.write("\n")
         if debug:
             sys.stdout.write("Finishing MPI\n")
         sys.stdout.flush()
