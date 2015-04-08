@@ -40,7 +40,7 @@ class Logger():
         self.debug = debug
 
         # open logfile
-        if create_logfile:
+        if writeable_logfile:
             self.logfile = open(self.logfilename, "a+")
         else:
             self.logfile = open(self.logfilename, "r")
