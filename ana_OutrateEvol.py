@@ -42,7 +42,7 @@ for i in range(0,len(outrates[:,0])):
 for i in range(0, len(iterations)):
     if iterations[i].getNumberOfBins() >= args.bin_index+1:
         if args.reweighting_range > 0.0:
-            iteration_range = int(iterations[i].getNumberOfBins() * args.reweighting_range)
+            iteration_range = int((iterations[i].getId() + 1) * args.reweighting_range)
         else:
             iteration_range = 0
         rates_tmp = analysis_operations.meanRateMatrix(iterations,i-iteration_range,i)[args.bin_index,:]
@@ -51,7 +51,7 @@ for i in range(0, len(iterations)):
                 if args.ln == True:
                     outrates[i,j]  = math.log(rates_tmp[j])
                 else:
-                    outrates[i,j]  = rates_tmp[j]                   
+                    outrates[i,j]  = rates_tmp[j]   
         
 #Save to file
 #header_line = 'Free Energy at: Bin, Iteration'            

@@ -50,6 +50,8 @@ logger = Logger(args.logfile, append = True)
 iterations = logger.loadIterations(args.first_iteration, args.last_iteration)
 logger.close()
 
+print(str(len(iterations)))
+
 # Load cpptraj input file as one string with linebreaks and delete the last line break
 try:
     cpptraj_lines_file=open(args.cpptraj_lines_file_path, 'r')

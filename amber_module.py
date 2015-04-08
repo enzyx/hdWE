@@ -17,7 +17,7 @@ class MD_module():
     # configuration_file          = ''   path to the amer configuration file that contains the 
     #                                    following entries:
     # amber_topology_file         = ''   the amber topology file
-    # amber_infile           = ''   the amber in file
+    # amber_infile                = ''   the amber in file
     # amber_coordinate_mask       = ''   for example for RMSD calculation. Example ':1-3@CA'
     # amber_binary                = ''   sander, pmemd, pmemd.cuda
     # parallelization_mode        = ''   serial, parallel, custom_cow
@@ -33,7 +33,7 @@ class MD_module():
         self.workdir               = config.get('hdWE','workdir')
         self.jobname               = config.get('hdWE','jobname')
         self.amber_topology_file   = config.get('amber','topology-path')
-        self.amber_infile     = config.get('amber','infile-path')
+        self.amber_infile          = config.get('amber','infile-path')
         self.amber_coordinate_mask = config.get('amber','coordinate-mask')
         self.amber_binary          = config.get('amber','binary')
         self.parallelization_mode  = config.get('amber','parallelization-mode')

@@ -33,9 +33,7 @@ class Segment(object):
         required for reweighting function to create new segments in empy bins. 
         Should not be used from Bin class
         """ 
-        print('1')
         self.parent_iteration_id = parent_iteration_id
-        print('2')
 
     def getNameString(self):
         """
