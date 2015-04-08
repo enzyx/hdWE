@@ -85,9 +85,15 @@ if(hdWE_parameters.md_package.lower() == "gromacs"):
 
 # Loop 
 for iteration_counter in range(len(iterations), hdWE_parameters.max_iterations + 1):
+    sys.stdout.write('\033[1mhdWE Status:\033[0m ' + 'Iteration ' + str(iteration_counter).zfill(5) + '\n')    
+    sys.stdout.flush()
+
     # 1. Initialisation of new iteration. 
     #    - initialize iteration and parent_iteration.
     #    - copy existing bins from the previous iteration into the new iteration.
+    sys.stdout.write(' Initialisation\n')
+    sys.stdout.flush()
+
     iteration = Iteration(iteration_counter)
     parent_iteration = iterations[iteration_counter - 1]
     for parent_bin in parent_iteration:
@@ -100,8 +106,8 @@ for iteration_counter in range(len(iterations), hdWE_parameters.max_iterations +
     # 2. Sorting of segments into bins
     #    - Calculate the rmsd of each segment to all existing bins.
     #    - Generate new bin if required
-    
-    print ("Sorting segments into bins")
+    sys.stdout.write(' Sorting Segments into Bins\n')
+    sys.stdout.flush()    
     coordinates = numpy.array([])
     max_bin_probability = parent_iteration.getMaxBinProbability()
     rmsd_matrix = md_module.calcRmsdSegmentsToBinsMatrix(parent_iteration)
@@ -181,12 +187,16 @@ for iteration_counter in range(len(iterations), hdWE_parameters.max_iterations +
     # 3. Reweighting of bin probabilities
     #    (Has to happen before resampling)
     if iteration.getNumberOfBins() > 1 and hdWE_parameters.reweighting_range > 0.0:
-            reweighting.reweightBinProbabilities(iterations,
-                                                 hdWE_parameters.reweighting_range,
-                                                 hdWE_parameters.workdir,
-                                                 hdWE_parameters.jobname)
+        sys.stdout.write(' Reweighting Bin Probabilities\n')
+        sys.stdout.flush() 
+        reweighting.reweightBinProbabilities(iterations,
+                                             hdWE_parameters.reweighting_range,
+                                             hdWE_parameters.workdir,
+                                             hdWE_parameters.jobname)
     # 4. Check convergence of the bins
     if iteration_counter > hdWE_parameters.convergence_range:    
+        sys.stdout.write(' Check Bin Convergence\n')
+        sys.stdout.flush() 
         convergenceCheck.checkOutratesForConvergence(iterations, 
                                                      hdWE_parameters.convergence_range,
                                                      hdWE_parameters.convergence_threshold,
@@ -196,6 +206,8 @@ for iteration_counter in range(len(iterations), hdWE_parameters.max_iterations +
 
 
     # 5. Resampling
+    sys.stdout.write(' Resampling\n')
+    sys.stdout.flush() 
     # Parallel
     if config.get('hdWE','number-of-threads') > 1:
         thread_container = ThreadContainer()
@@ -211,6 +223,8 @@ for iteration_counter in range(len(iterations), hdWE_parameters.max_iterations +
             this_bin.resampleSegments()
 
     # 6. Run MDs
+    sys.stdout.write(' Run MDs\n')
+    sys.stdout.flush() 
     md_module.RunMDs(iterations[-1])
     
     
@@ -219,13 +233,13 @@ for iteration_counter in range(len(iterations), hdWE_parameters.max_iterations +
 
 
     #if args.debug: 
-    print("The overall probabiliy is {0:05f}".format(iterations[-1].getProbability()))
+    print(" The overall probabiliy is {0:05f}".format(iterations[-1].getProbability()))
 
     #count total n of segments during iterations
     n_segments = 0
     for iteration_loop in iterations:
         n_segments += iteration_loop.getNumberOfPropagatedSegments()
-    sys.stdout.write(' (Total number of propagated segments: ' + str(n_segments-1)+ ')')
+    sys.stdout.write(' (Total number of propagated segments: ' + str(n_segments-1)+ ')\n')
     sys.stdout.flush()
 
     all_converged = True

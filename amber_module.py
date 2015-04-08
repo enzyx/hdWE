@@ -169,8 +169,7 @@ class MD_module():
         """Writes the actual WE run status in a string."""
         
         number_MD_runs = self.iteration.getNumberOfSegments()
-        string = '\r\033[1mhdWE Status:\033[0m ' + 'Iteration ' + self.iteration.getNameString() + \
-                 ' Number of bins ' + str(self.iteration.getNumberOfBins()) + \
+        string = '\r     Number of bins ' + str(self.iteration.getNumberOfBins()) + \
                  ' Segment ' + str(MD_run_count).zfill(5) + '/' + str(number_MD_runs).zfill(5) + \
                  ' Skipped segments: ' + str(MD_skip_count).zfill(6)
         return string
