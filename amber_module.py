@@ -51,9 +51,9 @@ class MD_module():
                        
         # check topology and infile:
         if not os.path.isfile(self.amber_topology_path):
-            raise Exception("No topology found at given path.")
+            raise Exception("No topology found at given pat:\n{}".format(self.amber_topology_path))
         if not os.path.isfile(self.amber_infile_path):
-            raise Exception("No infile found at given path.")        
+            raise Exception("No infile found at given path:\n{}".format(self.amber_infile_path))        
     
     def setIteration(self, iteration):
         self.iteration = iteration
@@ -148,13 +148,7 @@ class MD_module():
                                                   amber_start_coords_path,
                                                   amber_end_coords_path)
         return skip_command_line
-    
-    def isSegmentFile(self, segment):
-        """
-        Returns true if the segment file exists in the run folder on the filesystem
-        """
-        return os.path.isfile("{wd}/{jn}-run/{seg}.rst7".format( wd=self.workdir, jn=self.jobname, seg=segment.getNameString()))
-    
+      
     def MdLogString(self, segment,status):
         """Returns a string containing system time for MD run logging."""
         if status==0:
@@ -519,8 +513,26 @@ def doMPICalcRmsdMatrix(configfile, debug):
             print("RMSD Matrix: ", rmsd_matrix)
             print("Finished MPI RMSD Matrix calculation")
 
-    
+class MD_analysis_module():
+    """ a MD module for analysis operations
+        does not need the configfile
+    """
+    def __init__(self, workdir, jobname, debug):
+        """
+        Initializes the MD analysis module without a config file.
+        Additional input like topology or a structure might be needed for further functions.
+        """
+        #read in parameters
+        self.workdir               = workdir
+        self.jobname               = jobname
 
+    
+    def isSegmentFile(self, segment):
+        """
+        Returns true if the segment file exists in the run folder on the filesystem
+        """
+        return os.path.isfile("{wd}/{jn}-run/{seg}.rst7".format( wd=self.workdir, jn=self.jobname, seg=segment.getNameString()))
+        
 # Call only in MPI mode
 if __name__ == "__main__":
     from mpi4py import MPI

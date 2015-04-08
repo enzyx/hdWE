@@ -157,9 +157,11 @@ class Logger():
     def _createOwnHdWEParameters(self):
         self.hdWE_parameters = self.loadHdWEParameters()
         if self.hdWE_parameters.md_package.lower() == "amber":
-            from amber_module import MD_module
-            self.md_module = MD_module(configfile = self.hdWE_parameters.configfile,
-                                       debug = self.debug)
+            from amber_module import MD_analysis_module
+            self.md_analysis_module = MD_analysis_module(
+                                        workdir = self.hdWE_parameters.workdir,
+                                        jobname = self.hdWE_parameters.jobname,
+                                        debug = self.debug)
         if self.hdWE_parameters.md_package.lower() == "gromacs": 
             pass       
        
@@ -387,7 +389,7 @@ class Logger():
         bAllFilesPresent = True
         if bCheckFiles:
             for segment in iteration.getSegments():
-                    if not self.md_module.isSegmentFile(segment):
+                    if not self.md_analysis_module.isSegmentFile(segment):
                         bAllFilesPresent = False
                         sys.stderr.write("read-in error: File missing for segment {}\n".format(\
                                     segment.getNameString()))

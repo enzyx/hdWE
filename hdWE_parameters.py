@@ -73,7 +73,7 @@ class HdWEParameters():
         param_dict = json.loads(json_string)
         self.workdir               = param_dict.get("workdir")                   # str, DIR
         self.guaranteeWorkdirSlash()
-        self.jobname               = self.workdir + param_dict.get("jobname")    # str
+        self.jobname               = param_dict.get("jobname")                   # str
         self.configfile            = self.workdir + param_dict.get("configfile") # str, FILE
         self.max_iterations        = param_dict.get("max_iterations")            # int
         self.coordinate_threshold  = param_dict.get("coordinate_threshold")      # float
