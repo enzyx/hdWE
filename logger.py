@@ -35,12 +35,15 @@ class Logger():
         logger.close()
     
     """
-    def __init__(self, filename, append = True, debug = False):
+    def __init__(self, filename, writeable_logfile = False, append = True, debug = False):
         self.logfilename = filename
         self.debug = debug
 
         # open logfile
-        self.logfile = open(self.logfilename, "a+")
+        if create_logfile:
+            self.logfile = open(self.logfilename, "a+")
+        else:
+            self.logfile = open(self.logfilename, "r")
     
     def logParameters(self, hdWE_parameters):
         paramline = hdWE_parameters.getLogString()

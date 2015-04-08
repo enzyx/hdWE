@@ -62,6 +62,7 @@ initiate.prepare(hdWE_parameters.workdir,
 
 # Initialize the logger
 logger = Logger(filename="{jn}.log".format(jn=hdWE_parameters.jobname), 
+                writeable_logfile = True,
                 append=args.append,
                 debug=args.debug)
 logger.logParameters(hdWE_parameters)
