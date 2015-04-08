@@ -225,7 +225,7 @@ for iteration_counter in range(len(iterations), hdWE_parameters.max_iterations +
     n_segments = 0
     for iteration_loop in iterations:
         n_segments += iteration_loop.getNumberOfPropagatedSegments()
-    sys.stdout.write(' (Total number of propagated segments: ' + str(n_segments-1)+ ')')
+    sys.stdout.write(' (Total number of propagated segments: ' + str(n_segments-1)+ ')\n')
     sys.stdout.flush()
 
     all_converged = True

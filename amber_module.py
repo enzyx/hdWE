@@ -16,8 +16,8 @@ class MD_module():
     # debug                       = False
     # configuration_file          = ''   path to the amer configuration file that contains the 
     #                                    following entries:
-    # amber_topology_path         = ''   path to the amber topology file
-    # amber_infile_path           = ''   path to the amber in file
+    # amber_topology_file         = ''   the amber topology file
+    # amber_infile           = ''   the amber in file
     # amber_coordinate_mask       = ''   for example for RMSD calculation. Example ':1-3@CA'
     # amber_binary                = ''   sander, pmemd, pmemd.cuda
     # parallelization_mode        = ''   serial, parallel, custom_cow
@@ -32,8 +32,8 @@ class MD_module():
         config.read(configfile)
         self.workdir               = config.get('hdWE','workdir')
         self.jobname               = config.get('hdWE','jobname')
-        self.amber_topology_path   = self.workdir + config.get('amber','topology-path')
-        self.amber_infile_path     = self.workdir + config.get('amber','infile-path')
+        self.amber_topology_file   = config.get('amber','topology-path')
+        self.amber_infile     = config.get('amber','infile-path')
         self.amber_coordinate_mask = config.get('amber','coordinate-mask')
         self.amber_binary          = config.get('amber','binary')
         self.parallelization_mode  = config.get('amber','parallelization-mode')
@@ -44,16 +44,16 @@ class MD_module():
         self.debug                 = debug
         # local link to iteration
         self.iteration             = None
-        self.ITERATION_DUMP_FNAME  = '{wd}/{jn}-run/iteration.dump'.format(wd=self.workdir, jn=self.jobname)
-        self.RMSD_MATRIX_DUMP_FNAME= '{wd}/{jn}-run/rmsd_matrix.dump'.format(wd=self.workdir, jn=self.jobname)
+        self.ITERATION_DUMP_FNAME  = '{jn}-run/iteration.dump'.format(jn=self.jobname)
+        self.RMSD_MATRIX_DUMP_FNAME= '{jn}-run/rmsd_matrix.dump'.format(jn=self.jobname)
         
         self.keep_trajectory_files = bool(config.get('hdWE', 'keep_trajectory_files').lower() == "true")
                        
         # check topology and infile:
-        if not os.path.isfile(self.amber_topology_path):
-            raise Exception("No topology found at given pat:\n{}".format(self.amber_topology_path))
-        if not os.path.isfile(self.amber_infile_path):
-            raise Exception("No infile found at given path:\n{}".format(self.amber_infile_path))        
+        if not os.path.isfile(self.amber_topology_file):
+            raise Exception("No topology found at given path:\n{}".format(self.amber_topology_file))
+        if not os.path.isfile(self.amber_infile):
+            raise Exception("No infile found at given path:\n{}".format(self.amber_infile))        
     
     def setIteration(self, iteration):
         self.iteration = iteration
@@ -62,29 +62,29 @@ class MD_module():
         """
         Function that runs one single segment MD.
         """
-        amber_start_coords_path = "{0}/{1}-run/{2}.rst7".format(self.workdir, self.jobname, segment.getParentNameString()) 
-        amber_end_coords_path   = "{0}/{1}-run/{2}.rst7".format(self.workdir, self.jobname, segment.getNameString()) 
+        amber_start_coords_path = "{jn}-run/{seg}.rst7".format(jn=self.jobname, seg=segment.getParentNameString()) 
+        amber_end_coords_path   = "{jn}-run/{seg}.rst7".format(jn=self.jobname, seg=segment.getNameString()) 
         
         if self.debug:
-            amber_info_path         = "{0}/{1}-run/{2}.inf".format(self.workdir, self.jobname, segment.getNameString())
-            amber_outfile_path      = "{0}/{1}-run/{2}.out".format(self.workdir, self.jobname, segment.getNameString())
-            amber_trajectory_path   = "{0}/{1}-run/{2}.nc".format(self.workdir, self.jobname, segment.getNameString())
+            amber_info_path         = "{jn}-run/{seg}.inf".format(jn=self.jobname, seg=segment.getNameString())
+            amber_outfile_path      = "{jn}-run/{seg}.out".format(jn=self.jobname, seg=segment.getNameString())
+            amber_trajectory_path   = "{jn}-run/{seg}.nc".format( jn=self.jobname, seg=segment.getNameString())
         else:
             #amber_info_path         = '/dev/null'
             #amber_trajectory_path   = '/dev/null'
             #amber_outfile_path      = '/dev/null'
             #TODO: Strange bug on REX allows only info and traj to be /dev/null
-            amber_info_path         = '/tmp/{0}_{1}.inf'.format(segment.getNameString(), uuid.uuid1())
-            amber_outfile_path      = '/tmp/{0}_{1}.out'.format(segment.getNameString(), uuid.uuid1()) 
-            amber_trajectory_path   = '/tmp/{0}_{1}.nc'.format(segment.getNameString(), uuid.uuid1()) 
+            amber_info_path         = '/tmp/{seg}_{id}.inf'.format(seg=segment.getNameString(), id=uuid.uuid1())
+            amber_outfile_path      = '/tmp/{seg}_{id}.out'.format(seg=segment.getNameString(), id=uuid.uuid1()) 
+            amber_trajectory_path   = '/tmp/{seg}_{id}.nc'.format( seg=segment.getNameString(), id=uuid.uuid1()) 
         
         # Overwrite the previous settings
         if self.keep_trajectory_files:
-            amber_trajectory_path   = "{0}/{1}-run/{2}.nc".format(self.workdir, self.jobname, segment.getNameString())
+            amber_trajectory_path   = "{jn}-run/{seg}.nc".format(jn=self.jobname, seg=segment.getNameString())
         
         command_line = self.amber_binary + ' -O' + \
-                                  ' -p '   + self.amber_topology_path + \
-                                  ' -i '   + self.amber_infile_path + \
+                                  ' -p '   + self.amber_topology_file + \
+                                  ' -i '   + self.amber_infile + \
                                   ' -c '   + amber_start_coords_path + \
                                   ' -o '   + amber_outfile_path + \
                                   ' -x '   + amber_trajectory_path + \
@@ -95,11 +95,11 @@ class MD_module():
 
         #Command line for debugging
         if self.debug:
-            os.system('echo {0} >> {1}/{2}-debug/amber_command_lines.log'.format(command_line, self.workdir, self.jobname))
+            os.system('echo {line} >> {jn}-debug/amber_command_lines.log'.format(line=command_line, jn=self.jobname))
                       
         #Log and Run MD
         if self.debug:
-            logfile = open("{0}/{1}-log/{2}.MD_log".format(self.workdir, self.jobname, self.iteration.getNameString()),'a')
+            logfile = open("{jn}-log/{it}.MD_log".format(jn=self.jobname, it=self.iteration.getNameString()),'a')
             logfile.write(self.MdLogString(segment, status = 0))
         
         # Run MD
@@ -125,10 +125,9 @@ class MD_module():
         #Command line for debugging
         if self.debug:
                 os.system('echo ' + command_line + \
-                          ' >> {wd}/{jn}-debug/amber_command_lines.log'.format(wd=self.workdir, jn=self.jobname))
+                          ' >> {jn}-debug/amber_command_lines.log'.format(jn=self.jobname))
         #Log and Run MD
-        logfile = open("{wd}/{jn}-log/{it}.MD_log".format(wd = self.workdir,
-                                                        jn = self.jobname,
+        logfile = open("{jn}-log/{it}.MD_log".format(jn = self.jobname,
                                                         it = self.iteration.getNameString()),
                        'a')
         logfile.write(self.MdLogString(segment, status = 2 ))
@@ -141,12 +140,12 @@ class MD_module():
         """
         Returns the command line for linking segment restart files of skipped bins to next iteration.
         """
-        amber_start_coords_path = "{wd}/{jn}-run/{pseg}.rst7".format(wd=self.workdir, jn=self.jobname, pseg=segment.getParentNameString())
-        amber_end_coords_path = "{wd}/{jn}-run/{seg}.rst7".format( wd=self.workdir, jn=self.jobname, seg=segment.getNameString())        
+        amber_start_coords_path = "{jn}-run/{pseg}.rst7".format(jn=self.jobname, pseg=segment.getParentNameString())
+        amber_end_coords_path = "{jn}-run/{seg}.rst7".format(jn=self.jobname, seg=segment.getNameString())        
         
-        skip_command_line       = 'ln {0} {1}'.format(
-                                                  amber_start_coords_path,
-                                                  amber_end_coords_path)
+        skip_command_line       = 'ln {start} {end}'.format(
+                                                  start=amber_start_coords_path,
+                                                  end=amber_end_coords_path)
         return skip_command_line
       
     def MdLogString(self, segment,status):
@@ -163,10 +162,18 @@ class MD_module():
         """Writes the actual WE run status in a string."""
         
         number_MD_runs = self.iteration.getNumberOfSegments()
-        string = '\r\033[1mhdWE Status:\033[0m ' + 'Iteration ' + self.iteration.getNameString() + \
-                 ' Number of bins ' + str(self.iteration.getNumberOfBins()) + \
-                 ' Segment ' + str(MD_run_count).zfill(5) + '/' + str(number_MD_runs).zfill(5) + \
-                 ' Skipped segments: ' + str(MD_skip_count).zfill(6)
+        string = '\r\033[1mhdWE Status:\033[0m Iteration {it}; '\
+                 'Number of bins {nbins}; '\
+                 'Segment {segment:05d}/{all_segments:05d}; '\
+                 'Skipped segments: {skip:d}'.format(it = self.iteration.getNameString(),
+                                                      nbins = self.iteration.getNumberOfBins(),
+                                                      segment = MD_run_count,
+                                                      all_segments = number_MD_runs,
+                                                      skip = MD_skip_count)
+        #~ string = '\r\033[1mhdWE Status:\033[0m ' + 'Iteration ' + self.iteration.getNameString() + \
+                 #~ ' Number of bins ' + str(self.iteration.getNumberOfBins()) + \
+                 #~ ' Segment ' + str(MD_run_count).zfill(5) + '/' + str(number_MD_runs).zfill(5) + \
+                 #~ ' Skipped segments: ' + str(MD_skip_count).zfill(6)
         return string
     
     def printMdStatus(self, segment, MD_run_count, MD_skip_count):
@@ -245,22 +252,20 @@ class MD_module():
         UUID = uuid.uuid1()
         
         if self.debug:
-            cpptraj_infile_path = "{workdir}/{segment}.cpptraj_in".format(workdir=self.workdir, 
-                                                                      segment=segment_name_string)
+            cpptraj_infile_path = "{segment}.cpptraj_in".format(segment=segment_name_string)
         else:
             cpptraj_infile_path = "/tmp/{0}_{1}.cpptraj_in".format(segment_name_string, UUID)
         
         cpptraj_infile      = open(cpptraj_infile_path, 'w')
-        cpptraj_infile.write('trajin {workdir}/{jn}-run/{segment}.rst7\n'.format(workdir=self.workdir, jn=self.jobname, 
-                                                                            segment=segment_name_string))
+        cpptraj_infile.write('trajin {jn}-run/{segment}.rst7\n'.format(jn=self.jobname, 
+                                                                       segment=segment_name_string))
         if self.debug:  
-            cpptraj_outfile_path = "{workdir}/{segment}.cpptraj_out".format(workdir=self.workdir,
-                                                                      segment=segment_name_string)
+            cpptraj_outfile_path = "{segment}.cpptraj_out".format(segment=segment_name_string)
         else:
             cpptraj_outfile_path = "/tmp/{0}_{1}.cpptraj_out".format(segment_name_string, UUID)
         
         for bin_loop in range(0,len(bins)):
-            reference_bin_name_string         = "{workdir}/{jn}-run/{segment}.rst7".format(workdir=self.workdir, jn=self.jobname,
+            reference_bin_name_string         = "{jn}-run/{segment}.rst7".format(jn=self.jobname,
                                                                                       segment=bins[bin_loop].getReferenceNameString())
             cpptraj_reference_id_name_string  = '[reference_id_{0:05d}]'.format(bin_loop)
 
@@ -273,14 +278,13 @@ class MD_module():
 
         #Run cpptraj
         if self.debug:
-            cpptraj_execute_string = ' -p {top} -i {inpath} > {workdir}/{jn}-log/cpptraj.log'.format(
-                                                            top=self.amber_topology_path, 
+            cpptraj_execute_string = ' -p {top} -i {inpath} > {jn}-log/cpptraj.log'.format(
+                                                            top=self.amber_topology_file, 
                                                             inpath=cpptraj_infile_path,
-                                                            workdir=self.workdir,
                                                             jn=self.jobname)
         else:
             cpptraj_execute_string = ' -p {top} -i {inpath} > /dev/null'.format(
-                                                            top=self.amber_topology_path, 
+                                                            top=self.amber_topology_file, 
                                                             inpath=cpptraj_infile_path)
         os.system('cpptraj {execute}'.format(execute=cpptraj_execute_string))
                 
@@ -396,22 +400,22 @@ class MD_module():
         
         #Write the cpptraj infile
         segment_name_string = segment.getNameString() 
-        cpptraj_infile_path = self.workdir + segment_name_string + '.ana_calculatePMF_cpptraj_in'
-        cpptraj_output_path = self.workdir + segment_name_string + '.ana_calculatePMF_cpptraj_output'
+        cpptraj_infile_path = "{seg}.ana_calculatePMF_cpptraj_in".format(seg=segment_name_string)
+        cpptraj_output_path = "{seg}.ana_calculatePMF_cpptraj_output".format(seg=segment_name_string)
         cpptraj_infile      = open(cpptraj_infile_path,'w')
         if use_trajectory == False:
-            cpptraj_infile.write('trajin {workdir}/{jn}-run/{segment}.rst7\n'.format(workdir=self.workdir, jn=self.jobname,
-                                                                                      segment=segment_name_string) )
+            cpptraj_infile.write('trajin {jn}-run/{segment}.rst7\n'.format(jn=self.jobname,
+                                                                           segment=segment_name_string) )
         else:
-            cpptraj_infile.write('trajin {workdir}/{jn}-run/{segment}.nc\n'.format(workdir=self.workdir, jn=self.jobname,
-                                                                                      segment=segment_name_string) )            
+            cpptraj_infile.write('trajin {jn}-run/{segment}.nc\n'.format(jn=self.jobname,
+                                                                         segment=segment_name_string) )            
         cpptraj_infile.writelines(cpptraj_lines + ' out ' + cpptraj_output_path )
         cpptraj_infile.close()
         
         #Execute cpptraj
-        cpptraj_execute_string =' -p ' + self.amber_topology_path + \
+        cpptraj_execute_string =' -p ' + self.amber_topology_file + \
                                 ' -i ' + cpptraj_infile_path
-        cpptraj_execute_string = cpptraj_execute_string + ' >> {wd}/{jn}-log/ana_calculatePMF_cpptraj.log'.format(wd=self.workdir, jn=self.jobname,) 
+        cpptraj_execute_string = cpptraj_execute_string + ' >> {jn}-log/ana_calculatePMF_cpptraj.log'.format(jn=self.jobname,) 
         os.system('cpptraj ' + cpptraj_execute_string )        
         
         #Load cpptraj output as numpy array
