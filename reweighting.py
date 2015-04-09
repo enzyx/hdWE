@@ -7,8 +7,7 @@ def reweightBinProbabilities(iterations, reweighting_range, workdir, jobname):
     '''
     Reweights the bin probabilities according to the steady state equations, using
     the mean rates over the last reweighting_range*len(iteration) iterations. 
-    If the steady state equation matrix is singular, the bins added in the latest iterations are successively
-    skipped for reweighting until the steady state equations can be solved.
+    Bins with no outrates to other bins are excluded from the reweighting.
     The total probablity of the reweighted bins is not changed.
     The bin probablities of skipped bins are not changed.
     '''
@@ -30,11 +29,11 @@ def reweightBinProbabilities(iterations, reweighting_range, workdir, jobname):
     print('Using the last ' + str(iteration_range) + ' iterations for reweighting.', file=logfile)
     print('\nTotal Mean Rate Matrix:', file=logfile)
     print(mean_rate_matrix, file=logfile)
-    #check for bins with no outrates
+    #check for bins with no outrates or only outrate of 1 to itself
     keep_bin_index   = numpy.zeros([0], int)
     delete_bin_index = numpy.zeros([0], int)
     for i in range(0,len(mean_rate_matrix)):
-        if max(mean_rate_matrix[i,:]) > 0.0:
+        if max(mean_rate_matrix[i,:]) > 0.0 and max(mean_rate_matrix[i,:]) < 1.0:
             keep_bin_index = numpy.append(keep_bin_index, i)
         else: 
             delete_bin_index = numpy.append(delete_bin_index, i)  
@@ -61,6 +60,7 @@ def reweightBinProbabilities(iterations, reweighting_range, workdir, jobname):
         #(this could lead to trajectories with 0 probablity assigned)
         if numpy.min(bin_probs_from_rates) <= constants.num_boundary:
             print('At least one Bin probablity would be zero.', file=logfile)
+            print('At least one Bin probablity would be zero.')
         else:
             #Assign the new probabilities to bins. Keep relative segment probabilities within bins.
             for i in range(0,len(keep_bin_index)):
