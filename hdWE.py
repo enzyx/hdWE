@@ -15,6 +15,7 @@ import reweighting
 import convergenceCheck
 from thread_container import ThreadContainer
 from hdWE_parameters import HdWEParameters
+import os
 
 ###### Parse command line ###### 
 
@@ -41,6 +42,13 @@ config = ConfigParser.ConfigParser()
 config.read(args.configfile)
 
 #############################
+# Check files
+#############################
+if not os.path.isfile(args.configfile):
+    print("Configuration file not found: " + args.configfile)
+    sys.exit(-1)
+
+#############################
 # Main
 #############################
 
@@ -62,6 +70,7 @@ initiate.prepare(hdWE_parameters.workdir,
 
 # Initialize the logger
 logger = Logger(filename="{jn}.log".format(jn=hdWE_parameters.jobname), 
+                writeable_logfile = True,
                 append=args.append,
                 debug=args.debug)
 logger.logParameters(hdWE_parameters)
