@@ -15,6 +15,7 @@ import reweighting
 import convergenceCheck
 from thread_container import ThreadContainer
 from hdWE_parameters import HdWEParameters
+import os
 
 ###### Parse command line ###### 
 
@@ -39,6 +40,13 @@ args = parser.parse_args()
 ###### Parse Config File #######
 config = ConfigParser.ConfigParser()
 config.read(args.configfile)
+
+#############################
+# Check files
+#############################
+if not os.path.isfile(args.configfile):
+    print("Configuration file not found: " + args.configfile)
+    sys.exit(-1)
 
 #############################
 # Main
