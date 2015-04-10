@@ -7,8 +7,7 @@ def reweightBinProbabilities(iterations, reweighting_range, workdir, jobname):
     '''
     Reweights the bin probabilities according to the steady state equations, using
     the mean rates over the last reweighting_range*len(iteration) iterations. 
-    If the steady state equation matrix is singular, the bins added in the latest iterations are successively
-    skipped for reweighting until the steady state equations can be solved.
+    Bins with no outrates to other bins are excluded from the reweighting.
     The total probablity of the reweighted bins is not changed.
     The bin probablities of skipped bins are not changed.
     '''
@@ -33,15 +32,14 @@ def reweightBinProbabilities(iterations, reweighting_range, workdir, jobname):
     print(mean_rate_matrix, file=logfile)
     print('Old chi square (equilibriums condition): {0:g}'.format(
           calcChiSquare(bin_probabilities, mean_rate_matrix)), file=logfile)
-    #check for bins with no outrates
+    #check for bins with no outrates or only outrate of 1 to itself
     keep_bin_index   = numpy.zeros([0], int)
     delete_bin_index = numpy.zeros([0], int)
     for i in range(0,len(mean_rate_matrix)):
-        if max(mean_rate_matrix[i,:]) > 0.0:
+        if max(mean_rate_matrix[i,:]) > 0.0 and max(mean_rate_matrix[i,:]) < 1.0:
             keep_bin_index = numpy.append(keep_bin_index, i)
         else: 
-            delete_bin_index = numpy.append(delete_bin_index, i)
-    
+            delete_bin_index = numpy.append(delete_bin_index, i)  
     #reduce mean_rate_matrix
     reduced_mean_rate_matrix = numpy.delete(mean_rate_matrix, delete_bin_index, 0)
     reduced_mean_rate_matrix = numpy.delete(reduced_mean_rate_matrix, delete_bin_index, 1)
@@ -64,6 +62,7 @@ def reweightBinProbabilities(iterations, reweighting_range, workdir, jobname):
         #(this could lead to trajectories with 0 probability assigned)
         if numpy.min(bin_probs_from_rates) <= constants.num_boundary:
             print('At least one Bin probability would be zero.', file=logfile)
+            print('At least one Bin probablity would be zero.')
         else:
             #Assign the new probabilities to bins. Keep relative segment probabilities within bins.
             for i in range(0,len(keep_bin_index)):
@@ -78,6 +77,7 @@ def reweightBinProbabilities(iterations, reweighting_range, workdir, jobname):
             print('Skipped bins ' + str(delete_bin_index), file=logfile)
             print('Reweighted Bin Probabilities:', file=logfile)
             print(str(bin_probs_from_rates), file=logfile)
+            
             print('     Reweighting: Success. Skipped bins: ' + str(delete_bin_index))
             bin_probabilities = iterations[-1].getBinProbabilities()
             print('New chi square (equilibriums condition): {0:g}'.format(

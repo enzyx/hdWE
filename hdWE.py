@@ -258,6 +258,12 @@ for iteration_counter in range(len(iterations), hdWE_parameters.max_iterations +
     if all_converged == True:
         print('\nExploring Mode: All bins are converged                                         ')
         break        
+    #check for empty bins
+    empty_bins = 0
+    for bin_loop in iterations[-1]:
+         if bin_loop.getNumberOfSegments() == 0:
+             empty_bins += 1
+    print('    Empty bins: ' + str(empty_bins))
 
 # END of iteration loop
 
