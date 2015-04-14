@@ -47,7 +47,7 @@ class Logger():
     
     def logParameters(self, hdWE_parameters):
         paramline = hdWE_parameters.getLogString()
-        self.logfile.write("hdWE_parameters|"+paramline + "\n")
+        self.logfile.write("hdWE_parameters|"+ paramline + "\n")
         self.logfile.flush()
             
     def logIteration(self, iteration):
@@ -76,7 +76,7 @@ class Logger():
         hdWE_parameters = HdWEParameters()
         hdWE_parameters.loadLogfileParameters(self._getHdWEParameterString())
         return hdWE_parameters
-            
+    
     def loadIterations(self, first=0, last=-1, bCheckFiles=True):
         """
             @return read-in iterations

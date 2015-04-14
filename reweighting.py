@@ -25,7 +25,7 @@ def reweightBinProbabilities(iterations, reweighting_range, workdir, jobname):
     bin_probabilities = iterations[-1].getBinProbabilities()
     #for j in range(len(mean_rate_matrix)):
     #    print(sum(mean_rate_matrix[j,:]))
-    print('\nOld mean bin probabilities:', file=logfile)
+    print('\nOld bin probabilities:', file=logfile)
     print(bin_probabilities, file=logfile)
     print('Using the last ' + str(iteration_range) + ' iterations for reweighting.', file=logfile)
     print('\nTotal Mean Rate Matrix:', file=logfile)
