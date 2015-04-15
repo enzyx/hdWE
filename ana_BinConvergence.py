@@ -286,25 +286,27 @@ if args.rates:
                 else:
                     c[i]  = "red"
             # check for small rates
-            for i,mean in enumerate(means):
-                if mean > constants.num_boundary:
-                    for iteration in iterations:
-                        if iteration.getId() == iter_data.getId():
-                            #~ if mean < iteration.bins[i].getProbability()/iteration.bins[i].getNumberOfSegments():
-                            if mean < 0.5/iteration.bins[i].getTargetNumberOfSegments():
-                                c[i] = "blue"
+            #~ for i,mean in enumerate(means):
+                #~ if mean > constants.num_boundary:
+                    #~ for iteration in iterations:
+                        #~ if iteration.getId() == iter_data.getId():
+                            #if mean < iteration.bins[i].getProbability()/iteration.bins[i].getNumberOfSegments():
+                            #~ if mean < 0.5/(iteration.bins[i].getTargetNumberOfSegments()*iteration.bins[i].getProbability()):
+                                #~ c[i] = "blue"
             #size
             size = [0] * len(means)
             for i,mean in enumerate(means):
                 if mean > constants.num_boundary:
-                    size[i] = 5
-                if mean > 0.01:
-                    size[i] = 10
-                if mean > 0.1:
-                    size[i] = 20
+                    size[i] = 500*mean
+                # three seperate sizes
+                    #~ size[i] = 5
+                #~ if mean > 0.01:
+                    #~ size[i] = 10
+                #~ if mean > 0.1:
+                    #~ size[i] = 20
                 
             #~ ax.scatter(x, y, s=50*means/max_mean, color=c, marker="o", label = 'relative rmsf')
-            ax.scatter(x, y, s=size, color=c, marker="o", label = 'relative rmsf')
+            ax.scatter(x, y, s=size, color=c, marker="s", label = 'relative rmsf')
             #~ ax.get_yaxis().set_ticks([])
             
         # run our simulation check:
@@ -331,27 +333,18 @@ if args.rates:
                 bin_converged[it_counter] = 1.0
 
         # color for convergence
-        c_conv = [0.0] * len(iterations)
-        for i,convergence in enumerate(bin_converged):
-            if convergence == 1.0:
-                c_conv[i]  = "green"
-            else:
-                c_conv[i] = "red"
-        x = [ iteration.getId() for iteration in iterations ]
-        y = [-5] * len(bin_converged)
+        #~ c_conv = [0.0] * len(iterations)
+        #~ for i,convergence in enumerate(bin_converged):
+            #~ if convergence == 1.0:
+                #~ c_conv[i]  = "green"
+            #~ else:
+                #~ c_conv[i] = "red"
+        #~ x = [ iteration.getId() for iteration in iterations ]
+        #~ y = [-5] * len(bin_converged)
+#~ 
+        #~ ax.scatter(x,y, s=50, color=c_conv, marker='o', label = 'convergence')
 
-        ax.scatter(x,y, s=50, color=c_conv, marker='s', label = 'convergence')
-        #~ legend_handles = mlines.Line2D(range(1), range(1), color="green", marker='o', label="converged rate")
-        #~ line2 = mlines.Line2D(range(1), range(1), color="white", marker='o',markerfacecolor="green")
-        #~ ax.legend(handles = legend_handles, loc="upper left")  
-        red_patch = mpatches.Patch(color='red', label='The red data')
-        #~ plt.legend(handles=[red_patch])
-        #~ ax.legend(handles=[red_patch], loc="upper left")
-        #~ ax.legend()
-        
-        #works
-        #~ proxy = [plt.Rectangle((0,0),1,1,fc = "r") for i in range(2)]
-        #~ plt.legend(proxy, ["range(2-3)", "range(3-4)", "range(4-6)"])
+        # legend
         mark1 = mlines.Line2D(range(1), range(1), color="white", marker='o', markerfacecolor="green")
         mark2 = mlines.Line2D(range(1), range(1), color="white", marker='o', markerfacecolor="red")
         mark3 = mlines.Line2D(range(1), range(1), color="white", marker='o', markerfacecolor="orange")
@@ -361,14 +354,19 @@ if args.rates:
         mark7 = mlines.Line2D(range(1), range(1), color="white", marker='o', markerfacecolor="green", markersize=8)
         mark8 = mlines.Line2D(range(1), range(1), color="white", marker='s', markerfacecolor="green", markersize=10)
         mark9 = mlines.Line2D(range(1), range(1), color="white", marker='s', markerfacecolor="red", markersize=10)
-        ax.legend((mark5,mark6,mark7,mark8,mark9,mark1,mark2,mark3,mark4),
-                  ('rate > 0.1', 'rate > 0.01', 'rate < 0.01', 
-                   'bin converged', 'bin not converged', 'rate converged','rate not converged', 'just one rate', 
+        #~ ax.legend((mark5,mark6,mark7,mark8,mark9,mark1,mark2,mark3,mark4),
+                  #~ ('rate < 0.01', 'rate > 0.1', 'rate > 0.1', 
+                   #~ 'bin converged', 'bin not converged', 'rate converged','rate not converged', 'just one rate', 
+                   #~ 'low mean rate'),
+                  #~ numpoints=1, 
+                  #~ ncol = 2,
+                  #~ loc="upper left")
+        ax.legend((mark1,mark2,mark3,mark4),
+                  ('rate converged','rate not converged', 'just one rate', 
                    'low mean rate'),
                   numpoints=1, 
                   ncol = 2,
-                  loc="upper left")
-    
+                  loc="upper left")   
         
         sys.stdout.write('\033[1m' + 'Plotting data...' + '\033[0m\n')            
         plt.show() 

@@ -86,7 +86,7 @@ if(hdWE_parameters.md_package.lower() == "gromacs"):
 
 # Loop 
 for iteration_counter in range(len(iterations), hdWE_parameters.max_iterations + 1):
-    sys.stdout.write('\033[1mhdWE Status:\033[0m ' + 'Iteration ' + str(iteration_counter).zfill(5) + '\n')    
+    sys.stdout.write('\033[1m\n hdWE Status:\033[0m ' + 'Iteration ' + str(iteration_counter).zfill(5) + '\n')    
     sys.stdout.flush()
 
     # 1. Initialisation of new iteration. 

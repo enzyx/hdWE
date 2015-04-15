@@ -84,6 +84,7 @@ class Logger():
         sys.stdout.write("reading iterations from {file}\n".format(file = self.logfilename))
         iterations = []
         iteration = Iteration(-1)
+        target_number_of_segments = 0
         number_of_iterations_read = 0   # number of iterations read
         b_read_iteration = False        # True if iteration is to be read
         
