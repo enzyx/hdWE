@@ -1,5 +1,5 @@
 from __future__ import print_function
-import os, shutil
+import os
 import ConfigParser
 import numpy
 import threading
@@ -7,7 +7,6 @@ import sys
 from datetime import datetime
 from thread_container import ThreadContainer
 import pickle
-import tempfile
 import uuid
 
 class MD_module():
@@ -168,10 +167,6 @@ class MD_module():
                                                      segment = MD_run_count,
                                                      all_segments = number_MD_runs,
                                                      skip = MD_skip_count)
-        #~ string = '\r\033[1mhdWE Status:\033[0m ' + 'Iteration ' + self.iteration.getNameString() + \
-        #~ ' Number of bins ' + str(self.iteration.getNumberOfBins()) + \
-        #~ ' Segment ' + str(MD_run_count).zfill(5) + '/' + str(number_MD_runs).zfill(5) + \
-        #~ ' Skipped segments: ' + str(MD_skip_count).zfill(6)
         return string
     
     def printMdStatus(self, segment, MD_run_count, MD_skip_count):
