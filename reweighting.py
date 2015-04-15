@@ -85,7 +85,7 @@ def reweightBinProbabilities(iterations, reweighting_range, WORKDIR, JOBNAME):
             return
     except:
         print('Singular rate matrix.', file=logfile)
-        print('     Singular rate matrix.')
+        print('\x1b[31m     Singular rate matrix.\x1b[0m')
     return
 
 def calcChiSquare(P, K):
