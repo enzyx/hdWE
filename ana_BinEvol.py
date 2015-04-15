@@ -39,7 +39,7 @@ args = parser.parse_args()
 #md_module = MD_module(args.configfile, debug=False)
 
 #get the actual Iteration from logger module
-logger = Logger(args.logfile, append = False)
+logger = Logger(args.logfile, APPEND = False)
 hdWE_parameters = logger.loadHdWEParameters()
 iterations = logger.loadIterations(args.first_iteration, args.last_iteration, bCheckFiles=False)
 logger.close()

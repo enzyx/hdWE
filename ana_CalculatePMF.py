@@ -46,7 +46,7 @@ args = parser.parse_args()
 md_module = MD_module(args.input_md_conf, debug=False)
 
 #get the actual Iteration from logger module
-logger = Logger(args.logfile, append = True)
+logger = Logger(args.logfile, APPEND = True)
 iterations = logger.loadIterations(args.first_iteration, args.last_iteration)
 logger.close()
 

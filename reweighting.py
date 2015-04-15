@@ -3,7 +3,7 @@ import numpy
 import constants
 import analysis_operations
 
-def reweightBinProbabilities(iterations, reweighting_range, workdir, jobname):
+def reweightBinProbabilities(iterations, reweighting_range, WORKDIR, JOBNAME):
     '''
     Reweights the bin probabilities according to the steady state equations, using
     the mean rates over the last reweighting_range*len(iteration) iterations. 
@@ -14,7 +14,7 @@ def reweightBinProbabilities(iterations, reweighting_range, workdir, jobname):
     
     iteration_range = int(len(iterations) * reweighting_range)
     iteration_counter = len(iterations) - 1
-    logfile=open(workdir+jobname+'-log/reweighting'+str(iteration_counter).zfill(5),'w+')
+    logfile=open(WORKDIR+JOBNAME+'-log/reweighting'+str(iteration_counter).zfill(5),'w+')
     #check for empty bins    
     #for bin_loop in iterations[-1].bins:
     #    if bin_loop.getNumberOfSegments() < 1:

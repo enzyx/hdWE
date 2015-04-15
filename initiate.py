@@ -4,26 +4,26 @@ import glob
 from iteration import Iteration
 
 
-def prepare(workdir, jobname, starting_structure, overwrite, append, debug):
+def prepare(WORKDIR, JOBNAME, starting_structure, OVERWRITE, APPEND, debug):
     """
     Creates the directory structure. Copies the starting configuration
     into the bin_refcoords folder as the first bin.
     """
-    sub_dirs = ['{}-run'.format(jobname), '{}-log'.format(jobname), '{}-debug'.format(jobname)]
-    logfile = "{jn}.log".format(jn=jobname)
+    sub_dirs = ['{}-run'.format(JOBNAME), '{}-log'.format(JOBNAME), '{}-debug'.format(JOBNAME)]
+    logfile = "{jn}.log".format(jn=JOBNAME)
     # Go to Workdir
     try:
-        os.chdir(workdir)
+        os.chdir(WORKDIR)
     except OSError:
-        raise Exception("Workdir ({}) does not exist.".format(workdir))    
+        raise Exception("Workdir ({}) does not exist.".format(WORKDIR))    
         
     # Create directories if necessary 
-    if append == False:
-        if not overwrite:
+    if APPEND == False:
+        if not OVERWRITE:
             # Get the backup index 
             backup_index = -1
             for sub_dir in sub_dirs:
-                dir_tmp = workdir + sub_dir
+                dir_tmp = WORKDIR + sub_dir
                 if os.path.exists(dir_tmp):
                     if backup_index < 0:
                         backup_index = 1
@@ -42,7 +42,7 @@ def prepare(workdir, jobname, starting_structure, overwrite, append, debug):
                 
             # Now move old data to backup
             for sub_dir in sub_dirs:               
-                dir_tmp = workdir + sub_dir
+                dir_tmp = WORKDIR + sub_dir
                 try:
                     if backup_index >= 0:
                         os.rename(dir_tmp, "{0}.bak.{1}".format(dir_tmp, backup_index))
@@ -50,9 +50,9 @@ def prepare(workdir, jobname, starting_structure, overwrite, append, debug):
                     print "Could not backup directory {0}".format(dir_tmp)
                     
         # delete old simulation data if overwrite flag is set
-        if overwrite:
+        if OVERWRITE:
             for sub_dir in sub_dirs:
-                dir_tmp = workdir + sub_dir
+                dir_tmp = WORKDIR + sub_dir
                 if os.path.exists(dir_tmp):
                     shutil.rmtree(dir_tmp, ignore_errors=True)
             if os.path.exists(logfile): os.remove(logfile)
@@ -61,8 +61,8 @@ def prepare(workdir, jobname, starting_structure, overwrite, append, debug):
         for sub_dir in sub_dirs:
             if 'debug' in sub_dir and not debug:
                 continue
-            os.mkdir(workdir + sub_dir)
-        shutil.copyfile(workdir + starting_structure, "{wd}/{jn}-run/00000_00000_00000.rst7".format(wd=workdir, jn=jobname))
+            os.mkdir(WORKDIR + sub_dir)
+        shutil.copyfile(WORKDIR + starting_structure, "{wd}/{jn}-run/00000_00000_00000.rst7".format(wd=WORKDIR, jn=JOBNAME))
 
 def create_initial_iteration(target_number_of_segments):
     """
@@ -77,5 +77,5 @@ def create_initial_iteration(target_number_of_segments):
     iteration0.bins[0].generateSegment(probability=1.0,
                                        parent_bin_id=0, 
                                        parent_segment_id=0)
-    
+    iteration0.bins[0].backupInitialSegments()
     return iteration0

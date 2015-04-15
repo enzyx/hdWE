@@ -2,6 +2,7 @@
 from __future__ import print_function
 from segment import Segment
 import random as rnd
+import copy
 
 class Bin(object):
     """
@@ -28,6 +29,11 @@ class Bin(object):
         self.b_outrates_converged      = outrates_converged
         # The array of segments
         self.segments = []
+        # In this array the segments are copied before resampling happens.
+        # We need to store the old segments information
+        # to be able to correctly recalculate the bin to bin rates 
+        # after resampling.
+        self.initial_segments = []
 
     def generateSegment(self, probability, parent_bin_id, parent_segment_id):
         """
@@ -278,3 +284,12 @@ class Bin(object):
             raise StopIteration
         else:
             return self.segments[self._iter_index]
+
+    def backupInitialSegments(self):
+        """
+        Hard copy the segments list to the initial_segments list
+        This function should be called directly after assigning all
+        segments to all bins after MD.
+        """
+        self.initial_segments = copy.deepcopy(self.segments)
+        
