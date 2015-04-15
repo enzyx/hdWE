@@ -236,6 +236,12 @@ class Bin(object):
         @return Current number of segments
         """
         return len(self.segments)
+
+    def getNumberOfInitialSegments(self):
+        """
+        @return Number of initial segments
+        """
+        return len(self.initial_segments)
         
     def getNumberOfPropagatedSegments(self):
         """
