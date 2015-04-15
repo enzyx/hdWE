@@ -170,8 +170,16 @@ class Iteration(object):
                 for j in range(0,len(rate_matrix)):
                     rate_matrix[i,j] /= previous_iteration_parent_probability
         return rate_matrix
-        
-        
+    
+    def getBinProbabilities(self):
+        """
+        Return a vector with the bin probablities
+        """
+        bin_probs = []
+        for _bin in self.bins:
+            bin_probs.append(_bin.getProbability())
+        return bin_probs
+    
     def getMaxBinProbability(self):
         """
         Returns the probablity of the bin with largest probability.

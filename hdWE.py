@@ -15,6 +15,7 @@ import reweighting
 import convergenceCheck
 from thread_container import ThreadContainer
 from hdWE_parameters import HdWEParameters
+import os
 
 ###### Parse command line ###### 
 
@@ -39,6 +40,13 @@ args = parser.parse_args()
 ###### Parse Config File #######
 config = ConfigParser.ConfigParser()
 config.read(args.configfile)
+
+#############################
+# Check files
+#############################
+if not os.path.isfile(args.configfile):
+    print("Configuration file not found: " + args.configfile)
+    sys.exit(-1)
 
 #############################
 # Main
@@ -250,6 +258,12 @@ for iteration_counter in range(len(iterations), hdWE_parameters.max_iterations +
     if all_converged == True:
         print('\nExploring Mode: All bins are converged                                         ')
         break        
+    #check for empty bins
+    empty_bins = 0
+    for bin_loop in iterations[-1]:
+         if bin_loop.getNumberOfSegments() == 0:
+             empty_bins += 1
+    print('    Empty bins: ' + str(empty_bins))
 
 # END of iteration loop
 
