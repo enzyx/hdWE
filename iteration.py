@@ -143,7 +143,7 @@ class Iteration(object):
         flux_matrix = numpy.zeros([self.getNumberOfBins(), self.getNumberOfBins()], float)
         # Sum all probability that enters a bin from the parent bins
         for bin_l in self.bins:
-            for segment_l in bin_l.segments:
+            for segment_l in bin_l.initial_segments:
                 flux_matrix[segment_l.getParentBinId(), bin_l.getId()] += \
                 segment_l.getProbability()
         return flux_matrix
@@ -157,21 +157,32 @@ class Iteration(object):
         rate_matrix = numpy.zeros([self.getNumberOfBins(), self.getNumberOfBins()], float)
         # Sum all probability that enters a bin from the parent bins
         for bin_l in self.bins:
-            for segment_l in bin_l.segments:
+            for segment_l in bin_l.initial_segments:
                 if self.bins[segment_l.getParentBinId()].getProbability() > constants.num_boundary:
                     rate_matrix[segment_l.getParentBinId(), bin_l.getId()] += \
                     segment_l.getProbability()
+        
         # Normalize all outrates with respect to a bin:
         for i in range(0,len(rate_matrix)):
-            previous_iteration_parent_probability = 0.0            
+            previous_iteration_parent_probability = 0.0
+            #TODO: Shouldn't this be equal to something like:
+            #      parent_bins[i].getProbability()? Please comment (Fabi)
             for j in range(0,len(rate_matrix)):
                 previous_iteration_parent_probability += rate_matrix[i,j]
             if previous_iteration_parent_probability > constants.num_boundary:
                 for j in range(0,len(rate_matrix)):
                     rate_matrix[i,j] /= previous_iteration_parent_probability
         return rate_matrix
-        
-        
+    
+    def getBinProbabilities(self):
+        """
+        Return a vector with the bin probablities
+        """
+        bin_probs = []
+        for _bin in self.bins:
+            bin_probs.append(_bin.getProbability())
+        return bin_probs
+    
     def getMaxBinProbability(self):
         """
         Returns the probablity of the bin with largest probability.

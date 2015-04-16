@@ -13,6 +13,7 @@ def checkOutratesForConvergence(iterations, convergence_range, max_rate_rmsf, de
         last <convergence_range> iterations is below threshold.
     '''
     iteration_counter = len(iterations) - 1
+    converged_bins = []
     # if we can have converged bins (we need <conv_range> iterations. iterations[it_counter] also counts)
     #~ if iterations[iteration_counter].getId() - iterations[0].getId() + 1 >= convergence_range and 
     if len(iterations) >= convergence_range:
@@ -78,10 +79,11 @@ def checkOutratesForConvergence(iterations, convergence_range, max_rate_rmsf, de
                         
                 if b_converged:
                     iterations[-1].bins[bin_index].setConverged(True)
-                    print ("Bin {bin_id} is converged".format(bin_id = bin_index))
+                    converged_bins.append(bin_index)
                     if debug:
                         print("{nconv} rates from {nrates} converged. rest neglectable)".format(nconv=non_zero_rates-neglected_rates, nrates=non_zero_rates))
-                					
+        if len(converged_bins) > 0:
+            print ("     Newly converged bins: {}".format(converged_bins))        					
         #~ print ("rates[0]:")				
         #~ print (rates[0])
     return

@@ -1,5 +1,5 @@
 from __future__ import print_function
-import os, shutil
+import os
 import ConfigParser
 import numpy
 import threading
@@ -7,12 +7,11 @@ import sys
 from datetime import datetime
 from thread_container import ThreadContainer
 import pickle
-import tempfile
 import uuid
 
 class MD_module():
     
-    # workdir                    = ''
+    # WORKDIR                    = ''
     # debug                       = False
     # configuration_file          = ''   path to the amer configuration file that contains the 
     #                                    following entries:
@@ -23,15 +22,15 @@ class MD_module():
     # parallelization_mode        = ''   serial, parallel, custom_cow
     # number of threads           = ''   number of threads in parallel mode
     
-    def __init__(self, configfile, debug):
+    def __init__(self, CONFIGFILE, debug):
         """Initializes the MD module and Reads the amber configuration file.
         """
         #read in configuration file
-        self.configfile = configfile
+        self.configfile = CONFIGFILE
         config = ConfigParser.ConfigParser()
-        config.read(configfile)
-        self.workdir               = config.get('hdWE','workdir')
-        self.jobname               = config.get('hdWE','jobname')
+        config.read(CONFIGFILE)
+        self.workdir               = config.get('hdWE','WORKDIR')
+        self.jobname               = config.get('hdWE','JOBNAME')
         self.amber_topology_file   = config.get('amber','topology-path')
         self.amber_infile          = config.get('amber','infile-path')
         self.amber_coordinate_mask = config.get('amber','coordinate-mask')
@@ -162,18 +161,12 @@ class MD_module():
         """Writes the actual WE run status in a string."""
         
         number_MD_runs = self.iteration.getNumberOfSegments()
-        string = '\r\033[1mhdWE Status:\033[0m Iteration {it}; '\
-                 'Number of bins {nbins}; '\
+        string = '\r     Number of bins {nbins}; '\
                  'Segment {segment:05d}/{all_segments:05d}; '\
-                 'Skipped segments: {skip:d}'.format(it = self.iteration.getNameString(),
-                                                      nbins = self.iteration.getNumberOfBins(),
-                                                      segment = MD_run_count,
-                                                      all_segments = number_MD_runs,
-                                                      skip = MD_skip_count)
-        #~ string = '\r\033[1mhdWE Status:\033[0m ' + 'Iteration ' + self.iteration.getNameString() + \
-                 #~ ' Number of bins ' + str(self.iteration.getNumberOfBins()) + \
-                 #~ ' Segment ' + str(MD_run_count).zfill(5) + '/' + str(number_MD_runs).zfill(5) + \
-                 #~ ' Skipped segments: ' + str(MD_skip_count).zfill(6)
+                 'Skipped segments: {skip:d}'.format(nbins = self.iteration.getNumberOfBins(),
+                                                     segment = MD_run_count,
+                                                     all_segments = number_MD_runs,
+                                                     skip = MD_skip_count)
         return string
     
     def printMdStatus(self, segment, MD_run_count, MD_skip_count):
@@ -436,16 +429,16 @@ class MD_module():
             return coordinates[:,1]
 
 
-def doMPIMD(configfile, debug):
+def doMPIMD(CONFIGFILE, debug):
     """
     This function can run on multiple MPI processes in parallel
     to propagate all segments of iteration via MD 
     """    
     # Read in the call arguments
-    configfile               = configfile
+    CONFIGFILE               = CONFIGFILE
     debug                    = bool(debug == "True")
     # Initialize MD module
-    md_module = MD_module(configfile = configfile, debug = debug)
+    md_module = MD_module(CONFIGFILE = CONFIGFILE, debug = debug)
     md_module.loadIterationFromDumpFile()
     if debug:
         if rank == 0:
@@ -483,12 +476,12 @@ def doMPIMD(configfile, debug):
         if not debug:
             md_module.removeIterationDumpFile()
 
-def doMPICalcRmsdMatrix(configfile, debug):
+def doMPICalcRmsdMatrix(CONFIGFILE, debug):
     # Read in the call arguments
-    configfile               = configfile
+    CONFIGFILE               = CONFIGFILE
     debug                    = bool(debug == "True")
     # Initialize MD module
-    md_module = MD_module(configfile = configfile, debug = debug)
+    md_module = MD_module(CONFIGFILE = CONFIGFILE, debug = debug)
     md_module.loadIterationFromDumpFile()
     iteration = md_module.iteration
     
@@ -519,16 +512,16 @@ def doMPICalcRmsdMatrix(configfile, debug):
 
 class MD_analysis_module():
     """ a MD module for analysis operations
-        does not need the configfile
+        does not need the CONFIGFILE
     """
-    def __init__(self, workdir, jobname, debug):
+    def __init__(self, WORKDIR, JOBNAME, debug):
         """
         Initializes the MD analysis module without a config file.
         Additional input like topology or a structure might be needed for further functions.
         """
         #read in parameters
-        self.workdir               = workdir
-        self.jobname               = jobname
+        self.workdir               = WORKDIR
+        self.jobname               = JOBNAME
 
     
     def isSegmentFile(self, segment):
@@ -545,8 +538,8 @@ if __name__ == "__main__":
     size = comm.Get_size()
     
     if sys.argv[1] == "MPIMD":
-        doMPIMD(configfile=sys.argv[2], 
+        doMPIMD(CONFIGFILE=sys.argv[2], 
                 debug=sys.argv[3])
     if sys.argv[1] == "MPIRMSD":
-        doMPICalcRmsdMatrix(configfile=sys.argv[2],
+        doMPICalcRmsdMatrix(CONFIGFILE=sys.argv[2],
                             debug=sys.argv[3])
