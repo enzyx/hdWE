@@ -198,10 +198,10 @@ if args.plot_segments:
     for bin_id in range(iterations[-1].getNumberOfBins()):
         seg_x = []
         seg_y = []
-        for segment in segments:
-            if segment.getBinId() == bin_id:
-                seg_x.append(segment.getCoordinate())
-                seg_y.append(-seg_step - seg_step*segment.getBinId())
+        for segment_loop in segments:
+            if segment_loop.getBinId() == bin_id:
+                seg_x.append(segment_loop.getCoordinate())
+                seg_y.append(-seg_step - seg_step*segment_loop.getBinId())
                 
             if segment.getBinId() > bin_id:
                 break
@@ -226,7 +226,7 @@ ax.legend()
 if args.plot:
     plt.show() 
 else:
-    mpl.pyplot.savefig(args.output_plot, bbox_inches='tight', transparent=True)
+    plt.savefig(args.output_plot, bbox_inches='tight', transparent=True)
     print('\n Output written to: ' + args.output_plot)
 
    

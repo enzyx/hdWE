@@ -1,0 +1,3 @@
+- Parallelisierung von MD-runs, Resampling und Resorting vereinheitlichen
+- Resorting auslagern und vereinfachen
+- Was soll passieren, wenn das Reweighting einem Bin 0 Probability zuweist?
