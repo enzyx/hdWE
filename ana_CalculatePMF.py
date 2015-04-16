@@ -84,8 +84,6 @@ md_module = MD_module(args.input_md_conf, debug=False)
 logger = Logger(args.logdir)
 iterations = logger.loadIterations(begin=args.first_iteration, end=args.last_iteration)
 
-print(str(len(iterations)))
-
 # Load cpptraj input file as one string with linebreaks and delete the last line break
 try:
     cpptraj_lines_file=open(args.cpptraj_lines_file_path, 'r')
@@ -181,53 +179,57 @@ header_line = 'Coordinate Value, Free Energy, Probability, Values per hist-Bin, 
 numpy.savetxt(args.output_path, hist, header = header_line)
 print('\n PMF data written to: ' + args.output_path) 
 
+
 # Plotting
-segment_colors = ["Blue", "Red", "Green", "Orange", "c", "m", "y"]
-seg_step = 0.3
-f, ax = plt.subplots(1,1)
-ax.grid()
-
-# load reference (cMD) data
-if args.reference:
-    ref_data = numpy.transpose(numpy.loadtxt(args.reference))
-    ax.plot(ref_data[0], ref_data[args.ref_column-1], label=args.reference)
-
-ax.plot(hist[:,0], hist[:,1], label=args.logdir)
-
-if args.plot_segments:
-    for bin_id in range(iterations[-1].getNumberOfBins()):
-        seg_x = []
-        seg_y = []
-        for segment in segments:
-            if segment.getBinId() == bin_id:
-                seg_x.append(segment.getCoordinate())
-                seg_y.append(-seg_step - seg_step*segment.getBinId())
-                
-            if segment.getBinId() > bin_id:
-                break
-        ax.scatter(seg_x, 
-                seg_y,
-                marker="s",
-                color=segment_colors[bin_id%len(segment_colors)])
-
-if args.plot_bin_references:
-    bin_ref_x = []
-    bin_ref_y = []    
-    for index, bin_loop in enumerate(iterations[-1]):
-        bin_ref_x.append(references[index].getCoordinate())
-        bin_ref_y.append(-1)
-        bin_color = 1.0*bin_loop.getId()/iterations[-1].getNumberOfBins()
-    cmap = plt.get_cmap("coolwarm")
-    ax.scatter(bin_ref_x, 
-               bin_ref_y,
-               marker="s")               
-
-ax.legend()
 if args.plot:
-    plt.show() 
-else:
-    mpl.pyplot.savefig(args.output_plot, bbox_inches='tight', transparent=True)
-    print('\n Output written to: ' + args.output_plot)
+    try:
+        segment_colors = ["Blue", "Red", "Green", "Orange", "c", "m", "y"]
+        seg_step = 0.3
+        f, ax = plt.subplots(1,1)
+        ax.grid()
+        
+        # plot reference (cMD) data
+        if args.reference:
+            ref_data = numpy.transpose(numpy.loadtxt(args.reference))
+            ax.plot(ref_data[0], ref_data[args.ref_column-1], label=args.reference)
+        
+        # plot calculated PMF    
+        ax.plot(hist[:,0], hist[:,1], label=args.logdir)
+        
+        if args.plot_segments:
+            for bin_id in range(iterations[-1].getNumberOfBins()):
+                seg_x = []
+                seg_y = []
+                for segment in segments:
+                    if segment.getBinId() == bin_id:
+                        seg_x.append(segment.getCoordinate())
+                        seg_y.append(-seg_step - seg_step*segment.getBinId())
+                        
+                    if segment.getBinId() > bin_id:
+                        break
+                ax.scatter(seg_x, 
+                        seg_y,
+                        marker="s",
+                        color=segment_colors[bin_id%len(segment_colors)])
+        
+        if args.plot_bin_references:
+            bin_ref_x = []
+            bin_ref_y = []    
+            for index, bin_loop in enumerate(iterations[-1]):
+                bin_ref_x.append(references[index].getCoordinate())
+                bin_ref_y.append(-1)
+                bin_color = 1.0*bin_loop.getId()/iterations[-1].getNumberOfBins()
+            cmap = plt.get_cmap("coolwarm")
+            ax.scatter(bin_ref_x, 
+                    bin_ref_y,
+                    marker="s")               
+        
+        ax.legend()
+        plt.show() 
+        mpl.pyplot.savefig(args.output_plot, bbox_inches='tight', transparent=True)
+        print('\n PLot written to to: ' + args.output_plot)
+    except:
+        sys.stderr.write("Plotting with mathplotlib failed.")
 
    
 
