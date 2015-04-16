@@ -11,6 +11,7 @@ import initiate
 from iteration import Iteration
 from logger import Logger
 import threading
+import resorting
 import reweighting
 import convergenceCheck
 from thread_container import ThreadContainer
@@ -115,114 +116,36 @@ if(MD_PACKAGE == "gromacs"):
 #         Main Loop         #
 #############################
 for iteration_counter in range(len(iterations), MAX_ITERATIONS + 1):
-    sys.stdout.write('\033[1m\n hdWE Status:\033[0m ' + 'Iteration ' + str(iteration_counter).zfill(5) + '\n')    
+    sys.stdout.write('\033[1m\nhdWE Status:\033[0m ' + 'Iteration ' + str(iteration_counter).zfill(5) + '\n')    
     sys.stdout.flush()
 
-    # 1. Initialization of new iteration. 
-    #    - initialize iteration and parent_iteration.
+
+    # 1. Sorting of segments into bins
+    #    - initialize new iteration.
     #    - copy existing bins from the previous iteration into the new iteration.
-    sys.stdout.write(' Initialization\n')
-    sys.stdout.flush()
-
-    iteration = Iteration(iteration_counter)
-    parent_iteration = iterations[iteration_counter - 1]
-    for parent_bin in parent_iteration:
-        iteration.generateBin(reference_iteration_id=parent_bin.getReferenceIterationId(),
-                              reference_bin_id=parent_bin.getReferenceBinId(),
-                              reference_segment_id=parent_bin.getReferenceSegmentId(),
-                              target_number_of_segments=SEGMENTS_PER_BIN,
-                              outrates_converged = parent_bin.isConverged())
-
-    # 2. Sorting of segments into bins
     #    - Calculate the rmsd of each segment to all existing bins.
-    #    - Generate new bin if required
-    sys.stdout.write(' Sorting Segments into Bins\n')
-    sys.stdout.flush()    
-    coordinates = numpy.array([])
-    max_bin_probability = parent_iteration.getMaxBinProbability()
-    rmsd_matrix = md_module.calcRmsdSegmentsToBinsMatrix(parent_iteration)
-
-    segment_id = 0
-    new_bins   = []
-    for parent_bin in parent_iteration:
-        for segment in parent_bin:
-            is_segment_handled = False
-            min_coordinate = numpy.min(rmsd_matrix[segment_id])
-            min_target_bin_id = numpy.argmin(rmsd_matrix[segment_id])
-            first_coordinate_below_threshold = COORDINATE_THRESHOLD + 1.0
-            first_target_bin_id = -1
-            # find first bin below threshold:
-            for target_bin_id, coordinate in enumerate(rmsd_matrix[segment_id]):
-                if coordinate <= COORDINATE_THRESHOLD:
-                    first_coordinate_below_threshold = coordinate
-                    first_target_bin_id = target_bin_id
-                    break
-            min_coordinate = first_coordinate_below_threshold
-            min_target_bin_id = first_target_bin_id
-            # Sort Segment into appropriate bin
-            if (min_coordinate <= COORDINATE_THRESHOLD or 
-               segment.getProbability() < MINIMAL_PROBABILITY*max_bin_probability or 
-               iteration.getNumberOfBins() >= MAX_BINS):
-                bin_id = min_target_bin_id
-                iteration.bins[bin_id].generateSegment(probability=segment.getProbability(),
-                                                  parent_bin_id=segment.getBinId(),
-                                                  parent_segment_id=segment.getId())
-                is_segment_handled = True
-            # If necessary create new bin
-            # Check if this segment fits into one of the new bins first
-            if not is_segment_handled and len(new_bins) > 0:
-                new_rmsds = md_module.calcRmsdToBins(segment, new_bins)
-                min_coordinate = numpy.min(new_rmsds)
-                first_coordinate_below_threshold = COORDINATE_THRESHOLD + 1.0
-                first_target_bin_id = -1
-                # find first bin below threshold:
-                for target_bin_id, coordinate in enumerate(new_rmsds):
-                    if coordinate <= COORDINATE_THRESHOLD:
-                        first_coordinate_below_threshold = coordinate
-                        first_target_bin_id = target_bin_id
-                        break
-                min_coordinate = first_coordinate_below_threshold
-                min_target_bin_id = first_target_bin_id
-                if min_coordinate <= COORDINATE_THRESHOLD:
-                    bin_id = min_target_bin_id
-                    iteration.bins[bin_id].generateSegment(probability=segment.getProbability(),
-                                                parent_bin_id=segment.getBinId(),
-                                                parent_segment_id=segment.getId())
-                    is_segment_handled = True
-                    if DEBUG:
-                        print("Segment {0} fits in new bin {1}".format(
-                                    segment.getNameString(), 
-                                    new_bins[min_target_bin_id]))
-            if not is_segment_handled:
-                # Ok seems that we need a new bin
-                bin_id = iteration.generateBin(reference_iteration_id=segment.getIterationId(),
-                                    reference_bin_id=segment.getBinId(),
-                                    reference_segment_id=segment.getId(),
-                                    target_number_of_segments=SEGMENTS_PER_BIN)
-                iteration.bins[bin_id].generateSegment(probability=segment.getProbability(),
-                                                parent_bin_id=segment.getBinId(),
-                                                parent_segment_id=segment.getId())
-                new_bins.append(iteration.bins[bin_id])
-                is_segment_handled = True
-                if DEBUG:
-                    print("created new bin {0} from segment ({1})".format(
-                                    new_bins[-1].getId(), 
-                                    segment.getNameString()))
-            segment_id += 1
+    #    - Generate new bins if required
+    sys.stdout.write(' - Setting up new Iteration and sorting Segments into Bins\n')
+    sys.stdout.flush()  
     
-    # 3. Backup the segments lists of all bins
+    iterations.append(Iteration(iteration_counter)) 
+    resorting.copyBinStructureToLastIteration(iterations, SEGMENTS_PER_BIN)
+    resorting.resort(iterations, 
+                     md_module, 
+                     COORDINATE_THRESHOLD, 
+                     SEGMENTS_PER_BIN)
+    
+    # 2. Backup the segments lists of all bins
     #    Saving the segment assignments for correct
     #    rate matrix calculation in the original_segments
     #    list of bins. This list should be immutable 
-    for _bin in iteration:
-        _bin.backupInitialSegments()
-    
-    #Append iteration that has now all bins here!        
-    iterations.append(iteration)            
+    for this_bin in iterations[-1]:
+        this_bin.backupInitialSegments()
+           
             
-    # 4. Reweighting of bin probabilities
+    # 3. Reweighting of bin probabilities
     #    The order of the following steps should no longer matter.  
-    if iteration.getNumberOfBins() > 1 and REWEIGHTING_RANGE > 0.0:
+    if iterations[-1].getNumberOfBins() > 1 and REWEIGHTING_RANGE > 0.0:
         sys.stdout.write(' Reweighting Bin Probabilities\n')
         sys.stdout.flush()
         #TODO: why does reweighting need the workdir and jobname? fix it! 
@@ -230,7 +153,7 @@ for iteration_counter in range(len(iterations), MAX_ITERATIONS + 1):
                                              REWEIGHTING_RANGE,
                                              WORKDIR,
                                              JOBNAME)
-    # 5. Check convergence of the bins
+    # 4. Check convergence of the bins
     if iteration_counter > CONVERGENCE_RANGE:    
         sys.stdout.write(' Check Bin Convergence\n')
         sys.stdout.flush() 

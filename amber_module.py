@@ -238,6 +238,7 @@ class MD_module():
         Calculates the coordinate values of a segment with respect to all
         existing bin reference coordinates and returns them in a numpy array.
         The array entries are in the same order as the bins.
+        @return list of coordinates of segment to bins
         """
 
         #Write the cpptraj infile

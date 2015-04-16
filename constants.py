@@ -9,11 +9,11 @@ def getLogDirPath(WORKDIR, JOBNAME):
     """
     Global definition of the logdir name
     """
-    return "{wd}/{jn}-log".format(wd=WORKDIR, jn=JOBNAME)
+    return "{wd}/{jn}-log/".format(wd=WORKDIR, jn=JOBNAME)
 
 def getRunDirPath(WORKDIR, JOBNAME):
     """
     Global definition of the logdir name
     """
-    return "{wd}/{jn}-run".format(wd=WORKDIR, jn=JOBNAME)
+    return "{wd}/{jn}-run/".format(wd=WORKDIR, jn=JOBNAME)
 

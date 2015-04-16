@@ -55,7 +55,7 @@ class Bin(object):
         self.setConverged(False)
         return __segment
         
-    def resampleSegments(self, merge_mode):
+    def resampleSegments(self, merge_mode=0):
         """
         Split or Merge segments to generate the target number of segments
         """
