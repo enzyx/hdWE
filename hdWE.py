@@ -61,6 +61,7 @@ REWEIGHTING_RANGE     = float(config.get('hdWE','reweighting-range'))
 CONVERGENCE_RANGE     = float(config.get('hdWE','convergence-range'))
 CONVERGENCE_THRESHOLD = float(config.get('hdWE','convergence-threshold'))
 NUMBER_OF_THREADS     = int(config.get('hdWE','number-of-threads'))
+MERGE_MODE            = int(config.get('hdWE','merge-mode'))
 
 if "amber" in config.sections():
     MD_PACKAGE = "amber"
@@ -245,7 +246,7 @@ for iteration_counter in range(len(iterations), MAX_ITERATIONS + 1):
     if NUMBER_OF_THREADS > 1:
         thread_container = ThreadContainer()
         for this_bin in iterations[-1]:
-            thread_container.appendJob(threading.Thread(target=this_bin.resampleSegments))
+            thread_container.appendJob(threading.Thread(target=this_bin.resampleSegments(MERGE_MODE) ))
             if thread_container.getNumberOfJobs() >= NUMBER_OF_THREADS:
                 thread_container.runJobs()
         # Run remaining jobs
@@ -253,7 +254,7 @@ for iteration_counter in range(len(iterations), MAX_ITERATIONS + 1):
     # Serial
     else:
         for this_bin in iterations[-1]:
-            this_bin.resampleSegments()
+            this_bin.resampleSegments(MERGE_MODE)
 
     # 6. Run MDs
     sys.stdout.write(' Run MDs\n')
