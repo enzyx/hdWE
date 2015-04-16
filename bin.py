@@ -55,7 +55,7 @@ class Bin(object):
         self.setConverged(False)
         return __segment
         
-    def resampleSegments(self):
+    def resampleSegments(self, merge_mode):
         """
         Split or Merge segments to generate the target number of segments
         """
@@ -64,53 +64,80 @@ class Bin(object):
         # Too many bins -> merge
         prob_tot = self.getProbability()
         if len(self.segments) > self.target_number_of_segments:
-            for c in range(len(self.segments) - self.target_number_of_segments):
-                # Get the extinction index
-                ext_index = 0
-                merge_index = 0
-                inv_weights = []
-                inv_weights_tot = 0.0
-                for segment in self.segments:
-                    inv_weights_tot += prob_tot/segment.getProbability()
-                    inv_weights.append(prob_tot/segment.getProbability())
-                extinction_probabilities = []
-                for inv_weight in inv_weights:
-                    extinction_probabilities.append(inv_weight/inv_weights_tot)
-                rand = rnd.random()
-                cumulated_probability = 0.0
-                for index in range(len(extinction_probabilities)):
-                    cumulated_probability += extinction_probabilities[index]
-                    if cumulated_probability >= rand:
-                        ext_index = index
-                        break
-                # Get now the merge index 
-                inv_weights = []
-                inv_weights_tot = 0.0
-                for index in range(len(self.segments)):
-                    if index == ext_index:
-                        inv_weights.append(0.0)
-                        continue
-                    inv_weights_tot += prob_tot/self.segments[index].getProbability()
-                    inv_weights.append(prob_tot/self.segments[index].getProbability())
-                extinction_probabilities = []
-                for inv_weight in inv_weights:
-                    extinction_probabilities.append(inv_weight/inv_weights_tot)
-                rand = rnd.random()
-                cumulated_probability = 0.0
-                for index in range(len(extinction_probabilities)):
-                    cumulated_probability += extinction_probabilities[index]
-                    if cumulated_probability >= rand:
-                        merge_index = index
-                        break
-                # Pew, now we have to indices, a merge and a extinction index
-                # Do the merging stuff now.
-                shift_prob = self.segments[ext_index].getProbability()
-                self.segments[merge_index].addProbability(shift_prob)
-                del self.segments[ext_index]
-                # Reorder segment ids after deletion 
-                self.__fixSegmentIds()
-                #TODO reset the indices 
-            return
+            #Merge according to segment probabilities            
+            if merge_mode == 0:
+                for c in range(len(self.segments) - self.target_number_of_segments):
+                    # Get the extinction index
+                    ext_index = 0
+                    merge_index = 0
+                    inv_weights = []
+                    inv_weights_tot = 0.0
+                    for segment in self.segments:
+                        inv_weights_tot += prob_tot/segment.getProbability()
+                        inv_weights.append(prob_tot/segment.getProbability())
+                    extinction_probabilities = []
+                    for inv_weight in inv_weights:
+                        extinction_probabilities.append(inv_weight/inv_weights_tot)
+                    rand = rnd.random()
+                    cumulated_probability = 0.0
+                    for index in range(len(extinction_probabilities)):
+                        cumulated_probability += extinction_probabilities[index]
+                        if cumulated_probability >= rand:
+                            ext_index = index
+                            break
+                    # Get now the merge index 
+                    inv_weights = []
+                    inv_weights_tot = 0.0
+                    for index in range(len(self.segments)):
+                        if index == ext_index:
+                            inv_weights.append(0.0)
+                            continue
+                        inv_weights_tot += prob_tot/self.segments[index].getProbability()
+                        inv_weights.append(prob_tot/self.segments[index].getProbability())
+                    extinction_probabilities = []
+                    for inv_weight in inv_weights:
+                        extinction_probabilities.append(inv_weight/inv_weights_tot)
+                    rand = rnd.random()
+                    cumulated_probability = 0.0
+                    for index in range(len(extinction_probabilities)):
+                        cumulated_probability += extinction_probabilities[index]
+                        if cumulated_probability >= rand:
+                            merge_index = index
+                            break
+                    # Pew, now we have to indices, a merge and a extinction index
+                    # Do the merging stuff now.
+                    shift_prob = self.segments[ext_index].getProbability()
+                    self.segments[merge_index].addProbability(shift_prob)
+                    del self.segments[ext_index]
+                    # Reorder segment ids after deletion 
+                    self.__fixSegmentIds()
+                    #TODO reset the indices 
+                return
+            #Random Merge ignoring segment probabilities
+            elif merge_mode == 1:
+                init_num_segments = len(self.segments)
+                del_prob = 0.0
+                for i in range(init_num_segments,self.target_number_of_segments, -1):
+                    #print(str(i))
+                    ext_index = rnd.randint(0, i - 1 )
+                    #print(str(ext_index))
+                    del_prob += self.segments[ext_index].getProbability()
+                    del self.segments[ext_index]
+                    self.__fixSegmentIds()
+
+                del_prob = 1.0 * del_prob / self.getNumberOfSegments()                
+                for i in range(0,self.getNumberOfSegments()):
+                    self.segments[i].addProbability(1.0 * del_prob )
+
+                #tot_prob = 0.0                
+                #for i in range(self.getNumberOfSegments()):
+                #    tot_prob += self.segments[i].getProbability()
+                #print(str(tot_prob))                   
+                   
+                return
+                
+            else:
+                print('Error: Invalid merge mode')
 
         # Not enough bins -> split
         if len(self.segments) < self.target_number_of_segments:
@@ -138,6 +165,7 @@ class Bin(object):
                                     segment_id=len(self.segments))
                 self.__addSegment(__segment)
             return
+
 
 
 

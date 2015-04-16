@@ -46,7 +46,7 @@ class MD_module():
         self.ITERATION_DUMP_FNAME  = '{jn}-run/iteration.dump'.format(jn=self.jobname)
         self.RMSD_MATRIX_DUMP_FNAME= '{jn}-run/rmsd_matrix.dump'.format(jn=self.jobname)
         
-        self.keep_trajectory_files = bool(config.get('hdWE', 'keep_trajectory_files').lower() == "true")
+        self.keep_trajectory_files = bool(config.get('hdWE', 'keep-trajectory-files').lower() == "true")
                        
         # check topology and infile:
         if not os.path.isfile(self.amber_topology_file):
