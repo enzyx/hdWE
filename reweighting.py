@@ -14,7 +14,8 @@ def reweightBinProbabilities(iterations, reweighting_range, WORKDIR, JOBNAME):
     
     iteration_range = int(len(iterations) * reweighting_range)
     iteration_counter = len(iterations) - 1
-    logfile=open(WORKDIR+JOBNAME+'-log/reweighting'+str(iteration_counter).zfill(5),'w+')
+    #FIXME: This should all be moved to the logger somehow
+    logfile = open(WORKDIR + JOBNAME + '-log/reweighting'+str(iteration_counter).zfill(5),'w+')
     #check for empty bins    
     #for bin_loop in iterations[-1].bins:
     #    if bin_loop.getNumberOfSegments() < 1:
