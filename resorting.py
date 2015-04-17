@@ -22,13 +22,14 @@ def resort(iterations, md_module, COORDINATE_THRESHOLD, SEGMENTS_PER_BIN):
     rmsd_matrix         = md_module.calcRmsdSegmentsToBinsMatrix(parent_iteration)
 
     new_bins   = []
+    segment_id = -1
     for parent_bin in parent_iteration:
         for parent_segment in parent_bin:
             is_segment_handled = False
-     
+            segment_id += 1
             # 1. Check if parent_segment fits into a bin of
             #    the previous iteration
-            for bin_id, coordinate in enumerate(rmsd_matrix[parent_segment.getId(),:]):
+            for bin_id, coordinate in enumerate(rmsd_matrix[segment_id,:]):
                 if coordinate <= COORDINATE_THRESHOLD and not is_segment_handled:
                     current_iteration.bins[bin_id].generateSegment(probability       = parent_segment.getProbability(),
                                                                    parent_bin_id     = parent_segment.getBinId(),
@@ -49,7 +50,7 @@ def resort(iterations, md_module, COORDINATE_THRESHOLD, SEGMENTS_PER_BIN):
                         is_segment_handled = True                        
                         break
                                    
-            # 3. If it fits nowhere create new bin            
+            # 3. If it fits nowhere create new bin
             if not is_segment_handled:
                 bin_id = current_iteration.generateBin(reference_iteration_id    = parent_segment.getIterationId(),
                                                        reference_bin_id          = parent_segment.getBinId(),

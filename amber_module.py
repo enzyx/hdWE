@@ -497,8 +497,8 @@ def doMPICalcRmsdMatrix(CONFIGFILE, debug):
     rmsd_matrix = numpy.zeros((iteration.getNumberOfSegments(), iteration.getNumberOfBins()))
     # calculate entries
     i = 0
-    for bin_loop in iteration:
-        for segment in bin_loop:
+    for this_bin in iteration:
+        for segment in this_bin:
             if i % size == rank:
                 coordinates = md_module.calcRmsdToBins(segment, iteration.bins)
                 # fill matrix
