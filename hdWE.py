@@ -6,7 +6,6 @@ from __future__ import print_function
 import sys
 import ConfigParser
 import argparse
-import numpy
 import initiate
 from iteration import Iteration
 from logger import Logger
@@ -146,7 +145,7 @@ for iteration_counter in range(len(iterations), MAX_ITERATIONS + 1):
     # 3. Reweighting of bin probabilities
     #    The order of the following steps should no longer matter.  
     if iterations[-1].getNumberOfBins() > 1 and REWEIGHTING_RANGE > 0.0:
-        sys.stdout.write(' Reweighting Bin Probabilities\n')
+        sys.stdout.write(' - Reweighting Bin Probabilities\n')
         sys.stdout.flush()
         #TODO: why does reweighting need the workdir and jobname? fix it! 
         reweighting.reweightBinProbabilities(iterations,
@@ -155,7 +154,7 @@ for iteration_counter in range(len(iterations), MAX_ITERATIONS + 1):
                                              JOBNAME)
     # 4. Check convergence of the bins
     if iteration_counter > CONVERGENCE_RANGE:    
-        sys.stdout.write(' Check Bin Convergence\n')
+        sys.stdout.write(' - Checking Bin Convergence\n')
         sys.stdout.flush() 
         convergenceCheck.checkOutratesForConvergence(iterations, 
                                                      CONVERGENCE_RANGE,
@@ -163,7 +162,7 @@ for iteration_counter in range(len(iterations), MAX_ITERATIONS + 1):
                                                      DEBUG)
 
     # 5. Resampling
-    sys.stdout.write(' Resampling\n')
+    sys.stdout.write(' - Resampling\n')
     sys.stdout.flush() 
     # Parallel
     if NUMBER_OF_THREADS > 1:
@@ -180,7 +179,7 @@ for iteration_counter in range(len(iterations), MAX_ITERATIONS + 1):
             this_bin.resampleSegments(MERGE_MODE)
 
     # 6. Run MDs
-    sys.stdout.write(' Run MDs\n')
+    sys.stdout.write(' - Run MDs\n')
     sys.stdout.flush() 
     md_module.RunMDs(iterations[-1])
     
@@ -189,13 +188,13 @@ for iteration_counter in range(len(iterations), MAX_ITERATIONS + 1):
     logger.log(iterations[-1], CONFIGFILE)
 
     #if DEBUG: 
-    print(" The overall probabiliy is {0:05f}".format(iterations[-1].getProbability()))
+    print(" - The overall probabiliy is {0:05f}".format(iterations[-1].getProbability()))
 
     #count total n of segments during iterations
     n_segments = 0
     for iteration_loop in iterations:
         n_segments += iteration_loop.getNumberOfPropagatedSegments()
-    sys.stdout.write(' (Total number of propagated segments: ' + str(n_segments-1)+ ')\n')
+    sys.stdout.write(' - (Total number of propagated segments: ' + str(n_segments-1)+ ')\n')
     sys.stdout.flush()
 
     all_converged = True
