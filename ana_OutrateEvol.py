@@ -8,8 +8,8 @@ import math
 import matplotlib.pyplot as plt
 
 parser =argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-parser.add_argument('-l', '--log', type=str, dest="logfile", 
-                    default="logfile.log", metavar="FILE",
+parser.add_argument('-l', '--log', type=str, dest="logdir", 
+                    default="AD-log", metavar="DIR",
                     help="The logfile for reading and writing")
 parser.add_argument('-i', '--bin_index', dest="bin_index",
                     type=int, default=0,
@@ -29,9 +29,8 @@ args = parser.parse_args()
 
 
 #get the actual Iteration from logger module
-logger = Logger(args.logfile, APPEND = True)
-iterations = logger.loadIterations(bCheckFiles=False)
-logger.close()
+logger = Logger(args.logdir)
+iterations = logger.loadIterations()
 
 #functions:
 outrates = numpy.zeros([len(iterations), iterations[-1].getNumberOfBins()], float)

@@ -7,8 +7,8 @@ import numpy
 import matplotlib.pyplot as plt
 
 parser =argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-parser.add_argument('-l', '--log', type=str, dest="logfile", 
-                    default="logfile.log", metavar="FILE",
+parser.add_argument('-l', '--log', type=str, dest="logdir", 
+                    default="hdWE-log", metavar="DIR",
                     help="The logfile for reading and writing")
 parser.add_argument('-b', '--first_it', dest="first_iteration",
                     type=int, default=0,
@@ -26,9 +26,8 @@ args = parser.parse_args()
 
 
 #get the actual Iteration from logger module
-logger = Logger(args.logfile, APPEND = True)
+logger = Logger(args.logdir)
 iterations = logger.loadIterations(args.first_iteration, args.last_iteration)
-logger.close()
 n_iterations = args.last_iteration - args.first_iteration + 1 
 
 n_bins = iterations[-1].getNumberOfBins()

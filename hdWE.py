@@ -17,24 +17,24 @@ from thread_container import ThreadContainer
 import os
 import constants
 
-###### Parse command line ###### 
+#### Parse command line #### 
 
 parser =argparse.ArgumentParser(description=__doc__,
                             formatter_class=argparse.RawDescriptionHelpFormatter)
 
 parser.add_argument('-c', '--conf', type=str, dest="configfile", 
                     metavar="FILE", required=False, default='hdWE.conf',
-                    help="The hdWE configuration file")      
-prev_data = parser.add_mutually_exclusive_group()
-prev_data.add_argument("--append", dest="append", action='store_true', 
-                    default=False,
-                    help="continue previous iterations with parameters from conf file.")  
-prev_data.add_argument("--overwrite", dest="overwrite", action='store_true', 
-                    default=False,
-                    help="overwrite previous simulation data.")  
-parser.add_argument('--debug', dest="debug", action="store_true",
+                    help="The hdWE configuration file")
+parser.add_argument('-d', '--debug', dest="debug", action="store_true",
                     default=False, help="Turn debugging on")
-
+prev_data = parser.add_mutually_exclusive_group()
+prev_data.add_argument('-a', '--append', dest="append", action='store_true', 
+                       default=False,
+                       help='continue previous iterations with parameters from conf file')  
+prev_data.add_argument('-o', '--overwrite', dest="overwrite", action='store_true', 
+                       default=False,
+                       help='overwrite previous simulation data')
+                    
 args = parser.parse_args()                
 
 #############################
@@ -55,8 +55,6 @@ MAX_ITERATIONS        = int(config.get('hdWE','max-iterations'))
 SEGMENTS_PER_BIN      = int(config.get('hdWE','segments-per-bin'))
 STARTING_STRUCTURE    = config.get('hdWE','starting-structure')
 COORDINATE_THRESHOLD  = float(config.get('hdWE','threshold'))
-MINIMAL_PROBABILITY   = float(config.get('hdWE','minimal-probability'))
-MAX_BINS              = int(config.get('hdWE','max-bins'))
 REWEIGHTING_RANGE     = float(config.get('hdWE','reweighting-range'))
 CONVERGENCE_RANGE     = float(config.get('hdWE','convergence-range'))
 CONVERGENCE_THRESHOLD = float(config.get('hdWE','convergence-threshold'))
@@ -70,7 +68,7 @@ elif "gromacs" in config.sections():
 else:
     raise Exception("No MD package (amber/gromacs) section in configuration file")
 
-# The global list of arrays
+# The global list of iterations
 iterations = [] 
 
 #############################
@@ -115,7 +113,8 @@ if(MD_PACKAGE == "gromacs"):
 #         Main Loop         #
 #############################
 for iteration_counter in range(len(iterations), MAX_ITERATIONS + 1):
-    sys.stdout.write('\033[1m\nhdWE Status:\033[0m ' + 'Iteration ' + str(iteration_counter).zfill(5) + '\n')    
+    sys.stdout.write('\033[1m\nhdWE Status:\033[0m ' + 'Iteration '
+    + str(iteration_counter).zfill(5) + '\n')    
     sys.stdout.flush()
 
 
@@ -135,9 +134,10 @@ for iteration_counter in range(len(iterations), MAX_ITERATIONS + 1):
                      SEGMENTS_PER_BIN)
     
     # 2. Backup the segments lists of all bins
-    #    Saving the segment assignments for correct
-    #    rate matrix calculation in the original_segments
-    #    list of bins. This list should be immutable 
+    #    - Saving the segment assignments for correct
+    #      rate matrix calculation in the original_segments
+    #      list of bins. 
+    #    - This list should be immutable 
     for this_bin in iterations[-1]:
         this_bin.backupInitialSegments()
            
@@ -204,7 +204,7 @@ for iteration_counter in range(len(iterations), MAX_ITERATIONS + 1):
     if all_converged == True:
         print('\nExploring Mode: All bins are converged                                         ')
         break        
-    #check for empty bins
+    #check for empty bins #TODO: make this a function of iterations
     empty_bins = 0
     for bin_loop in iterations[-1]:
         if bin_loop.getNumberOfSegments() == 0:
@@ -219,7 +219,7 @@ for iteration_counter in range(len(iterations), MAX_ITERATIONS + 1):
 n_segments = 0
 for iteration_loop in iterations:
     n_segments += iteration_loop.getNumberOfPropagatedSegments()
-print('\nhdWE completed. Total number of propagated segments: ' + str(n_segments-1) + '            ')
+print('\nhdWE completed. Total number of propagated segments: ' + str(n_segments-1) + '         ')
 
 
 

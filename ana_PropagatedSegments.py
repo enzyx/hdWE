@@ -4,8 +4,8 @@ from logger import Logger
 import argparse 
 
 parser =argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-parser.add_argument('-l', '--log', type=str, dest="logfile", 
-                    default="logfile.log", metavar="FILE",
+parser.add_argument('-l', '--log', type=str, dest="logdir", 
+                    default="dhWE-log", metavar="DIR",
                     help="The logfile for reading and writing")
 parser.add_argument('-e', '--last_it', dest="last_iteration",
                     type=int, default=-1,
@@ -17,9 +17,8 @@ args = parser.parse_args()
 
 
 #get the actual Iteration from logger module
-logger = Logger(args.logfile, APPEND = True)
+logger = Logger(args.logdir)
 iterations = logger.loadIterations(0, args.last_iteration)
-logger.close()
 
 n_segments = 0
 for iteration_loop in iterations:
