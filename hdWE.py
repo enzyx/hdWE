@@ -140,7 +140,6 @@ for iteration_counter in range(len(iterations), MAX_ITERATIONS + 1):
     #    - This list should be immutable 
     for this_bin in iterations[-1]:
         this_bin.backupInitialSegments()
-           
             
     # 3. Reweighting of bin probabilities
     #    The order of the following steps should no longer matter.  
