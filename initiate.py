@@ -1,4 +1,4 @@
-import os, sys
+import os
 import shutil
 import glob
 from iteration import Iteration
@@ -10,7 +10,6 @@ def prepare(WORKDIR, JOBNAME, starting_structure, OVERWRITE, APPEND, debug):
     into the bin_refcoords folder as the first bin.
     """
     sub_dirs = ['{}-run'.format(JOBNAME), '{}-log'.format(JOBNAME), '{}-debug'.format(JOBNAME)]
-    logfile = "{jn}.log".format(jn=JOBNAME)
     # Go to Workdir
     try:
         os.chdir(WORKDIR)
@@ -36,10 +35,6 @@ def prepare(WORKDIR, JOBNAME, starting_structure, OVERWRITE, APPEND, debug):
                     except IndexError:
                         continue
             
-            # backup log file
-            if os.path.isfile(logfile):
-                os.rename(logfile, logfile+".bak." + str(backup_index))
-                
             # Now move old data to backup
             for sub_dir in sub_dirs:               
                 dir_tmp = WORKDIR + sub_dir
@@ -55,7 +50,6 @@ def prepare(WORKDIR, JOBNAME, starting_structure, OVERWRITE, APPEND, debug):
                 dir_tmp = WORKDIR + sub_dir
                 if os.path.exists(dir_tmp):
                     shutil.rmtree(dir_tmp, ignore_errors=True)
-            if os.path.exists(logfile): os.remove(logfile)
                 
         # setup new folders and startfile
         for sub_dir in sub_dirs:

@@ -20,9 +20,7 @@ def resort(iterations, md_module, COORDINATE_THRESHOLD, SEGMENTS_PER_BIN):
     """
     parent_iteration    = iterations[-2]
     current_iteration   = iterations[-1]
-    #TODO: check rmsd_matrix calculation (i<->j?)
     rmsd_matrix         = md_module.calcRmsdSegmentsToBinsMatrix(parent_iteration)
-    numpy.savetxt("{0:05d}.rmsd".format(parent_iteration.getId()), rmsd_matrix, "% 3.5f")
     
     new_bins   = []
     segment_id = -1
@@ -40,27 +38,20 @@ def resort(iterations, md_module, COORDINATE_THRESHOLD, SEGMENTS_PER_BIN):
                                                                   parent_bin_id     = parent_segment.getBinId(),
                                                                   parent_segment_id = parent_segment.getId())
                 is_segment_handled = True
-                transition = (current_iteration.bins[min_index].segments[-1].getParentBinId() != 
-                              current_iteration.bins[min_index].segments[-1].getBinId())
-                # DEBUG:
-                print("segment {0} into {1} (parent {2}): {3}".format(parent_segment.getNameString(), 
-                      current_iteration.bins[min_index].segments[-1].getNameString(), 
-                      current_iteration.bins[min_index].segments[-1].getParentNameString(),
-                      transition))
 
 ## This code sorts segments into the first bin below threshold
 ## The drawback is, that segments are bias towards the first bins
-#
-#             for bin_id, coordinate in enumerate(rmsd_matrix[segment_id,:]):
-#                 if coordinate <= COORDINATE_THRESHOLD and not is_segment_handled:
-#                     current_iteration.bins[bin_id].generateSegment(probability       = parent_segment.getProbability(),
-#                                                                    parent_bin_id     = parent_segment.getBinId(),
-#                                                                    parent_segment_id = parent_segment.getId())
-#                     is_segment_handled = True
-#                     print("segment {0} into {1} (parent {2})".format(parent_segment.getNameString(), 
-#                           current_iteration.bins[bin_id].segments[-1].getNameString(), 
-#                           current_iteration.bins[bin_id].segments[-1].getParentNameString()))
-#                     break
+##
+##             for bin_id, coordinate in enumerate(rmsd_matrix[segment_id,:]):
+##                 if coordinate <= COORDINATE_THRESHOLD and not is_segment_handled:
+##                     current_iteration.bins[bin_id].generateSegment(probability       = parent_segment.getProbability(),
+##                                                                    parent_bin_id     = parent_segment.getBinId(),
+##                                                                    parent_segment_id = parent_segment.getId())
+##                     is_segment_handled = True
+##                     print("segment {0} into {1} (parent {2})".format(parent_segment.getNameString(), 
+##                           current_iteration.bins[bin_id].segments[-1].getNameString(), 
+##                           current_iteration.bins[bin_id].segments[-1].getParentNameString()))
+##                     break
 
             # 2. Check if parent_segment fits into one of the
             #    bins newly created for this iteration
@@ -73,11 +64,6 @@ def resort(iterations, md_module, COORDINATE_THRESHOLD, SEGMENTS_PER_BIN):
                                             parent_bin_id     = parent_segment.getBinId(),
                                             parent_segment_id = parent_segment.getId())
                         is_segment_handled = True
-                        # DEBUG:
-                        print("segment {0} into {1} (parent {2}): SORTED INTO NEW BIN".format(parent_segment.getNameString(), 
-                          current_iteration.bins[new_bins[newbin_id].getId()].segments[-1].getNameString(), 
-                          current_iteration.bins[new_bins[newbin_id].getId()].segments[-1].getParentNameString()))
-
                         break
                                    
             # 3. If it fits nowhere create new bin
@@ -91,10 +77,6 @@ def resort(iterations, md_module, COORDINATE_THRESHOLD, SEGMENTS_PER_BIN):
                                                                parent_segment_id = parent_segment.getId())
                 new_bins.append(current_iteration.bins[bin_id])
                 is_segment_handled = True
-                # DEBUG:
-                print("segment {0} into {1} (parent {2}): CREATED NEW BIN".format(parent_segment.getNameString(), 
-                          current_iteration.bins[bin_id].segments[-1].getNameString(), 
-                          current_iteration.bins[bin_id].segments[-1].getParentNameString()))
                 
             # 4. Sanity check
             if not is_segment_handled:
