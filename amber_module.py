@@ -384,8 +384,7 @@ class MD_module():
             rmsd_matrix = self.loadRmsdMatrixFromDumpFile()
             if not self.debug:
                 self.removeRmsdMatrixDumpFile()
-            print("   RMSD matrix shape: ", numpy.shape(rmsd_matrix))
-            
+           
             return rmsd_matrix
     
     def ana_calcCoordinateOfSegment(self, segment, cpptraj_lines, use_trajectory):
