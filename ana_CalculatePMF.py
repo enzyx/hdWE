@@ -1,3 +1,4 @@
+#!/usr/bin/env python2
 """
 Calculates the PMF along an arbitrary coordinate 
 from the data of a hdWE run.
