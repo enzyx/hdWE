@@ -22,6 +22,11 @@ def resort(iterations, md_module, COORDINATE_THRESHOLD, SEGMENTS_PER_BIN):
     current_iteration   = iterations[-1]
     rmsd_matrix         = md_module.calcRmsdSegmentsToBinsMatrix(parent_iteration)
     
+    # Sanity check for RMSD matrix
+    if rmsd_matrix.min() == 0.0:
+        print("Warning! SegmentsToBins RMSD Matrix has entries 0.00000!"\
+              " This is extremely unlikely!")
+    
     new_bins   = []
     segment_id = -1
     for parent_bin in parent_iteration:
