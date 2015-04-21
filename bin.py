@@ -111,7 +111,7 @@ class Bin(object):
                     del self.segments[ext_index]
                     # Reorder segment ids after deletion 
                     self.__fixSegmentIds()
-                    #TODO reset the indices 
+                    #TODO: reset the indices 
                 return
             #Random Merge ignoring segment probabilities
             elif merge_mode == 1:

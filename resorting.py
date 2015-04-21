@@ -30,17 +30,6 @@ def resort(iterations, md_module, COORDINATE_THRESHOLD, SEGMENTS_PER_BIN):
             segment_id += 1
             # 1. Check if parent_segment fits into a bin of
             #    the previous iteration
-#            min_index = rmsd_matrix[segment_id].argmin()
-#            min_coord = rmsd_matrix[segment_id, min_index]
-#            
-#            if not is_segment_handled and min_coord <= COORDINATE_THRESHOLD:
-#                current_iteration.bins[min_index].generateSegment(probability       = parent_segment.getProbability(),
-#                                                                  parent_bin_id     = parent_segment.getBinId(),
-#                                                                  parent_segment_id = parent_segment.getId())
-#                is_segment_handled = True
-
-            ## This code sorts segments into the first bin below threshold
-            ## The drawback is, that segments are bias towards the first bins
             for bin_id, coordinate in enumerate(rmsd_matrix[segment_id,:]):
                 if not is_segment_handled and coordinate <= COORDINATE_THRESHOLD:
                     current_iteration.bins[bin_id].generateSegment(probability       = parent_segment.getProbability(),
