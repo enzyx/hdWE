@@ -5,7 +5,6 @@ from the data of a hdWE run.
 """
 from __future__ import print_function
 import numpy
-import matplotlib.pyplot as plt  
 import constants
 import sys
 import segment
@@ -88,6 +87,8 @@ parser.add_argument('--bin-references', dest="plot_bin_references", action="stor
 # Initialize
 print('\033[1mCalculating PMF\033[0m (Free Energy is given in kcal/mol at 298K).')      
 args = parser.parse_args()
+if args.plot:
+    import matplotlib.pyplot as plt  
 
 # failproofing for segment plotting
 if args.first_iteration == args.last_iteration and \
@@ -117,9 +118,10 @@ cpptraj_lines_file.close()
 #Calculate the coordinate values and store them together with
 #the trajectory probability into coordinates 
 
-segment_datas = []
-references = []
-datapoints = []
+parent_segments = []   # a list of (bin, segment) tuples for parent segments
+segment_datas = []     # a list of Segment_Data structures, all segment data
+references = []        # a list of Segment_Data structures, reference segments of bins
+datapoints = []        # a list of Datapoint structures with coordinate and probability
 
 first_it_id = iterations[0].getId()
 last_it_id  = iterations[-1].getId()
@@ -127,11 +129,19 @@ data_per_segment = len(md_module.ana_calcCoordinateOfSegment(iterations[0].bins[
                                                              cpptraj_lines,
                                                              use_trajectory = args.use_trajectory))
 
+if args.plot_segments:
+    # find parent segments (to be saved during the coordinate calculation)
+    for bin_loop in iterations[-1]:
+        for segment_loop in bin_loop:
+            parent_segments.append( (segment_loop.getParentBinId(), segment_loop.getParentSegmentId()) )
+    parent_segments = set(parent_segments)       
+
 # read in coordinates and probability 
 for iteration_loop in iterations:
     for bin_loop in iteration_loop:
-        sys.stdout.write(' Processing iteration {it_id:05d}/{first_it:05d}-{last_it:05d}'\
-                         ', Bin {bin_id:05d}/{bin_total:05d}\r'.format(it_id     = iteration_loop.getId(),
+        sys.stdout.write(' Calculating coordinates for iteration '\
+                         '{it_id:05d}/{first_it:05d}-{last_it:05d}, '\
+                         'Bin {bin_id:05d}/{bin_total:05d}\r'.format(it_id     = iteration_loop.getId(),
                                                                first_it  = first_it_id,
                                                                last_it   = last_it_id,
                                                                bin_id    = bin_loop.getId()+1,
@@ -142,9 +152,14 @@ for iteration_loop in iterations:
             segment_probability = segment_loop.getProbability()
             for i,coord in enumerate(segment_coordinates):
                 datapoints.append(Datapoint(coord, segment_probability))
+                
+            # store parent segment data
+            if args.plot_segments and iteration_loop.getId() == last_it_id - 1:
+                segment_datas.append(SegmentData(segment_loop.getIterationId(), bin_loop.getId(), segment_coordinates))
 sys.stdout.write("\n")
 
 # Calculate the coordinate values of the bin reference structures
+sys.stdout.write(' Calculating coordinates of bin references\n')
 for bin_loop in iterations[-1]:
     #create temporary segment to pass to md_module, because the bin reference segment
     #is not necessarilly within the loaded range of iterations
@@ -155,18 +170,10 @@ for bin_loop in iterations[-1]:
     coordinate = md_module.ana_calcCoordinateOfSegment(segment_tmp, 
                                                        cpptraj_lines, 
                                                        use_trajectory=False)
-    references.append(SegmentData(iteration_loop.getId(), bin_loop.getId(), coordinate))
-
-# calculate coordinate of initial_segments that were sorted into the bins
-if args.plot_segments:
-    for bin_loop in iterations[-1]:
-        for segment_loop in bin_loop.initial_segments:
-            parent_segment = iterations[-2].bins[segment_loop.getParentBinId()].segments[segment_loop.getParentSegmentId()]
-            coordinates = md_module.ana_calcCoordinateOfSegment(parent_segment, cpptraj_lines, use_trajectory = args.use_trajectory)
-            segment_datas.append(SegmentData(segment_loop.getIterationId(), bin_loop.getId(), coordinates))
-       
+    references.append(SegmentData(iteration_loop.getId(), bin_loop.getId(), coordinate))       
             
-#Calculate the weighted histogram and PMF     
+#Calculate the weighted histogram and PMF 
+sys.stdout.write(' Creating weighted histogram and PMF\n')
 #Setup variables
 datapoints                  = sorted(datapoints, key=lambda datapoint: datapoint.coordinate)
 hist_min                    = datapoints[0].coordinate
@@ -220,6 +227,7 @@ print('\n PMF data written to: ' + args.output_path)
 
 # Plotting
 if args.plot:
+    sys.stdout.write(' Preparing plot\n')
     try:
         segment_colors = ["Blue", "Red", "Green", "Orange", "c", "m", "y"]
         seg_step = 0.3
@@ -266,7 +274,7 @@ if args.plot:
         ax.legend()
         
         plt.savefig(args.output_plot)
-        print('\n Plot written to to:  ' + args.output_plot)
+        print(' Plot written to to:  ' + args.output_plot)
         plt.show() 
     except:
         sys.stderr.write(" Plotting with mathplotlib failed.")
