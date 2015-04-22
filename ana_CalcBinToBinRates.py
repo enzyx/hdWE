@@ -34,9 +34,10 @@ iterations = logger.loadIterations(args.first_iteration, args.last_iteration)
 N = iterations[-1].getNumberOfBins()
 transition_matrix = numpy.zeros((N,N))
 
-for this_bin in iterations[-1]:
-    for segment in this_bin.initial_segments:
-        transition_matrix[segment.getParentBinId(), segment.getBinId()] += 1
+for iteration in iterations:
+    for this_bin in iteration:
+        for segment in this_bin.initial_segments:
+            transition_matrix[segment.getParentBinId(), segment.getBinId()] += 1
 
 print( transition_matrix )
 
