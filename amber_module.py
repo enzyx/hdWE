@@ -410,7 +410,7 @@ class MD_module():
         #Execute cpptraj
         cpptraj_execute_string =' -p ' + self.amber_topology_file + \
                                 ' -i ' + cpptraj_infile_path
-        cpptraj_execute_string = cpptraj_execute_string + ' >> {jn}-log/ana_calculatePMF_cpptraj.log'.format(jn=self.jobname,) 
+        cpptraj_execute_string = cpptraj_execute_string + ' >> {jn}-log/ana_calculatePMF_cpptraj.log'.format(jn=self.jobname)
         os.system('cpptraj ' + cpptraj_execute_string )        
         
         #Load cpptraj output as numpy array
