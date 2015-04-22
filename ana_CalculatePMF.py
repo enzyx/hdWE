@@ -132,10 +132,13 @@ bin_coordinates_tmp = numpy.zeros([1,1])
 for bin_loop in iterations[-1]:
     #create temporary segment to pass to md_module, because the bin reference segment
     #is not necessarilly within the loaded range of iterations
-    segment_tmp = segment.Segment(probability = 0, parent_bin_id = 0, parent_segment_id = 0,
-                  iteration_id = bin_loop.getReferenceIterationId(),
-                  bin_id       = bin_loop.getReferenceBinId(),
-                  segment_id   = bin_loop.getReferenceSegmentId() )
+    segment_tmp = segment.Segment(probability         = 0,
+                                  parent_iteration_id = 0, 
+                                  parent_bin_id       = 0, 
+                                  parent_segment_id   = 0,
+                                  iteration_id        = bin_loop.getReferenceIterationId(),
+                                  bin_id              = bin_loop.getReferenceBinId(),
+                                  segment_id          = bin_loop.getReferenceSegmentId() )
     coordinate = md_module.ana_calcCoordinateOfSegment(segment_tmp, cpptraj_lines, False)
     references.append(SegmentData(iteration_loop.getId(), bin_loop.getId(), coordinate))
     bin_coordinates_tmp[0] = md_module.ana_calcCoordinateOfSegment(segment_tmp, cpptraj_lines, False)

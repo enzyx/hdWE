@@ -28,30 +28,32 @@ class Bin(object):
         # are the outrates converged
         self.b_outrates_converged      = outrates_converged
         # The array of segments
-        self.segments = []
+        self.segments                  = []
         # In this array the segments are copied before resampling happens.
         # We need to store the old segments information
         # to be able to correctly recalculate the bin to bin rates 
         # after resampling.
-        self.initial_segments = []
+        self.initial_segments          = []
 
-    def generateSegment(self, probability, parent_bin_id, parent_segment_id):
+    def generateSegment(self, probability, parent_iteration_id, parent_bin_id, parent_segment_id):
         """
         @return segment_id of the created segment
         """
-        __segment = Segment(probability=probability,
-                            parent_bin_id=parent_bin_id,
-                            parent_segment_id=parent_segment_id,
-                            iteration_id=self.getIterationId(),
-                            bin_id=self.getId(),
-                            segment_id=len(self.segments))
+        __segment = Segment(probability         = probability,
+                            parent_iteration_id = parent_iteration_id,
+                            parent_bin_id       = parent_bin_id,
+                            parent_segment_id   = parent_segment_id,
+                            iteration_id        = self.getIterationId(),
+                            bin_id              = self.getId(),
+                            segment_id          = len(self.segments))
         return self.__addSegment(__segment)
 
     def respawnSegmentFromReference(self, probability):
-        __segment = self.generateSegment(probability = probability,
-                             parent_bin_id = self.getReferenceBinId(),
-                             parent_segment_id = self.getReferenceSegmentId())                    
-        self.segments[__segment].setParentIterationId(self.getReferenceIterationId())
+        __segment = self.generateSegment(
+                             probability          = probability,
+                             parent_iteration_id  = self.getReferenceIterationId(),
+                             parent_bin_id        = self.getReferenceBinId(),
+                             parent_segment_id    = self.getReferenceSegmentId())
         self.setConverged(False)
         return __segment
         
@@ -157,12 +159,13 @@ class Bin(object):
                 split_segment = self.segments[split_index]
                 split_prob = split_segment.getProbability()/2.0
                 self.segments[split_index].subProbability(split_prob)
-                __segment = Segment(probability=split_prob,
-                                    parent_bin_id=split_segment.getParentBinId(),
-                                    parent_segment_id=split_segment.getParentSegmentId(),
-                                    iteration_id=split_segment.getIterationId(),
-                                    bin_id=split_segment.getBinId(),
-                                    segment_id=len(self.segments))
+                __segment = Segment(probability         = split_prob,
+                                    parent_iteration_id = split_segment.getParentIterationId(),
+                                    parent_bin_id       = split_segment.getParentBinId(),
+                                    parent_segment_id   = split_segment.getParentSegmentId(),
+                                    iteration_id        = split_segment.getIterationId(),
+                                    bin_id              = split_segment.getBinId(),
+                                    segment_id          = len(self.segments))
                 self.__addSegment(__segment)
             return
 
@@ -188,7 +191,7 @@ class Bin(object):
         @return the segment id of the added segment
         """
         self.segments.append(segment)
-        return len(self.segments)-1
+        return segment.getId()
 
     def __fixSegmentIds(self):
         """
@@ -204,7 +207,10 @@ class Bin(object):
         @return bin reference as a string
         """
         # clumsy construct to use segments own naming method and format
-        segment = Segment(probability=0, parent_bin_id=0, parent_segment_id=0,
+        segment = Segment(probability=0,
+                          parent_iteration_id = 0, 
+                          parent_bin_id=0, 
+                          parent_segment_id=0,
                           iteration_id = self.reference_iteration_id,
                           bin_id       = self.reference_bin_id,
                           segment_id   = self.reference_segment_id)

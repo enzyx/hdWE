@@ -16,12 +16,13 @@ class Trajectory():
     a container for complete trajectories
     """
     def __init__(self, segment):
-        self.last_segment = Segment(probability = segment.getProbability(),
-                                    parent_bin_id = segment.getParentBinId(),
-                                    parent_segment_id = segment.getParentSegmentId(),
-                                    iteration_id = segment.getIterationId(),
-                                    bin_id = segment.getBinId(),
-                                    segment_id = segment.getId())
+        self.last_segment = Segment(probability         = segment.getProbability(),
+                                    parent_iteration_id = segment.getParentIterationId(),
+                                    parent_bin_id       = segment.getParentBinId(),
+                                    parent_segment_id   = segment.getParentSegmentId(),
+                                    iteration_id        = segment.getIterationId(),
+                                    bin_id              = segment.getBinId(),
+                                    segment_id          = segment.getId())
         self.read_segments = []
         self.read_segments.insert(0,self.last_segment)
     

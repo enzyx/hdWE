@@ -64,12 +64,13 @@ def create_initial_iteration(target_number_of_segments):
     and n_segs_per_bin trajectories with probability 1/n_segs_per_bin.
     """
     iteration0 = Iteration(iteration_id=0)
-    iteration0.generateBin(reference_iteration_id=iteration0.getId(),
-                           reference_bin_id=0,
-                           reference_segment_id=0,
-                           target_number_of_segments=target_number_of_segments)
-    iteration0.bins[0].generateSegment(probability=1.0,
-                                       parent_bin_id=0, 
-                                       parent_segment_id=0)
+    iteration0.generateBin(reference_iteration_id    = iteration0.getId(),
+                           reference_bin_id          = 0,
+                           reference_segment_id      = 0,
+                           target_number_of_segments = target_number_of_segments)
+    iteration0.bins[0].generateSegment(probability         = 1.0,
+                                       parent_iteration_id = 0,
+                                       parent_bin_id       = 0, 
+                                       parent_segment_id   = 0)
     iteration0.bins[0].backupInitialSegments()
     return iteration0

@@ -24,7 +24,7 @@ def resort(iterations, md_module, COORDINATE_THRESHOLD, SEGMENTS_PER_BIN):
     
     # Sanity check for RMSD matrix
     if rmsd_matrix.min() == 0.0:
-        print("Warning! SegmentsToBins RMSD Matrix has entries 0.00000!"\
+        print("\x1b[31m Warning!\x1b[0m SegmentsToBins RMSD Matrix has entries 0.00000!"\
               " This is extremely unlikely!")
     
     new_bins   = []
@@ -37,9 +37,10 @@ def resort(iterations, md_module, COORDINATE_THRESHOLD, SEGMENTS_PER_BIN):
             #    the previous iteration
             for bin_id, coordinate in enumerate(rmsd_matrix[segment_id,:]):
                 if not is_segment_handled and coordinate <= COORDINATE_THRESHOLD:
-                    current_iteration.bins[bin_id].generateSegment(probability       = parent_segment.getProbability(),
-                                                                   parent_bin_id     = parent_segment.getBinId(),
-                                                                   parent_segment_id = parent_segment.getId())
+                    current_iteration.bins[bin_id].generateSegment(probability         = parent_segment.getProbability(),
+                                                                   parent_iteration_id = parent_segment.getIterationId(),
+                                                                   parent_bin_id       = parent_segment.getBinId(),
+                                                                   parent_segment_id   = parent_segment.getId())
                     is_segment_handled = True
                     break
 
@@ -50,21 +51,23 @@ def resort(iterations, md_module, COORDINATE_THRESHOLD, SEGMENTS_PER_BIN):
                 for newbin_id, coordinate in enumerate(new_rmsds):
                     if coordinate <= COORDINATE_THRESHOLD:
                         current_iteration.bins[new_bins[newbin_id].getId()].\
-                            generateSegment(probability       = parent_segment.getProbability(),
-                                            parent_bin_id     = parent_segment.getBinId(),
-                                            parent_segment_id = parent_segment.getId())
+                            generateSegment(probability         = parent_segment.getProbability(),
+                                            parent_iteration_id = parent_segment.getIterationId(),
+                                            parent_bin_id       = parent_segment.getBinId(),
+                                            parent_segment_id   = parent_segment.getId())
                         is_segment_handled = True
                         break
                                    
             # 3. If it fits nowhere create new bin
             if not is_segment_handled:
-                bin_id = current_iteration.generateBin(reference_iteration_id    = parent_segment.getIterationId(),
-                                                       reference_bin_id          = parent_segment.getBinId(),
-                                                       reference_segment_id      = parent_segment.getId(),
-                                                       target_number_of_segments = SEGMENTS_PER_BIN)
-                current_iteration.bins[bin_id].generateSegment(probability       = parent_segment.getProbability(),
-                                                               parent_bin_id     = parent_segment.getBinId(),
-                                                               parent_segment_id = parent_segment.getId())
+                bin_id = current_iteration.generateBin(reference_iteration_id      = parent_segment.getIterationId(),
+                                                       reference_bin_id            = parent_segment.getBinId(),
+                                                       reference_segment_id        = parent_segment.getId(),
+                                                       target_number_of_segments   = SEGMENTS_PER_BIN)
+                current_iteration.bins[bin_id].generateSegment(probability         = parent_segment.getProbability(),
+                                                               parent_iteration_id = parent_segment.getIterationId(),
+                                                               parent_bin_id       = parent_segment.getBinId(),
+                                                               parent_segment_id   = parent_segment.getId())
                 new_bins.append(current_iteration.bins[bin_id])
                 is_segment_handled = True
                 

@@ -246,7 +246,7 @@ class MD_module():
         UUID = uuid.uuid1()
         
         if self.debug:
-            cpptraj_infile_path = "{segment}.cpptraj_in".format(segment=segment_name_string)
+            cpptraj_infile_path = "{jn}-run/{segment}.cpptraj_in".format(jn=self.jobname, segment=segment_name_string)
         else:
             cpptraj_infile_path = "/tmp/{0}_{1}.cpptraj_in".format(segment_name_string, UUID)
         
@@ -254,7 +254,7 @@ class MD_module():
         cpptraj_infile.write('trajin {jn}-run/{segment}.rst7\n'.format(jn=self.jobname, 
                                                                        segment=segment_name_string))
         if self.debug:  
-            cpptraj_outfile_path = "{segment}.cpptraj_out".format(segment=segment_name_string)
+            cpptraj_outfile_path = "{jn}-run/{segment}.cpptraj_out".format(jn=self.jobname,segment=segment_name_string)
         else:
             cpptraj_outfile_path = "/tmp/{0}_{1}.cpptraj_out".format(segment_name_string, UUID)
         

@@ -2,10 +2,10 @@ class Segment(object):
     """
     Defines a trajectory element of a bin
     """
-    def __init__(self, probability, parent_bin_id, parent_segment_id,
+    def __init__(self, probability, parent_iteration_id, parent_bin_id, parent_segment_id,
                  iteration_id, bin_id, segment_id):
         self.probability         = probability          # float
-        self.parent_iteration_id = iteration_id - 1     # int
+        self.parent_iteration_id = parent_iteration_id  # int
         self.parent_bin_id       = parent_bin_id        # int
         self.parent_segment_id   = parent_segment_id    # int
         self.bin_id              = bin_id               # int
@@ -28,13 +28,6 @@ class Segment(object):
         """
         self.segment_id = segment_id
         
-    def setParentIterationId(self, parent_iteration_id):
-        """
-        required for reweighting function to create new segments in empy bins. 
-        Should not be used from Bin class
-        """ 
-        self.parent_iteration_id = parent_iteration_id
-
     def getNameString(self):
         """
         @return the indices in a string following the scheme iteration_bin_segment
