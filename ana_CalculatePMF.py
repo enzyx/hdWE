@@ -148,19 +148,19 @@ dcoord   =  1.0 * (hist_max - hist_min ) / args.number_of_bins
 hist     =  numpy.zeros([args.number_of_bins,5], float)
 #Sort coords into histogramm
 for i in range(0,len(coordinates[:,0])):
-    index       = int( (coordinates[i,0] - hist_min) / dcoord )
+    hist_index       = int( (coordinates[i,0] - hist_min) / dcoord )
     #maximum coord entry shall not be in an extra bin:
-    if index==args.number_of_bins:
-        index = index - 1
-    hist[index,2] = hist[index,2] + coordinates[i,1]
-    hist[index,3] = hist[index,3] + 1
+    if hist_index==args.number_of_bins:
+        hist_index = hist_index - 1
+    hist[hist_index,2] = hist[hist_index,2] + coordinates[i,1]
+    hist[hist_index,3] = hist[hist_index,3] + 1
 #Sort bin coords into histogramm
 for i in range(0,len(bin_coordinates[:,0])):
-    index       = int( (bin_coordinates[i,0] - hist_min) / dcoord )
+    hist_index       = int( (bin_coordinates[i,0] - hist_min) / dcoord )
     #maximum bin coord entry shall not be in an extra bin:
-    if index>=args.number_of_bins:
-        index = args.number_of_bins - 1
-    hist[index,4] = hist[index,4] + 1
+    if hist_index>=args.number_of_bins:
+        hist_index = args.number_of_bins - 1
+    hist[hist_index,4] = hist[hist_index,4] + 1
 #Assign the bin positions and calculate free energy:
 for i in range(0,args.number_of_bins):
     hist[i,0] = hist_min + i * dcoord
@@ -215,8 +215,8 @@ if args.plot:
         if args.plot_bin_references:
             bin_ref_x = []
             bin_ref_y = []    
-            for index, bin_loop in enumerate(iterations[-1]):
-                bin_ref_x.append(references[index].getCoordinate())
+            for hist_index, bin_loop in enumerate(iterations[-1]):
+                bin_ref_x.append(references[hist_index].getCoordinate())
                 bin_ref_y.append(-1)
                 bin_color = 1.0*bin_loop.getId()/iterations[-1].getNumberOfBins()
             cmap = plt.get_cmap("coolwarm")

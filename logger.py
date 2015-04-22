@@ -100,13 +100,22 @@ class Logger():
             iterations.append(iteration)
             iteration_id += 1
         
-        # We want to raise an error if 
-        # the end is known but not all files present 
-        if end < -1:
-            if len(iterations) != end - begin:
+        # We want to raise an error if... 
+        # no iterations were read in
+        if len(iterations) == 0:
+            raise Exception("Could not read any iteration files "\
+                            "for desired range {b:05d}-{e:05d}!".format(b = begin,
+                                                                        e = end))          
+        # or the range is known but not all files present 
+        if end > -1: 
+            if len(iterations) != end - begin + 1:
                 raise Exception("Could not read all iteration files "\
-                                "for desired range {0:05d}-{1:05d}!\n"\
-                                "Found first {0:d} iterations.".format(begin, end, len(iterations)))
+                                "for desired range {b:05d}-{e:05d}!\n"\
+                                "           Found iterations {first_found:05d}-{last_found:05d} "\
+                                "of desired range.".format(b = begin,
+                                                           e = end,
+                                                           first_found = iterations[0].getId(),
+                                                           last_found = iterations[-1].getId()))
         
         return iterations
 
