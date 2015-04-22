@@ -191,7 +191,7 @@ config.read(CONFIGFILE)
 CONV_RANGE = int(config.get('hdWE','convergence-range'))
 CONV_THRES = float(config.get('hdWE','convergence-threshold'))
 rate_matrices = []
-print ("CR={}, CT={}".format(CONV_RANGE, CONV_THRES))
+print ("range={}, threshold={}".format(CONV_RANGE, CONV_THRES))
 
 #################
 # CLOSED STATUS #
