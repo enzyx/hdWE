@@ -160,11 +160,11 @@ class Iteration(object):
         # Initialize array for rate matrix
         rate_matrix = numpy.zeros([self.getNumberOfBins(), self.getNumberOfBins()], float)
         # Sum all probability that enters a bin from the parent bins
-        for bin_l in self.bins:
-            for segment_l in bin_l.initial_segments:
-                if self.bins[segment_l.getParentBinId()].getProbability() > constants.num_boundary:
-                    rate_matrix[segment_l.getParentBinId(), bin_l.getId()] += \
-                    segment_l.getProbability()
+        for this_bin in self.bins:
+            for this_segment in this_bin.initial_segments:
+                if self.bins[this_segment.getParentBinId()].getProbability() > constants.num_boundary:
+                    rate_matrix[this_segment.getParentBinId(), this_bin.getId()] += \
+                    this_segment.getProbability()
         
         # Normalize all outrates with respect to a bin:
         for i in range(0,len(rate_matrix)):
