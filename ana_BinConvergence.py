@@ -264,7 +264,6 @@ if args.rates:
                     y.append(it_data.getBinData(args.bin_index).means[target_bin_index])
                 else:
                     y.append(0.0)
-            print (x,y)
             axarr[target_bin_index].plot(x,y)
             
         plt.show()
@@ -342,7 +341,8 @@ if args.convergence:
             sys.stdout.flush()
             b_converged = convergenceCheck.checkBin(iterations[-1].bins[args.bin_index],
                                                     rate_matrices[it_counter-CONV_RANGE:it_counter+1],
-                                                    CONV_THRES)
+                                                    CONV_THRES,
+                                                    debug=False)
             if len(iteration.bins) > args.bin_index \
                and b_converged:
                 bin_converged[it_counter] = 1.0

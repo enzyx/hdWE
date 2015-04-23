@@ -101,6 +101,7 @@ for _bin in old_iteration:
                           target_number_of_segments=_bin.getTargetNumberOfSegments(), 
                           outrates_converged=False)
     iteration.bins[-1].generateSegment(probability=_bin.getProbability(),
+                                       parent_iteration_id = 0,
                                        parent_bin_id=bin_index,
                                        parent_segment_id=0)
     

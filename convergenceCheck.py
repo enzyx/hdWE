@@ -19,7 +19,7 @@ def checkBin(_bin, rate_matrices, CONV_THRES, debug):
         # read rates
         outrates = []
         for matrix in rate_matrices:
-            if len(matrix[bin_index]) > target_bin_index:
+            if len(matrix) > bin_index and len(matrix[bin_index]) > target_bin_index:
                 outrates.append(matrix[bin_index][target_bin_index])
             else:
                 outrates.append(0.0)
