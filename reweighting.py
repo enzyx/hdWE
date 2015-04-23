@@ -15,8 +15,10 @@ def reweightBinProbabilities(iterations, reweighting_range, WORKDIR, JOBNAME):
     iteration_range   = int(len(iterations) * reweighting_range)
     iteration_counter = len(iterations) - 1
     #FIXME: This should all be moved to the logger somehow
-    logfile = open(WORKDIR + JOBNAME + '-log/reweighting'+str(iteration_counter).zfill(5),'w+')
-
+    logfile = open("{wd}/{jn}-log/reweighting{it:05d}".format(wd=WORKDIR,
+                                                              jn=JOBNAME,
+                                                              it=iteration_counter), 'w+')
+    
     # 1. get the Rate Matrix, averaged over the last iteration_range iterations
     mean_rate_matrix  = analysis_operations.getMeanRateMatrixWithConvergedOutrates(iterations,
                                                                                    iteration_range)
