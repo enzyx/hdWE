@@ -289,7 +289,7 @@ if args.plot:
         print(' Plot written to to:  ' + args.output_plot)
         plt.show() 
     #except:
-        sys.stderr.write(" Plotting with mathplotlib failed.")
+        #sys.stderr.write(" Plotting with matplotlib failed.")
 
    
 
