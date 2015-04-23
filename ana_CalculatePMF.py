@@ -40,6 +40,14 @@ class SegmentData(object):
     def getCoordinates(self):
         return self.coordinates
     
+### methods ### 
+
+def isParent(segment, parent_segment_list):
+    if (segment_loop.getIterationId(), segment_loop.getBinId(), segment_loop.getId()) in parent_segments:
+        return True
+    else:
+        return False
+    
 ###### Parse command line ###### 
 parser =argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
 
@@ -118,7 +126,9 @@ cpptraj_lines_file.close()
 #Calculate the coordinate values and store them together with
 #the trajectory probability into coordinates 
 
-parent_segments = []   # a list of (bin, segment) tuples for parent segments
+parent_segments = []   # a list of (iteration, bin, segment) tuples for parent segments
+child_segments = []    # a list of (iteration, bin, segment) tuples for child segments
+                       # where 0th parent is 0th in parent_segments list
 segment_datas = []     # a list of Segment_Data structures, all segment data
 references = []        # a list of Segment_Data structures, reference segments of bins
 datapoints = []        # a list of Datapoint structures with coordinate and probability
@@ -132,9 +142,10 @@ data_per_segment = len(md_module.ana_calcCoordinateOfSegment(iterations[0].bins[
 if args.plot_segments:
     # find parent segments (to be saved during the coordinate calculation)
     for bin_loop in iterations[-1]:
-        for segment_loop in bin_loop:
-            parent_segments.append( (segment_loop.getParentBinId(), segment_loop.getParentSegmentId()) )
-    parent_segments = set(parent_segments)       
+        bin_parent_segments = []
+        for segment_loop in bin_loop.initial_segments:
+            parent_segments.append( (segment_loop.getParentIterationId(), segment_loop.getParentBinId(), segment_loop.getParentSegmentId()) )
+            child_segments.append( (segment_loop.getIterationId(), segment_loop.getBinId(), segment_loop.getId()) )
 
 # read in coordinates and probability 
 for iteration_loop in iterations:
@@ -154,8 +165,10 @@ for iteration_loop in iterations:
                 datapoints.append(Datapoint(coord, segment_probability))
                 
             # store parent segment data
-            if args.plot_segments and iteration_loop.getId() == last_it_id - 1:
-                segment_datas.append(SegmentData(segment_loop.getIterationId(), bin_loop.getId(), segment_coordinates))
+            if args.plot_segments:
+                if isParent(segment_loop, parent_segments):
+                    index = parent_segments.index((segment_loop.getIterationId(), segment_loop.getBinId(), segment_loop.getId()) )
+                    segment_datas.append(SegmentData(child_segments[index][0], child_segments[index][1], segment_coordinates))
 sys.stdout.write("\n")
 
 # Calculate the coordinate values of the bin reference structures
@@ -228,7 +241,8 @@ print('\n PMF data written to: ' + args.output_path)
 # Plotting
 if args.plot:
     sys.stdout.write(' Preparing plot\n')
-    try:
+    #try:
+    if True:    
         segment_colors = ["Blue", "Red", "Green", "Orange", "c", "m", "y"]
         seg_step = 0.3
         f, ax = plt.subplots(1,1)
@@ -250,14 +264,12 @@ if args.plot:
                     if segment_data.getBinId() == bin_id:
                         # use last coordinate since that should be the sorted structure
                         seg_x.append(segment_data.getCoordinates()[-1])
-                        seg_y.append(-seg_step - seg_step*segment_data.getBinId())
-                      
-                    if segment_data.getBinId() > bin_id:
-                        break
+                        seg_y.append(-seg_step - seg_step*segment_data.getBinId())                  
+
                 ax.scatter(seg_x, 
                            seg_y,
                            marker="s",
-                           color=segment_colors[bin_id%len(segment_colors)])
+                           color=segment_colors[bin_id%len(segment_colors)])                 
         
         if args.plot_bin_references:
             bin_ref_x = []
@@ -276,7 +288,7 @@ if args.plot:
         plt.savefig(args.output_plot)
         print(' Plot written to to:  ' + args.output_plot)
         plt.show() 
-    except:
+    #except:
         sys.stderr.write(" Plotting with mathplotlib failed.")
 
    
