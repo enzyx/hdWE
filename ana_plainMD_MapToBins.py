@@ -8,6 +8,7 @@ from logger import Logger
 from amber_module import MD_module
 import argparse  
 import os
+import sys
 
     
 ###### Parse command line ###### 
@@ -24,6 +25,9 @@ parser.add_argument('-o', '--output', dest="output_path",
                     help="Output filename")  
 parser.add_argument('-t', '--trajectory', dest="trajectory_path", required=True,
                     help="the free MD trajectory.")
+parser.add_argument('-e', '--last_it', dest="last_iteration",
+                    type=int, default=-1,
+                    help="Use bins that exist in this iteration.")  
                     
 # Initialize
 print('\033[1mMapping free MD trajectory to hdWE Bins\033[0m')      
@@ -32,7 +36,7 @@ args = parser.parse_args()
 
 #get the actual Iteration from logger module
 logger = Logger(args.logdir)
-iterations = logger.loadIterations()
+iterations = logger.loadIterations(args.last_iteration, args.last_iteration)
 last_iteration = iterations[-1]
 
 # load md module
@@ -77,11 +81,12 @@ except:
     print('cpptraj output {0} can not be found or loaded.'.format(cpptraj_outfile_path))
 
 n_frames = len(data[:,0])
-print(' sorting {0} frames into bins'.format(n_frames))
 threshold = 1
 #sort configurations into bins
 bin_indices = numpy.zeros([len(data[0,:])+1,3], float)
 for i in range(0,len(data[:,0])):
+    sys.stdout.write(' Sorting frame {frame:05d} /{n_frames}\r'.format(frame = i, n_frames = n_frames))
+    sys.stdout.flush()
     frame_handled = False
     for j in range(0,len(data[0,:])):
         #sort into first bin within threshold, bins are chronologically ordered
@@ -105,8 +110,9 @@ for i in range(0,len(bin_indices[:,0])-1):
     bin_indices[i,2] =  last_iteration.bins[i].getProbability()
 
 header = 'free MD frames in bin, normalized to probabiltiy (without bins that didnt fit), hdWE probability per bin'
-numpy.savetxt( md_module.workdir + args.output_path, bin_indices)
-
+numpy.savetxt( md_module.workdir + args.output_path, bin_indices )
+sys.stdout.write(' Output written to {out} \n'.format(out = md_module.workdir + args.output_path))
+sys.stdout.flush()
 
 
     
