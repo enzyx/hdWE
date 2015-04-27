@@ -91,15 +91,21 @@ class Logger():
         """
         iterations = []
         iteration_id = begin
-        while (os.path.isfile(
-                       self.ITERATION_FNAME_FORMAT.format(
-                                dir=self.logdir, 
-                                id=iteration_id))
-              and (iteration_id <= end or end==-1) ):
+        #for only reading the last iteration without knowing the id of the last iteration
+        if (begin==-1 and end==-1):
             iteration = self.loadIteration(iteration_id)
             iterations.append(iteration)
-            iteration_id += 1
-        
+        else:            
+            
+            while (os.path.isfile(
+                           self.ITERATION_FNAME_FORMAT.format(
+                                    dir=self.logdir, 
+                                    id=iteration_id))
+                  and (iteration_id <= end or end==-1) ):
+                iteration = self.loadIteration(iteration_id)
+                iterations.append(iteration)
+                iteration_id += 1
+            
         # We want to raise an error if... 
         # no iterations were read in
         if len(iterations) == 0:
