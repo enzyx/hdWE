@@ -27,7 +27,10 @@ parser.add_argument('-t', '--trajectory', dest="trajectory_path", required=True,
                     help="the free MD trajectory.")
 parser.add_argument('-e', '--last_it', dest="last_iteration",
                     type=int, default=-1,
-                    help="Use bins that exist in this iteration.")  
+                    help="Use bins that exist in this iteration.") 
+parser.add_argument('--threshold', dest="threshold",
+                    type=int, required=True,
+                    help="Threshold used for hdWE bins.") 
                     
 # Initialize
 print('\033[1mMapping free MD trajectory to hdWE Bins\033[0m')      
@@ -81,7 +84,6 @@ except:
     print('cpptraj output {0} can not be found or loaded.'.format(cpptraj_outfile_path))
 
 n_frames = len(data[:,0])
-threshold = 1
 #sort configurations into bins
 bin_indices = numpy.zeros([len(data[0,:])+1,3], float)
 for i in range(0,len(data[:,0])):
@@ -90,7 +92,7 @@ for i in range(0,len(data[:,0])):
     frame_handled = False
     for j in range(0,len(data[0,:])):
         #sort into first bin within threshold, bins are chronologically ordered
-        if data[i,j] < threshold:
+        if data[i,j] < args.threshold:
             bin_indices[j,0]  += 1
             frame_handled = True
             break
