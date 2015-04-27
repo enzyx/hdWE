@@ -134,10 +134,11 @@ def getParentSegment(segment, iterations):
         if iteration.getId() > p_iter:
             break
     if not found_parent:
-        raise Exception("failed to find parent {i:05d}_{b:05d}_{s:05d} for segment {sn}".format(i=segment.getParentIterationId(),
-                                                                                                 b=segment.getParentBinId(),
-                                                                                                 s=segment.getParentSegmentId(),
-                                                                                                 sn=segment.getNameString()))
+        #sys.stderr.write("failed to find parent {i:05d}_{b:05d}_{s:05d} for segment {sn}\n".format(i=segment.getParentIterationId(),
+        #                                                                                         b=segment.getParentBinId(),
+        #                                                                                         s=segment.getParentSegmentId(),
+        #                                                                                         sn=segment.getNameString()))
+        return False
     return parent_segment
     
 ###### Parse command line ###### 
@@ -267,30 +268,31 @@ for iteration in iterations[2:]:
                                  initial_segment.getParentBinId(),
                                  initial_segment.getParentSegmentId())
             parent_segment = getParentSegment(segment, iteration_datas)
-            # low to high flow
-            if parent_segment.getCoordinates() < args.coordinate_threshold\
-               and segment.getCoordinates() > args.coordinate_threshold:
-                low_to_high += parent_segment.probability
-                low_to_high_counter += 1
-                if args.debug:
-                    print ("{seg}({prob},{coord}) <- {pseg}({pprob},{pcoord})".format(pseg=parent_segment.getNameString(),
-                                                                                 pprob=parent_segment.probability,
-                                                                                 pcoord=parent_segment.getCoordinates(),
-                                                                                 seg=segment.getNameString(),
-                                                                                 prob=segment.probability,
-                                                                                 coord=segment.getCoordinates()))
-            # high to low flow
-            if parent_segment.getCoordinates() > args.coordinate_threshold\
-               and segment.getCoordinates() < args.coordinate_threshold:
-                high_to_low += segment.probability
-                high_to_low_counter += 1
-                if args.debug:
-                    print ("{pseg}({pprob},{pcoord}) -> {seg}({prob},{coord})".format(pseg=parent_segment.getNameString(),
-                                                                                 pprob=parent_segment.probability,
-                                                                                 pcoord=parent_segment.getCoordinates(),
-                                                                                 seg=segment.getNameString(),
-                                                                                 prob=segment.probability,
-                                                                                 coord=segment.getCoordinates()))
+            if parent_segment:
+                # low to high flow
+                if parent_segment.getCoordinates() < args.coordinate_threshold\
+                   and segment.getCoordinates() > args.coordinate_threshold:
+                    low_to_high += parent_segment.probability
+                    low_to_high_counter += 1
+                    if args.debug:
+                        print ("{seg}({prob},{coord}) <- {pseg}({pprob},{pcoord})".format(pseg=parent_segment.getNameString(),
+                                                                                     pprob=parent_segment.probability,
+                                                                                     pcoord=parent_segment.getCoordinates(),
+                                                                                     seg=segment.getNameString(),
+                                                                                     prob=segment.probability,
+                                                                                     coord=segment.getCoordinates()))
+                # high to low flow
+                if parent_segment.getCoordinates() > args.coordinate_threshold\
+                   and segment.getCoordinates() < args.coordinate_threshold:
+                    high_to_low += segment.probability
+                    high_to_low_counter += 1
+                    if args.debug:
+                        print ("{pseg}({pprob},{pcoord}) -> {seg}({prob},{coord})".format(pseg=parent_segment.getNameString(),
+                                                                                     pprob=parent_segment.probability,
+                                                                                     pcoord=parent_segment.getCoordinates(),
+                                                                                     seg=segment.getNameString(),
+                                                                                     prob=segment.probability,
+                                                                                     coord=segment.getCoordinates()))
     # iteration id is the one before because initial_segments are considered.
     # so a transition happened at the iteration before
     sys.stdout.write("{it:05d}:\t-> {plh:6f}({lhc:3d})\t|\t<- {phl:6f}({hlc:3d})\n".format(it  =iteration.getId()-1,
