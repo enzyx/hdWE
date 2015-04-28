@@ -29,7 +29,7 @@ parser.add_argument('-e', '--last_it', dest="last_iteration",
                     type=int, default=-1,
                     help="Use bins that exist in this iteration.") 
 parser.add_argument('--threshold', dest="threshold",
-                    type=int, required=True,
+                    type=float, required=True,
                     help="Threshold used for hdWE bins.") 
                     
 # Initialize
