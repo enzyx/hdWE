@@ -232,6 +232,97 @@ class MD_module():
                                   self.configfile,
                                   str(self.debug)))
 
+    def getRamachandranBinId(self, phi, psi):
+        """
+        @return 0,1,2 according to the region of phi, psi in the ramachandran plot
+        """
+        # Alpha helix
+        if -180 < phi < 0 or 130 < phi < 180:
+            # Alpha helix
+            if -105 < psi < 75:
+                return 1
+            # Beta sheet
+            else:
+                return 2
+        # L helix
+        else:
+            return 3
+
+
+    def calcCombinatoryDihedralBin(self, segment):
+        """
+        Calculates the combinatory bin coordinate according to the backbone dihedrals
+        @return A bin id of the for e.g "001211011" for the given segment 
+        """
+        # Write the cpptraj infile
+        segment_name_string = segment.getNameString() 
+        UUID = uuid.uuid1()
+        
+        if self.debug:
+            cpptraj_infile_path = "{jn}-run/{segment}.cpptraj_in".format(jn=self.jobname, segment=segment_name_string)
+        else:
+            cpptraj_infile_path = "/tmp/{0}_{1}.cpptraj_in".format(segment_name_string, UUID)
+        
+        cpptraj_infile      = open(cpptraj_infile_path, 'w')
+        cpptraj_infile.write('trajin {jn}-run/{segment}.rst7\n'.format(jn=self.jobname, 
+                                                                       segment=segment_name_string))
+        if self.debug:  
+            cpptraj_outfile_path = "{jn}-run/{segment}.cpptraj_out".format(jn=self.jobname,segment=segment_name_string)
+        else:
+            cpptraj_outfile_path = "/tmp/{0}_{1}.cpptraj_out".format(segment_name_string, UUID)
+        
+        cpptraj_infile.write("dihedral phi_2     :1@C   :2@N   :2@CA  :2@C   out {0}\n".format(cpptraj_outfile_path))
+        cpptraj_infile.write("dihedral psi_2     :2@N   :2@CA  :2@C   :3@N   out {0}\n".format(cpptraj_outfile_path))
+        cpptraj_infile.write("dihedral phi_3     :2@C   :3@N   :3@CA  :3@C   out {0}\n".format(cpptraj_outfile_path))
+        cpptraj_infile.write("dihedral psi_3     :3@N   :3@CA  :3@C   :4@N   out {0}\n".format(cpptraj_outfile_path))
+        cpptraj_infile.write("dihedral phi_4     :3@C   :4@N   :4@CA  :4@C   out {0}\n".format(cpptraj_outfile_path))
+        cpptraj_infile.write("dihedral psi_4     :4@N   :4@CA  :4@C   :5@N   out {0}\n".format(cpptraj_outfile_path))
+        cpptraj_infile.write("dihedral phi_5     :4@C   :5@N   :5@CA  :5@C   out {0}\n".format(cpptraj_outfile_path))
+        cpptraj_infile.write("dihedral psi_5     :5@N   :5@CA  :5@C   :6@N   out {0}\n".format(cpptraj_outfile_path))
+        cpptraj_infile.write("dihedral phi_6     :5@C   :6@N   :6@CA  :6@C   out {0}\n".format(cpptraj_outfile_path))
+        cpptraj_infile.write("dihedral psi_6     :6@N   :6@CA  :6@C   :7@N   out {0}\n".format(cpptraj_outfile_path))
+        cpptraj_infile.write("dihedral phi_7     :6@C   :7@N   :7@CA  :7@C   out {0}\n".format(cpptraj_outfile_path))
+        cpptraj_infile.write("dihedral psi_7     :7@N   :7@CA  :7@C   :8@N   out {0}\n".format(cpptraj_outfile_path))
+        cpptraj_infile.write("dihedral phi_8     :7@C   :8@N   :8@CA  :8@C   out {0}\n".format(cpptraj_outfile_path))
+        cpptraj_infile.write("dihedral psi_8     :8@N   :8@CA  :8@C   :9@N   out {0}\n".format(cpptraj_outfile_path))
+        cpptraj_infile.write("dihedral phi_9     :8@C   :9@N   :9@CA  :9@C   out {0}\n".format(cpptraj_outfile_path))
+        cpptraj_infile.write("dihedral psi_9     :9@N   :9@CA  :9@C   :10@N  out {0}\n".format(cpptraj_outfile_path))
+        cpptraj_infile.write("dihedral phi_10    :9@C   :10@N  :10@CA :10@C  out {0}\n".format(cpptraj_outfile_path))
+        cpptraj_infile.write("dihedral psi_10    :10@N  :10@CA :10@C  :11@N  out {0}\n".format(cpptraj_outfile_path))
+        
+        # Write changes to file
+        cpptraj_infile.close()
+        
+        # Run cpptraj
+        if self.debug:
+            cpptraj_execute_string = ' -p {top} -i {inpath} > {jn}-log/cpptraj.log'.format(
+                                                            top    = self.amber_topology_file, 
+                                                            inpath = cpptraj_infile_path,
+                                                            jn     = self.jobname)
+        else:
+            cpptraj_execute_string = ' -p {top} -i {inpath} > /dev/null'.format(
+                                                            top=self.amber_topology_file, 
+                                                            inpath=cpptraj_infile_path)
+        os.system('cpptraj {execute}'.format(execute=cpptraj_execute_string))
+                
+        # Load cpptraj output as numpy array
+        try:
+            dihedrals = numpy.loadtxt(cpptraj_outfile_path) 
+            # Delete the first entry which refers to the frame index
+            dihedrals = numpy.delete(dihedrals, 0)
+        except:
+            #TODO What should happen then?
+            print('amber_module error: cpptraj output {0} can not '\
+                  'be found or loaded.'.format(cpptraj_outfile_path))
+
+        # Get the bin id
+        coordinate = ""
+        for i in range(len(dihedrals)/2):
+            phi = dihedrals[i*2]
+            psi = dihedrals[i*2+1]
+            area = str(self.getRamachandranBinId(phi, psi))
+            coordinate += area
+        return coordinate
         
     def calcRmsdToBins(self, segment, bins):
         """
@@ -270,7 +361,7 @@ class MD_module():
         # Write changes to file
         cpptraj_infile.close()
 
-        #Run cpptraj
+        # Run cpptraj
         if self.debug:
             cpptraj_execute_string = ' -p {top} -i {inpath} > {jn}-log/cpptraj.log'.format(
                                                             top=self.amber_topology_file, 
@@ -357,15 +448,14 @@ class MD_module():
         """
         self.setIteration(iteration)
         if self.parallelization_mode in ["serial", "thread"]:
-            rmsd_matrix = numpy.zeros((iteration.getNumberOfSegments(), iteration.getNumberOfBins()))
+            rmsd_matrix = numpy.zeros(iteration.getNumberOfSegments(), dtype=int)
             # calculate entries
             i = 0
             for bin_loop in self.iteration:
                 for segment in bin_loop:
-                    coordinates = self.calcRmsdToBins(segment, self.iteration.bins)
+                    coordinates = self.calcCombinatoryDihedralBin(segment)
                     # fill matrix
-                    for j in range(len(coordinates)):
-                        rmsd_matrix[i][j] = coordinates[j]
+                    rmsd_matrix[i] = coordinates
                     i += 1
             return rmsd_matrix
         
@@ -492,16 +582,15 @@ def doMPICalcRmsdMatrix(CONFIGFILE, debug):
         sys.stderr.flush()
 
     # Setup the rmsd matrix
-    rmsd_matrix = numpy.zeros((iteration.getNumberOfSegments(), iteration.getNumberOfBins()))
+    rmsd_matrix = numpy.zeros(iteration.getNumberOfSegments(), dtype=int)
     # calculate entries
     i = 0
     for this_bin in iteration:
         for segment in this_bin:
             if i % size == rank:
-                coordinates = md_module.calcRmsdToBins(segment, iteration.bins)
+                coordinates = md_module.calcCombinatoryDihedralBin(segment)
                 # fill matrix
-                for j in range(len(coordinates)):
-                    rmsd_matrix[i][j] = coordinates[j]
+                rmsd_matrix[i] = coordinates
             i += 1
     # Collect the matrix on the root process (rank == 0)
     rmsd_matrix = comm.reduce(rmsd_matrix, op = MPI.SUM, root=0)

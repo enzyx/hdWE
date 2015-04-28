@@ -19,7 +19,7 @@ import constants
 
 #### Parse command line #### 
 
-parser =argparse.ArgumentParser(description=__doc__,
+parser = argparse.ArgumentParser(description=__doc__,
                             formatter_class=argparse.RawDescriptionHelpFormatter)
 
 parser.add_argument('-c', '--conf', type=str, dest="configfile", 
@@ -60,6 +60,7 @@ CONVERGENCE_RANGE     = int(config.get('hdWE','convergence-range'))
 CONVERGENCE_THRESHOLD = float(config.get('hdWE','convergence-threshold'))
 NUMBER_OF_THREADS     = int(config.get('hdWE','number-of-threads'))
 MERGE_MODE            = int(config.get('hdWE','merge-mode'))
+MAX_NUMBER_OF_BINS    = int(config.get('hdWE','max-bins'))
 
 if "amber" in config.sections():
     MD_PACKAGE = "amber"
@@ -131,7 +132,8 @@ for iteration_counter in range(len(iterations), MAX_ITERATIONS + 1):
     resorting.resort(iterations, 
                      md_module, 
                      COORDINATE_THRESHOLD, 
-                     SEGMENTS_PER_BIN)
+                     SEGMENTS_PER_BIN,
+                     MAX_NUMBER_OF_BINS)
     
     # 2. Backup the segments lists of all bins
     #    - Saving the segment assignments for correct

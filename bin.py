@@ -11,7 +11,7 @@ class Bin(object):
     """
     def __init__(self, iteration_id, bin_id, reference_iteration_id, 
                  reference_bin_id, reference_segment_id, 
-                 target_number_of_segments, outrates_converged):
+                 target_number_of_segments, rama_id, outrates_converged):
         """
         @param ref_coords the path to reference coordinates defining the bin
         @param trajectories single or list of trajectories to 
@@ -27,6 +27,9 @@ class Bin(object):
         self.target_number_of_segments = target_number_of_segments  # int
         # are the outrates converged
         self.b_outrates_converged      = outrates_converged
+        # The dihedral bin reference string (only for 
+        # combinatoric ramachandran binning)
+        self.rama_id                   = int(rama_id)
         # The array of segments
         self.segments                  = []
         # In this array the segments are copied before resampling happens.
@@ -201,6 +204,12 @@ class Bin(object):
         """
         for index in range(len(self.segments)):
             self.segments[index].setSegmentId(index)
+    
+    def getRamaId(self):
+        """
+        @return ramachandran bin id
+        """
+        return self.rama_id
     
     def getReferenceNameString(self):
         """

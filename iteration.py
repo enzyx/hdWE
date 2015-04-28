@@ -21,7 +21,7 @@ class Iteration(object):
 
     def generateBin(self, reference_iteration_id, 
                     reference_bin_id, reference_segment_id,
-                    target_number_of_segments, outrates_converged = False):
+                    target_number_of_segments, rama_id, outrates_converged = False):
         """
         Initialize a new instance of class Bin and append to bins
         @return  bin_id returns the id of the created bin
@@ -32,6 +32,7 @@ class Iteration(object):
                     reference_bin_id           = reference_bin_id, 
                     reference_segment_id       = reference_segment_id, 
                     target_number_of_segments  = target_number_of_segments, 
+                    rama_id                    = rama_id,
                     outrates_converged         = outrates_converged)
         return self.__addBin(__bin)
 
