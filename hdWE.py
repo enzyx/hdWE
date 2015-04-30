@@ -54,7 +54,6 @@ DEBUG                 = args.debug
 MAX_ITERATIONS        = int(config.get('hdWE','max-iterations'))
 SEGMENTS_PER_BIN      = int(config.get('hdWE','segments-per-bin'))
 STARTING_STRUCTURE    = config.get('hdWE','starting-structure')
-COORDINATE_THRESHOLD  = float(config.get('hdWE','threshold'))
 REWEIGHTING_RANGE     = float(config.get('hdWE','reweighting-range'))
 CONVERGENCE_RANGE     = int(config.get('hdWE','convergence-range'))
 CONVERGENCE_THRESHOLD = float(config.get('hdWE','convergence-threshold'))
@@ -93,14 +92,6 @@ initiate.prepare(WORKDIR,
 # Initialize the logger
 logger = Logger(LOGDIR)
 
-# Initiate iterations
-if APPEND:
-    iterations = logger.loadIterations()
-    #TODO: check if all files are present  
-else:
-    iterations.append(initiate.create_initial_iteration(SEGMENTS_PER_BIN))
-    logger.log(iterations[0], CONFIGFILE)
-
 # Check MD suite
 if(MD_PACKAGE == "amber"):
     from amber_module import MD_module
@@ -108,6 +99,14 @@ if(MD_PACKAGE == "amber"):
 if(MD_PACKAGE == "gromacs"):
     print("Sorry, support for gromacs is not implemented yet.")
     sys.exit(-1)
+
+# Initiate iterations
+if APPEND:
+    iterations = logger.loadIterations()
+    #TODO: check if all files are present  
+else:
+    iterations.append(initiate.create_initial_iteration(SEGMENTS_PER_BIN, md_module))
+    logger.log(iterations[0], CONFIGFILE)
 
 
 #############################
@@ -130,8 +129,7 @@ for iteration_counter in range(len(iterations), MAX_ITERATIONS + 1):
     iterations.append(Iteration(iteration_counter)) 
     resorting.copyBinStructureToLastIteration(iterations, SEGMENTS_PER_BIN)
     resorting.resort(iterations, 
-                     md_module, 
-                     COORDINATE_THRESHOLD, 
+                     md_module,
                      SEGMENTS_PER_BIN,
                      MAX_NUMBER_OF_BINS)
     

@@ -2,9 +2,9 @@ import os
 import shutil
 import glob
 from iteration import Iteration
+from segment import Segment
 
-
-def prepare(WORKDIR, JOBNAME, starting_structure, OVERWRITE, APPEND, debug):
+def prepare(WORKDIR, JOBNAME, starting_structure, OVERWRITE, APPEND, DEBUG):
     """
     Creates the directory structure. Copies the starting configuration
     into the bin_refcoords folder as the first bin.
@@ -53,22 +53,30 @@ def prepare(WORKDIR, JOBNAME, starting_structure, OVERWRITE, APPEND, debug):
                 
         # setup new folders and startfile
         for sub_dir in sub_dirs:
-            if 'debug' in sub_dir and not debug:
+            if 'debug' in sub_dir and not DEBUG:
                 continue
             os.mkdir(WORKDIR + sub_dir)
         shutil.copyfile(WORKDIR + starting_structure, "{wd}/{jn}-run/00000_00000_00000.rst7".format(wd=WORKDIR, jn=JOBNAME))
 
-def create_initial_iteration(target_number_of_segments):
+def create_initial_iteration(target_number_of_segments, md_module):
     """
     Creates the first bin, with the starting structure as refcoords
     and n_segs_per_bin trajectories with probability 1/n_segs_per_bin.
     """
+    initial_segment = Segment(probability = 0, 
+                              parent_iteration_id = 0, 
+                              parent_bin_id = 0, 
+                              parent_segment_id = 0,
+                              iteration_id = 0, 
+                              bin_id = 0, 
+                              segment_id = 0)
+    initial_rama_id = md_module.calcRamaId(initial_segment)
     iteration0 = Iteration(iteration_id=0)
     iteration0.generateBin(reference_iteration_id    = iteration0.getId(),
                            reference_bin_id          = 0,
                            reference_segment_id      = 0,
                            target_number_of_segments = target_number_of_segments,
-                           rama_id                   = 111111111)
+                           rama_id                   = initial_rama_id)
     iteration0.bins[0].generateSegment(probability         = 1.0,
                                        parent_iteration_id = 0,
                                        parent_bin_id       = 0, 

@@ -29,7 +29,7 @@ class Bin(object):
         self.b_outrates_converged      = outrates_converged
         # The dihedral bin reference string (only for 
         # combinatoric ramachandran binning)
-        self.rama_id                   = int(rama_id)
+        self.rama_id                   = str(rama_id)
         # The array of segments
         self.segments                  = []
         # In this array the segments are copied before resampling happens.

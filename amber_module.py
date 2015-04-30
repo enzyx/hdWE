@@ -8,6 +8,7 @@ from datetime import datetime
 from thread_container import ThreadContainer
 import pickle
 import uuid
+from aa_classifier import AAClassifier
 
 class MD_module():
     
@@ -33,7 +34,6 @@ class MD_module():
         self.jobname               = config.get('hdWE','JOBNAME')
         self.amber_topology_file   = config.get('amber','topology-path')
         self.amber_infile          = config.get('amber','infile-path')
-        self.amber_coordinate_mask = config.get('amber','coordinate-mask')
         self.amber_binary          = config.get('amber','binary')
         self.parallelization_mode  = config.get('amber','parallelization-mode')
         # Only search mpirun binary in config file if MPI switched on
@@ -44,7 +44,7 @@ class MD_module():
         # local link to iteration
         self.iteration             = None
         self.ITERATION_DUMP_FNAME  = '{jn}-run/iteration.dump'.format(jn=self.jobname)
-        self.RMSD_MATRIX_DUMP_FNAME= '{jn}-run/rmsd_matrix.dump'.format(jn=self.jobname)
+        self.RAMA_IDS_DUMP_FNAME= '{jn}-run/rama_ids.dump'.format(jn=self.jobname)
         
         self.keep_trajectory_files = bool(config.get('hdWE', 'keep-trajectory-files').lower() == "true")
                        
@@ -52,7 +52,10 @@ class MD_module():
         if not os.path.isfile(self.amber_topology_file):
             raise Exception("No topology found at given path:\n{}".format(self.amber_topology_file))
         if not os.path.isfile(self.amber_infile):
-            raise Exception("No infile found at given path:\n{}".format(self.amber_infile))        
+            raise Exception("No infile found at given path:\n{}".format(self.amber_infile))
+        
+        self.aa_sequence           = config.get('hdWE', 'aa-sequence')
+        self.aa_classifier         = AAClassifier(self.aa_sequence)
     
     def setIteration(self, iteration):
         self.iteration = iteration
@@ -232,24 +235,25 @@ class MD_module():
                                   self.configfile,
                                   str(self.debug)))
 
-    def getRamachandranBinId(self, phi, psi):
-        """
-        @return 0,1,2 according to the region of phi, psi in the ramachandran plot
-        """
-        # Alpha helix
-        if -180 < phi < 0 or 130 < phi < 180:
-            # Alpha helix
-            if -105 < psi < 75:
-                return 1
-            # Beta sheet
-            else:
-                return 2
-        # L helix
-        else:
-            return 3
-
-
-    def calcCombinatoryDihedralBin(self, segment):
+    def getCpptrajDihedralLine(self, index, tDihedral, outfile_path):
+        if tDihedral == "omega":
+            line = "dihedral omega_{ind}   :{mind}@CA  :{mind}@C   :{ind}@N   :{ind}@CA  out {out}\n".format(
+                                                ind  = index,
+                                                mind = index - 1,
+                                                out  = outfile_path)
+        if tDihedral == "phi":
+            line = "dihedral phi_{ind}     :{mind}@C   :{ind}@N   :{ind}@CA  :{ind}@C   out {out}\n".format(
+                                                ind  = index, 
+                                                mind = index - 1,
+                                                out  = outfile_path)
+        if tDihedral == "psi": 
+            line = "dihedral psi_{ind}     :{ind}@N   :{ind}@CA  :{ind}@C   :{pind}@N   out {out}\n".format(
+                                                ind  = index,
+                                                pind = index + 1,
+                                                out  = outfile_path)
+        return line
+    
+    def calcRamaId(self, segment):
         """
         Calculates the combinatory bin coordinate according to the backbone dihedrals
         @return A bin id of the for e.g "001211011" for the given segment 
@@ -271,24 +275,9 @@ class MD_module():
         else:
             cpptraj_outfile_path = "/tmp/{0}_{1}.cpptraj_out".format(segment_name_string, UUID)
         
-        cpptraj_infile.write("dihedral phi_2     :1@C   :2@N   :2@CA  :2@C   out {0}\n".format(cpptraj_outfile_path))
-        cpptraj_infile.write("dihedral psi_2     :2@N   :2@CA  :2@C   :3@N   out {0}\n".format(cpptraj_outfile_path))
-        cpptraj_infile.write("dihedral phi_3     :2@C   :3@N   :3@CA  :3@C   out {0}\n".format(cpptraj_outfile_path))
-        cpptraj_infile.write("dihedral psi_3     :3@N   :3@CA  :3@C   :4@N   out {0}\n".format(cpptraj_outfile_path))
-        cpptraj_infile.write("dihedral phi_4     :3@C   :4@N   :4@CA  :4@C   out {0}\n".format(cpptraj_outfile_path))
-        cpptraj_infile.write("dihedral psi_4     :4@N   :4@CA  :4@C   :5@N   out {0}\n".format(cpptraj_outfile_path))
-        cpptraj_infile.write("dihedral phi_5     :4@C   :5@N   :5@CA  :5@C   out {0}\n".format(cpptraj_outfile_path))
-        cpptraj_infile.write("dihedral psi_5     :5@N   :5@CA  :5@C   :6@N   out {0}\n".format(cpptraj_outfile_path))
-        cpptraj_infile.write("dihedral phi_6     :5@C   :6@N   :6@CA  :6@C   out {0}\n".format(cpptraj_outfile_path))
-        cpptraj_infile.write("dihedral psi_6     :6@N   :6@CA  :6@C   :7@N   out {0}\n".format(cpptraj_outfile_path))
-        cpptraj_infile.write("dihedral phi_7     :6@C   :7@N   :7@CA  :7@C   out {0}\n".format(cpptraj_outfile_path))
-        cpptraj_infile.write("dihedral psi_7     :7@N   :7@CA  :7@C   :8@N   out {0}\n".format(cpptraj_outfile_path))
-        cpptraj_infile.write("dihedral phi_8     :7@C   :8@N   :8@CA  :8@C   out {0}\n".format(cpptraj_outfile_path))
-        cpptraj_infile.write("dihedral psi_8     :8@N   :8@CA  :8@C   :9@N   out {0}\n".format(cpptraj_outfile_path))
-        cpptraj_infile.write("dihedral phi_9     :8@C   :9@N   :9@CA  :9@C   out {0}\n".format(cpptraj_outfile_path))
-        cpptraj_infile.write("dihedral psi_9     :9@N   :9@CA  :9@C   :10@N  out {0}\n".format(cpptraj_outfile_path))
-        cpptraj_infile.write("dihedral phi_10    :9@C   :10@N  :10@CA :10@C  out {0}\n".format(cpptraj_outfile_path))
-        cpptraj_infile.write("dihedral psi_10    :10@N  :10@CA :10@C  :11@N  out {0}\n".format(cpptraj_outfile_path))
+        for residue in self.aa_classifier.getRequiredDihedrals():
+            for angle in residue['required_angles']:
+                cpptraj_infile.write(self.getCpptrajDihedralLine(residue['res_id'], angle, cpptraj_outfile_path))
         
         # Write changes to file
         cpptraj_infile.close()
@@ -316,88 +305,8 @@ class MD_module():
                   'be found or loaded.'.format(cpptraj_outfile_path))
 
         # Get the bin id
-        coordinate = ""
-        for i in range(len(dihedrals)/2):
-            phi = dihedrals[i*2]
-            psi = dihedrals[i*2+1]
-            area = str(self.getRamachandranBinId(phi, psi))
-            coordinate += area
-        return coordinate
-        
-    def calcRmsdToBins(self, segment, bins):
-        """
-        Calculates the coordinate values of a segment with respect to all
-        existing bin reference coordinates and returns them in a numpy array.
-        The array entries are in the same order as the bins.
-        @return list of coordinates of segment to bins
-        """
+        return self.aa_classifier.getBinId(dihedrals)
 
-        #Write the cpptraj infile
-        segment_name_string = segment.getNameString() 
-        UUID = uuid.uuid1()
-        
-        if self.debug:
-            cpptraj_infile_path = "{jn}-run/{segment}.cpptraj_in".format(jn=self.jobname, segment=segment_name_string)
-        else:
-            cpptraj_infile_path = "/tmp/{0}_{1}.cpptraj_in".format(segment_name_string, UUID)
-        
-        cpptraj_infile      = open(cpptraj_infile_path, 'w')
-        cpptraj_infile.write('trajin {jn}-run/{segment}.rst7\n'.format(jn=self.jobname, 
-                                                                       segment=segment_name_string))
-        if self.debug:  
-            cpptraj_outfile_path = "{jn}-run/{segment}.cpptraj_out".format(jn=self.jobname,segment=segment_name_string)
-        else:
-            cpptraj_outfile_path = "/tmp/{0}_{1}.cpptraj_out".format(segment_name_string, UUID)
-        
-        for bin_loop in range(0,len(bins)):
-            reference_bin_name_string         = "{jn}-run/{segment}.rst7".format(jn=self.jobname,
-                                                                                      segment=bins[bin_loop].getReferenceNameString())
-            cpptraj_reference_id_name_string  = '[reference_id_{0:05d}]'.format(bin_loop)
-
-            cpptraj_infile.write('reference {0} {1}\n'.format(reference_bin_name_string, cpptraj_reference_id_name_string))
-            cpptraj_infile.write('rms in_{0:05d} {1} out {2} ref {3}\n'.format(bin_loop,
-                                 self.amber_coordinate_mask, cpptraj_outfile_path,
-                                 cpptraj_reference_id_name_string))
-        # Write changes to file
-        cpptraj_infile.close()
-
-        # Run cpptraj
-        if self.debug:
-            cpptraj_execute_string = ' -p {top} -i {inpath} > {jn}-log/cpptraj.log'.format(
-                                                            top=self.amber_topology_file, 
-                                                            inpath=cpptraj_infile_path,
-                                                            jn=self.jobname)
-        else:
-            cpptraj_execute_string = ' -p {top} -i {inpath} > /dev/null'.format(
-                                                            top=self.amber_topology_file, 
-                                                            inpath=cpptraj_infile_path)
-        os.system('cpptraj {execute}'.format(execute=cpptraj_execute_string))
-                
-        #Load cpptraj output as numpy array
-        try:
-            coordinates = numpy.loadtxt(cpptraj_outfile_path) 
-            #Delete the first entry which refers to the frame index
-            coordinates = numpy.delete(coordinates, 0)
-        except:
-            #TODO What should happen then?
-            print('amber_module error: cpptraj output {0} can not '\
-                  'be found or loaded.'.format(cpptraj_outfile_path))
-            
-        #Check if cpptraj output is correct
-        if not (len(coordinates)==len(bins)):
-            #TODO What should happen then?
-            print("amber_module error: cpptraj output {0} does not " \
-                  "have the correct number of entries.".format(cpptraj_outfile_path))
-
-        #Remove temporary files
-        if not self.debug: 
-            try: 
-                os.remove(cpptraj_outfile_path)
-                os.remove(cpptraj_infile_path)
-            except OSError: pass
-        
-        return coordinates
-    
     def loadIterationFromDumpFile(self):
         """
         Load the local copy of iteration from the 
@@ -421,43 +330,43 @@ class MD_module():
         """
         os.remove(self.ITERATION_DUMP_FNAME)
     
-    def dumpRmsdMatrixToFile(self, rmsd_matrix):
+    def dumpRamaIdsToFile(self, rama_ids):
         """
         Store the rmsd matrix to dump file
         """        
-        rmsd_matrix_dump_file = open(self.RMSD_MATRIX_DUMP_FNAME , 'w')
-        rmsd_matrix.dump(rmsd_matrix_dump_file)
-        rmsd_matrix_dump_file.close()
+        rama_ids_dump_file = open(self.RAMA_IDS_DUMP_FNAME , 'w')
+        pickle.dump(rama_ids, rama_ids_dump_file)
+        rama_ids_dump_file.close()
 
-    def loadRmsdMatrixFromDumpFile(self):
+    def loadRamaIdsFromDumpFile(self):
         """
         Load the rmsd matrix from dump file
         """
-        rmsd_matrix_dump_file = open(self.RMSD_MATRIX_DUMP_FNAME , 'r')
-        rmsd_matrix = pickle.load(rmsd_matrix_dump_file)
-        rmsd_matrix_dump_file.close()
-        return rmsd_matrix
+        rama_ids_dump_file = open(self.RAMA_IDS_DUMP_FNAME , 'r')
+        rama_ids = pickle.load(rama_ids_dump_file)
+        rama_ids_dump_file.close()
+        return rama_ids
 
-    def removeRmsdMatrixDumpFile(self):
+    def removeRamaIdsDumpFile(self):
         """ Remove rmsd matrix dump file """
-        os.remove(self.RMSD_MATRIX_DUMP_FNAME)
+        os.remove(self.RAMA_IDS_DUMP_FNAME)
     
-    def calcRmsdSegmentsToBinsMatrix(self, iteration):
+    def calcRamaIds(self, iteration):
         """
-        Returns a NxM matrix with RMSD entries segments x bins
+        Returns an array with rama ids per segment
         """
         self.setIteration(iteration)
         if self.parallelization_mode in ["serial", "thread"]:
-            rmsd_matrix = numpy.zeros(iteration.getNumberOfSegments(), dtype=int)
+            rama_ids = [''] * iteration.getNumberOfSegments()
             # calculate entries
             i = 0
             for bin_loop in self.iteration:
                 for segment in bin_loop:
-                    coordinates = self.calcCombinatoryDihedralBin(segment)
+                    rama_id = self.calcRamaId(segment)
                     # fill matrix
-                    rmsd_matrix[i] = coordinates
+                    rama_ids[i] = rama_id
                     i += 1
-            return rmsd_matrix
+            return rama_ids
         
         if self.parallelization_mode == "mpi":            
             # dump the iteration object to a file
@@ -466,61 +375,17 @@ class MD_module():
             if self.debug:
                 print("Switching to MPI for RMSD calculation.")
             os.system("{0} {1} {2} {3} {4} {5} ".format(self.mpirun, 
-                                  sys.executable,
-                                  os.path.realpath(__file__),
-                                  "MPIRMSD",
-                                  self.configfile, 
-                                  str(self.debug)))
-            rmsd_matrix = self.loadRmsdMatrixFromDumpFile()
+                                                        sys.executable,
+                                                        os.path.realpath(__file__),
+                                                        "MPIRAMA",
+                                                        self.configfile, 
+                                                        str(self.debug)))
+            rama_ids = self.loadRamaIdsFromDumpFile()
             if not self.debug:
-                self.removeRmsdMatrixDumpFile()
+                self.removeRamaIdDumpFile()
            
-            return rmsd_matrix
+            return rama_ids
     
-    def ana_calcCoordinateOfSegment(self, segment, cpptraj_lines, use_trajectory):
-        """
-        Calculates the value of a coordinate corresponding to a segment and defined
-        in cpptraj_line via cpptraj.
-        """
-        
-        #Write the cpptraj infile
-        segment_name_string = segment.getNameString() 
-        cpptraj_infile_path = "{seg}.ana_calculatePMF_cpptraj_in".format(seg=segment_name_string)
-        cpptraj_output_path = "{seg}.ana_calculatePMF_cpptraj_output".format(seg=segment_name_string)
-        cpptraj_infile      = open(cpptraj_infile_path,'w')
-        if use_trajectory == False:
-            cpptraj_infile.write('trajin {jn}-run/{segment}.rst7\n'.format(jn=self.jobname,
-                                                                           segment=segment_name_string) )
-        else:
-            cpptraj_infile.write('trajin {jn}-run/{segment}.nc\n'.format(jn=self.jobname,
-                                                                         segment=segment_name_string) )            
-        cpptraj_infile.writelines(cpptraj_lines + ' out ' + cpptraj_output_path )
-        cpptraj_infile.close()
-        
-        #Execute cpptraj
-        cpptraj_execute_string =' -p ' + self.amber_topology_file + \
-                                ' -i ' + cpptraj_infile_path
-        cpptraj_execute_string = cpptraj_execute_string + ' >> {jn}-log/ana_calculatePMF_cpptraj.log'.format(jn=self.jobname)
-        os.system('cpptraj ' + cpptraj_execute_string )        
-        
-        #Load cpptraj output as numpy array
-        try:
-            coordinates = numpy.loadtxt(cpptraj_output_path) 
-        except:
-            #TODO What should happen then?
-            print('amber_module error: cpptraj output ' + cpptraj_output_path + ' can not be found or loaded.')
-            
-        #Remove temporary files
-        if not self.debug:
-            os.remove(cpptraj_infile_path)
-            os.remove(cpptraj_output_path)
-         
-        if use_trajectory == False:   
-            return  [coordinates[1]]
-        else:
-            return coordinates[:,1]
-
-
 def doMPIMD(CONFIGFILE, debug):
     """
     This function can run on multiple MPI processes in parallel
@@ -568,7 +433,7 @@ def doMPIMD(CONFIGFILE, debug):
         if not debug:
             md_module.removeIterationDumpFile()
 
-def doMPICalcRmsdMatrix(CONFIGFILE, debug):
+def doMPICalcRamaIds(CONFIGFILE, debug):
     # Read in the call arguments
     CONFIGFILE               = CONFIGFILE
     debug                    = bool(debug == "True")
@@ -581,25 +446,27 @@ def doMPICalcRmsdMatrix(CONFIGFILE, debug):
         sys.stderr.write("Number of MPI processes: {0}\n".format(size))
         sys.stderr.flush()
 
-    # Setup the rmsd matrix
-    rmsd_matrix = numpy.zeros(iteration.getNumberOfSegments(), dtype=int)
+    # Setup the list of rama ids
+    #TODO: use a matrix of strings and implement the necessary
+    #      MPI code to collect 
+    rama_ids = numpy.array([0] * iteration.getNumberOfSegments())
     # calculate entries
     i = 0
     for this_bin in iteration:
         for segment in this_bin:
             if i % size == rank:
-                coordinates = md_module.calcCombinatoryDihedralBin(segment)
+                rama_id = md_module.calcRamaId(segment)
                 # fill matrix
-                rmsd_matrix[i] = coordinates
+                rama_ids[i] = int(rama_id)
             i += 1
     # Collect the matrix on the root process (rank == 0)
-    rmsd_matrix = comm.reduce(rmsd_matrix, op = MPI.SUM, root=0)
+    rama_ids = comm.reduce(rama_ids, op = MPI.SUM, root=0)
     # Dump matrix to file
     if rank == 0:
-        md_module.dumpRmsdMatrixToFile(rmsd_matrix)
+        md_module.dumpRamaIdsToFile(list(numpy.array(rama_ids, 'S')))
         if debug:
-            print("RMSD Matrix: ", rmsd_matrix)
-            print("Finished MPI RMSD Matrix calculation")
+            print("Rama Ids: ", rama_ids)
+            print("Finished MPI Rama ids calculation")
 
 class MD_analysis_module():
     """ a MD module for analysis operations
@@ -631,6 +498,6 @@ if __name__ == "__main__":
     if sys.argv[1] == "MPIMD":
         doMPIMD(CONFIGFILE=sys.argv[2], 
                 debug=sys.argv[3])
-    if sys.argv[1] == "MPIRMSD":
-        doMPICalcRmsdMatrix(CONFIGFILE=sys.argv[2],
-                            debug=sys.argv[3])
+    if sys.argv[1] == "MPIRAMA":
+        doMPICalcRamaIds(CONFIGFILE=sys.argv[2],
+                         debug=sys.argv[3])

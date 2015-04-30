@@ -15,22 +15,18 @@ def copyBinStructureToLastIteration(iterations, SEGMENTS_PER_BIN):
                                       rama_id                   = parent_bin.getRamaId(),
                                       outrates_converged        = parent_bin.isConverged())
 
-def resort(iterations, md_module, COORDINATE_THRESHOLD, SEGMENTS_PER_BIN, MAX_NUMBER_OF_BINS):
+def resort(iterations, md_module, SEGMENTS_PER_BIN, MAX_NUMBER_OF_BINS):
     """
     Resorts final segments of parent iteration into bins and creates new bins if necessary
     """
     parent_iteration    = iterations[-2]
     current_iteration   = iterations[-1]
-    rmsd_matrix         = md_module.calcRmsdSegmentsToBinsMatrix(parent_iteration)
+    rama_ids         = md_module.calcRamaIds(parent_iteration)
     
     # Sanity check for RMSD matrix
-#     if rmsd_matrix.min() == 0.0:
-#         print("\x1b[31m Warning!\x1b[0m SegmentsToBins RMSD Matrix has entries 0.00000!"\
-#               " This is extremely unlikely!")
-    # Save the rmsd matrix there for checking...
-    numpy.savetxt("{0}-log/{1}.dihe".format(md_module.jobname, current_iteration.getNameString()), 
-                  rmsd_matrix,
-                  fmt='%d')
+    #     if rama_ids.min() == 0.0:
+    #         print("\x1b[31m Warning!\x1b[0m SegmentsToBins RMSD Matrix has entries 0.00000!"\
+    #               " This is extremely unlikely!")
     
     segment_id = -1
     for parent_bin in parent_iteration:
@@ -40,7 +36,7 @@ def resort(iterations, md_module, COORDINATE_THRESHOLD, SEGMENTS_PER_BIN, MAX_NU
             # 1. Check if parent_segment fits into a bin of
             #    the previous iteration
             for this_bin in current_iteration.bins:
-                if rmsd_matrix[segment_id] == this_bin.getRamaId():
+                if rama_ids[segment_id] == this_bin.getRamaId():
                     this_bin.generateSegment(probability         = parent_segment.getProbability(),
                                              parent_iteration_id = parent_segment.getIterationId(),
                                              parent_bin_id       = parent_segment.getBinId(),
@@ -54,7 +50,7 @@ def resort(iterations, md_module, COORDINATE_THRESHOLD, SEGMENTS_PER_BIN, MAX_NU
                                                        reference_bin_id            = parent_segment.getBinId(),
                                                        reference_segment_id        = parent_segment.getId(),
                                                        target_number_of_segments   = SEGMENTS_PER_BIN,
-                                                       rama_id                     = rmsd_matrix[segment_id])
+                                                       rama_id                     = rama_ids[segment_id])
                 current_iteration.bins[bin_id].generateSegment(probability         = parent_segment.getProbability(),
                                                                parent_iteration_id = parent_segment.getIterationId(),
                                                                parent_bin_id       = parent_segment.getBinId(),
