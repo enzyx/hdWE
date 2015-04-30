@@ -382,7 +382,7 @@ class MD_module():
                                                         str(self.debug)))
             rama_ids = self.loadRamaIdsFromDumpFile()
             if not self.debug:
-                self.removeRamaIdDumpFile()
+                self.removeRamaIdsDumpFile()
            
             return rama_ids
     
