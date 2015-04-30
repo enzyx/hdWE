@@ -125,7 +125,10 @@ parser.add_argument('-y', dest="use_trajectory", action="store_true",
                                         "not only the end conformation")
 parser.add_argument('-N', '--number_of_bins', dest="number_of_bins", nargs='?',
                     default=False, type=int, const=32, 
-                    help="Number of bins used to calculate the probability histogram.")  
+                    help="Number of bins used to calculate the probability histogram.")
+parser.add_argument('-a', '--average', dest="averaged_pmfs", nargs='?',
+                    default=False, type=int, const=4, 
+                    help="Calculate averages and produce given number of PMFs.")
     
 # Initialize
 sys.stdout.write('\033[1mCalculating Bin PMF\033[0m (Free Energy is given in kcal/mol at 298K).\n')      
@@ -141,7 +144,7 @@ iterations = logger.loadIterations(begin=args.first_iteration, end=args.last_ite
 # load md module
 if not args.input_md_conf:
     args.input_md_conf = logger.loadConfigFile(iterations[0].getId())
-md_module = MD_module(args.input_md_conf, debug=True)
+md_module = MD_module(args.input_md_conf, debug=False)
 
 # Load cpptraj input file as one string with linebreaks and delete the last line break
 try:
@@ -158,7 +161,6 @@ cpptraj_lines_file.close()
 #the trajectory probability into coordinates 
 
 segment_datas = []     # a list of lists of SegmentData structures of length len(iterations)
-
 
 first_it_id = iterations[0].getId()
 last_it_id  = iterations[-1].getId()
@@ -191,38 +193,74 @@ sys.stdout.write(' Creating histograms\n')
 # get number of bins if not entered:
 if not args.number_of_bins:
     args.number_of_bins = iterations[-1].bins[0].getNumberOfSegments() 
-pmffile = open(args.output_path, "a")
+pmffile = open(args.output_path, "w")
 header_line = '#Coordinate Value, Free Energy, Probability\n'
 pmffile.write(header_line)
 
 if args.plot:
     f,ax = plt.subplots(1,1)
     cm = plt.get_cmap('gist_rainbow')
-    colors=['red','green','blue']
     cNorm  = mpl.colors.Normalize(vmin=0, vmax=len(segment_datas))
     scalarMap = mpl.cm.ScalarMappable(norm=cNorm, cmap=cm)
 
-for i,segment_list in enumerate(segment_datas):
-    iteration_id = segment_list[0].getIterationId()
-    histogram =  calculateHistogram(segment_list, args.number_of_bins)
-    data_to_save = numpy.transpose([histogram[0],
+if not args.averaged_pmfs:
+    for i,segment_list in enumerate(segment_datas):
+        iteration_id = segment_list[0].getIterationId()
+        histogram =  calculateHistogram(segment_list, args.number_of_bins)
+        data_to_save = numpy.transpose([histogram[0],
+                                        histogram[1],
+                                        histogram[2]])
+        numpy.savetxt(pmffile, data_to_save)
+        pmffile.write("\n")
+        
+        # plot directly
+        if args.plot:
+            color = cm(1.0*i/len(segment_datas))
+            color = scalarMap.to_rgba(i)
+            #ax.scatter(histogram[0], histogram[1], color=color)
+            ax.plot(histogram[0], histogram[1], color=color, label='iteration {}'.format(iteration_id))
+    
+if args.averaged_pmfs:
+    iterations_per_pmf = int(len(iterations)/args.averaged_pmfs)
+    if iterations_per_pmf == 0:
+        sys.stderr.write("WARNING: Too few iterations for desired number of average pmfs.\n"\
+                         "         Averaging over all iterations.\n")
+        iterations_per_pmf = len(iterations)
+    segments_for_average = []
+    for i, segment_list in enumerate(segment_datas):
+        if i%iterations_per_pmf==0 and len(iterations)-i >= iterations_per_pmf:
+            segments_for_average.append([])
+        segments_for_average[-1] += segment_list
+            
+    for i,segment_list in enumerate(segments_for_average):
+        # create and save histogram
+        histogram =  calculateHistogram(segment_list, args.number_of_bins)
+        data_to_save = numpy.transpose([histogram[0],
                                     histogram[1],
                                     histogram[2]])
-    numpy.savetxt(pmffile, data_to_save)
-    pmffile.write("\n")
-    
-    # plot directly
-    if args.plot:
-        color = cm(1.0*i/len(segment_datas))
-        color = scalarMap.to_rgba(i)
-        #ax.scatter(histogram[0], histogram[1], color=colors[i%3])
-        ax.plot(histogram[0], histogram[1], color=color, label='iteration {}'.format(iteration_id))
+        numpy.savetxt(pmffile, data_to_save)
+        pmffile.write("\n")
         
+        # plot directly
+        if args.plot:
+            cNorm  = mpl.colors.Normalize(vmin=0, vmax=len(segments_for_average))
+            scalarMap = mpl.cm.ScalarMappable(norm=cNorm, cmap=cm)
+            color = cm(1.0*i/len(segments_for_average))
+            color = scalarMap.to_rgba(i)
+            #ax.scatter(histogram[0], histogram[1], color=color)
+            ax.plot(histogram[0],
+                    histogram[1],
+                    color=color,
+                    label='<it{first:05d}-it{last:05d}>'.format(first = segments_for_average[i][0].getIterationId(),
+                                                                last  = segments_for_average[i][-1].getIterationId()))
+    
+            
 pmffile.close()
+sys.stdout.write('\n PMF data written to: {}\n'.format(args.output_path)) 
+
 if args.plot:
     ax.legend()
     plt.show()
-sys.stdout.write('\n PMF data written to: {}\n'.format(args.output_path)) 
 
 
 

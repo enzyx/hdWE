@@ -32,7 +32,7 @@ class AAClassifier():
         """
         phi   = int(phi + 179)
         psi   = int(180 - psi)
-        return glycine[psi][phi]
+        return str(glycine[psi][phi])
     
     
     def getBinId(self, dihedrals):
