@@ -15,6 +15,7 @@ import reweighting
 import convergenceCheck
 from thread_container import ThreadContainer
 import os
+import glob
 import constants
 
 #### Parse command line #### 
@@ -77,6 +78,11 @@ iterations = []
 if not os.path.isfile(CONFIGFILE):
     print("Configuration file not found: " + CONFIGFILE)
     sys.exit(-1)
+if APPEND and not (os.path.exists(LOGDIR) and
+                   os.path.exists(RUNDIR) and 
+                   glob.glob(LOGDIR + "*.iter")):
+    sys.stderr.write("WARNING: appending failed. turning it off.\n")
+    APPEND = False
 
 #############################
 #           Main            #

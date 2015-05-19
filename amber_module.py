@@ -385,6 +385,49 @@ class MD_module():
                 self.removeRamaIdsDumpFile()
            
             return rama_ids
+        
+    def ana_calcCoordinateOfSegment(self, segment, cpptraj_lines, use_trajectory):
+        """
+        Calculates the value of a coordinate corresponding to a segment and defined
+        in cpptraj_line via cpptraj.
+        """
+        
+        #Write the cpptraj infile
+        segment_name_string = segment.getNameString() 
+        cpptraj_infile_path = "{seg}.ana_calculatePMF_cpptraj_in".format(seg=segment_name_string)
+        cpptraj_output_path = "{seg}.ana_calculatePMF_cpptraj_output".format(seg=segment_name_string)
+        cpptraj_infile      = open(cpptraj_infile_path,'w')
+        if use_trajectory == False:
+            cpptraj_infile.write('trajin {jn}-run/{segment}.rst7\n'.format(jn=self.jobname,
+                                                                           segment=segment_name_string) )
+        else:
+            cpptraj_infile.write('trajin {jn}-run/{segment}.nc\n'.format(jn=self.jobname,
+                                                                         segment=segment_name_string) )            
+        cpptraj_infile.writelines(cpptraj_lines + ' out ' + cpptraj_output_path )
+        cpptraj_infile.close()
+        
+        #Execute cpptraj
+        cpptraj_execute_string =' -p ' + self.amber_topology_file + \
+                                ' -i ' + cpptraj_infile_path
+        cpptraj_execute_string = cpptraj_execute_string + ' >> {jn}-log/ana_calculatePMF_cpptraj.log'.format(jn=self.jobname)
+        os.system('cpptraj ' + cpptraj_execute_string )        
+        
+        #Load cpptraj output as numpy array
+        try:
+            coordinates = numpy.loadtxt(cpptraj_output_path) 
+        except:
+            #TODO What should happen then?
+            print('amber_module error: cpptraj output ' + cpptraj_output_path + ' can not be found or loaded.')
+            
+        #Remove temporary files
+        if not self.debug:
+            os.remove(cpptraj_infile_path)
+            os.remove(cpptraj_output_path)
+         
+        if use_trajectory == False:   
+            return  [coordinates[1]]
+        else:
+            return coordinates[:,1]
     
 def doMPIMD(CONFIGFILE, debug):
     """
