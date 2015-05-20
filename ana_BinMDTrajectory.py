@@ -37,7 +37,7 @@ args = parser.parse_args()
 md_module = MD_module(args.input_md_conf, debug=False)
 
 # Write the cpptraj infile
-cpptraj_jobname = args.trajectories[0]
+cpptraj_jobname = os.path.basename(args.trajectories[0])
 
 cpptraj_infile_path = "./{cpptraj}.cpptraj_in".format(cpptraj = cpptraj_jobname)
 cpptraj_infile      = open(cpptraj_infile_path, 'w')
@@ -60,18 +60,15 @@ cpptraj_execute_string = ' -p {top} -i {inpath} > /dev/null'.format(
 os.system('cpptraj {execute}'.format(execute=cpptraj_execute_string))
         
 # Load cpptraj output as numpy array
-try:
-    dihedral_matrix = numpy.loadtxt(cpptraj_outfile_path) 
-    # Delete the first entry which refers to the frame index
-    dihedral_matrix = numpy.delete(dihedral_matrix, 0, axis=1)
-except:
-    #TODO What should happen then?
-    print('amber_module error: cpptraj output {0} can not '\
-          'be found or loaded.'.format(cpptraj_outfile_path))
+
+dihedral_matrix = numpy.loadtxt(cpptraj_outfile_path) 
+# Delete the first entry which refers to the frame index
+dihedral_matrix = numpy.delete(dihedral_matrix, 0, axis=1)
 
 rama_bins = []
 for dihedrals in dihedral_matrix:
     rama_bins.append(md_module.aa_classifier.getBinId(dihedrals))
+
 
 if not args.keep:
     os.remove(cpptraj_infile_path)
