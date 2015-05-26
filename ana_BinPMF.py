@@ -169,6 +169,8 @@ last_it_id  = iterations[-1].getId()
 for iteration_loop in iterations:
     if iteration_loop.getId() == 0:
         continue
+    if len(iteration_loop.bins) <= args.bin_id:
+        continue
     segment_datas.append([])
     this_bin = iteration_loop.bins[args.bin_id]
     sys.stdout.write(' Calculating coordinates for iteration '\

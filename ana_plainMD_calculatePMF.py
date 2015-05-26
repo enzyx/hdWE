@@ -17,12 +17,9 @@ parser.add_argument('-b', '--begin_frame', dest="begin_frame",
 parser.add_argument('-e', '--end_frame', dest="end_frame",
                     required=False, type=int, default=0,
                     help="Last frame to to use for PMF calculation.")  
-parser.add_argument('-i', '--cpptraj_lines_file', dest="cpptraj_lines_file_path", 
+parser.add_argument('-i', '--cpptraj_output', dest="cpptraj_output", 
                     type=str, 
-                    help="File containig cpptraj syntax that defines the reaction coordinate.")
-parser.add_argument('-t', '--trajectory', dest="trajectory", 
-                    required=True, type=str,
-                    help="Plain MD trajectory.") 
+                    help="File containing cpptraj output.")
 parser.add_argument('-o', '--output', dest="output_path", 
                     required=False, type=str, default='freeMD_calculatePMF.output',
                     help="Output filename")  
@@ -34,7 +31,7 @@ parser.add_argument('-N', '--number_of_bins', dest="number_of_bins",
 args = parser.parse_args()
 
 # Load coordinates
-coordinates_tmp = numpy.loadtxt(args.input_path, usecols=(1,) )
+coordinates_tmp = numpy.loadtxt(args.cpptraj_output, usecols=(1,) )
 if args.end_frame==0:
     args.end_frame = len(coordinates_tmp) - 1
 

@@ -128,7 +128,7 @@ def findConvegenceEvents(iterations):
         finds the iteration of each bin when it switched to converged.
     """
     # holds the raw iterations of convergence. 0 means no converged rates
-    all_closing_iterations = [0] * iterations[-1].getNumberOfBins()
+    all_closing_iterations = [0] * N_BINS
     for iteration in iterations:
         for _bin in iteration.bins:
             if _bin.isConverged() and all_closing_iterations[_bin.getId()] == 0:
@@ -169,13 +169,16 @@ parser.add_argument('-C', '--converged', dest="convergence",
 parser.add_argument('-r', '--rates', dest="rates",
                     default=False, action='store_true',
                     help="Re-calculates the outrates.")                      
-                            
+parser.add_argument('-t', '--transitions', dest="transitions",
+                    default=False, action='store_true',
+                    help="Count trasitions for convergence check.")                              
 # Initialize
 args = parser.parse_args()
                
 ################################
 
 # Get the iterations and parameters
+print ('loading iterations')
 logger = Logger(args.logdir)
 iterations = logger.loadIterations(begin = args.first_iteration, 
                                    end   = args.last_iteration)
@@ -190,6 +193,7 @@ config.read(CONFIGFILE)
 
 CONV_RANGE = int(config.get('hdWE','convergence-range'))
 CONV_THRES = float(config.get('hdWE','convergence-threshold'))
+N_BINS     = iterations[-1].getNumberOfBins() 
 rate_matrices = []
 print ("range={}, threshold={}".format(CONV_RANGE, CONV_THRES))
 
@@ -224,22 +228,22 @@ if args.when:
 ###################
 # CALCULATE RATES #
 ###################
-sys.stdout.write('\033[1m' + 'Calculating rates...' + '\033[0m\n')
-
-# fill iteration and bin data
-iteration_datasets = []
-n_bins = iterations[-1].getNumberOfBins()
-
-for iteration in iterations:
-    iteration_datasets.append(iterationData(iteration))
-    rate_matrices.append(iteration_datasets[-1].rate_matrix)
+if args.rates or args.convergence:
+    sys.stdout.write('\033[1m' + 'Calculating rates...' + '\033[0m\n')
     
-for it_data in iteration_datasets:
-    if len(it_data.bin_data) > args.bin_index:
-        it_data.bin_data[args.bin_index].calculateMeans(iteration_datasets, 
-                                                    n_bins, 
-                                                    CONV_RANGE, 
-                                                    CONV_THRES)
+    # fill iteration and bin data
+    iteration_datasets = []
+    
+    for iteration in iterations:
+        iteration_datasets.append(iterationData(iteration))
+        rate_matrices.append(iteration_datasets[-1].rate_matrix)
+        
+    for it_data in iteration_datasets:
+        if len(it_data.bin_data) > args.bin_index:
+            it_data.bin_data[args.bin_index].calculateMeans(iteration_datasets, 
+                                                        N_BINS, 
+                                                        CONV_RANGE, 
+                                                        CONV_THRES)
           
 ##############
 # PLOT RATES #
@@ -252,19 +256,55 @@ if args.rates:
     for target_index, mean in enumerate(means):
         if mean > constants.num_boundary and target_index != args.bin_index:
             sys.stdout.write("{0} \t {1:.5f}\n".format(target_index, mean))
+            
+    # get number of plots to draw
+    number_of_plots = 0
+    for it_data in iteration_datasets:
+        means = it_data.getBinData(args.bin_index).getMeans()
+        number_of_plots_for_iteration = 0
+        for target_bin_index,mean in enumerate(means):
+            if target_bin_index == args.bin_index:
+                continue
+            if mean > constants.num_boundary:
+                number_of_plots_for_iteration += 1
+        if number_of_plots_for_iteration > number_of_plots:
+            number_of_plots = number_of_plots_for_iteration
+    print ('creating {} plots'.format(number_of_plots))
+            
+    
 
     if args.plot:
-        f, axarr = plt.subplots(iterations[-1].getNumberOfBins(),1, sharex=True, sharey=True)
+        # plot data generation
+        # list of tuples (bin_id, [x], [y])
+        plot_data = []
         for target_bin_index, target_bin in enumerate(iterations[-1].bins):
+            if target_bin_index == args.bin_index:
+                continue
+            b_plot_this_bin = False
             x = []
             y = []
             for it_data in iteration_datasets:
                 x.append(it_data.getId())
                 if len(it_data.getBinData(args.bin_index).means) > target_bin_index:
-                    y.append(it_data.getBinData(args.bin_index).means[target_bin_index])
+                    mean = it_data.getBinData(args.bin_index).means[target_bin_index]
+                    y.append(mean)
+                    if mean > constants.num_boundary:
+                        b_plot_this_bin = True
                 else:
                     y.append(0.0)
-            axarr[target_bin_index].plot(x,y)
+            if b_plot_this_bin:
+                plot_data.append((target_bin_index, x, y))
+                    
+         # actual plotting
+        f, axarr = plt.subplots(len(plot_data),1, sharex=True, sharey=False)
+        for plot_index, data in enumerate(plot_data):
+            print ('plotting plot {}'.format(plot_index))
+            target_bin_index = data[0]
+            x = data[1]
+            y = data[2]
+            axarr[plot_index].plot(x,y)
+            axarr[plot_index].set_ylabel('bin {}'.format(target_bin_index))
+            plot_index += 1
             
         plt.show()
 
@@ -388,4 +428,159 @@ if args.convergence:
         plt.show() 
 
 
-    
+#########################
+### transition counts ###
+#########################
+
+if args.transitions:
+    print ('analysing transitions')
+    transitions_matrix = convergenceCheck.CalculateTransitionsMatrix(iterations)
+      
+    # PRINT TRANSITIONS MATRIX        
+#     for iline,line in enumerate(transitions_matrix):
+#         for iele,element in enumerate(line):
+#             if iele != iline:
+#                 sys.stdout.write("{0:<5d} ".format(element))
+#             else:
+#                 sys.stdout.write("    0 ")
+#         sys.stdout.write("\n")
+
+    # Print all values of the transition matrix
+    sys.stdout.write('#from  to    transitions\n')
+    for source_bin,line in enumerate(transitions_matrix):
+        for target_bin,element in enumerate(line):
+            if source_bin != target_bin and element != 0:
+                sys.stdout.write("{0:<3d}   {1:<3d}    {2:<4d}\n".format(source_bin, target_bin, element))
+            
+
+
+    # Print transitions of selected bin args.bin_index
+#     total_in = 0
+#     total_out = 0
+#     sys.stdout.write('# total transitions of bin {} \n'.format(args.bin_index))
+#     sys.stdout.write('#bin   incoming     outgoing\n')
+#     for bin_id in N_BINS:
+#         incoming = transitions_matrix[args.bin_index][bin_id]
+#         outgoing = transitions_matrix[bin_id][args.bin_index]
+#         total_in += incoming
+#         total_out += outgoing
+#         if incoming != 0 or outgoing != 0:
+#             sys.stdout.write('{bin_id:>3}      {inc:>5}      {out:>5}\n'.format(bin_id = bin_id,
+#                                                                                 inc    = incoming,
+#                                                                                 out    = outgoing))
+#     sys.stdout.write('# total numbers:\n')
+#     sys.stdout.write('#         {inc:>5}      {out:>5}'.format(inc = total_in,
+#                                                                out = total_out))
+
+    # total in and out transitions (from different bins) of all bins
+    # column sum:
+#     in_transitions  = transitions_matrix.sum(axis=0) - np.diagonal(transitions_matrix)
+#     # row sum:
+#     out_transitions = transitions_matrix.sum(axis=1) - np.diagonal(transitions_matrix)
+# 
+#     # print total in and out transitions 
+#     sys.stdout.write('# total incmoing and outgoing segments for all bins\n')
+#     sys.stdout.write('#bin_id   in      out      in-out\n')
+#     for bin_id in range(N_BINS):
+#         sys.stdout.write('{bin:<4d}      {inc:<6d}   {out:<6d}   {net:<6d}\n'.format(bin = bin_id, 
+#                                                                       inc = in_transitions[bin_id],
+#                                                                       out = out_transitions[bin_id],
+#                                                                       net = in_transitions[bin_id]-out_transitions[bin_id]))
+
+    # Number of Connected bins
+#     connected_bins = []
+#     for bin_id in range(N_BINS):
+#         transition_partners = 0
+#         for target_bin_id, n_transitions in enumerate(transitions_matrix[bin_id]):
+#             if n_transitions != 0 and target_bin_id != bin_id:
+#                 transition_partners += 1
+#         connected_bins.append(transition_partners)
+#         
+#     # print number of connected bins
+#     sys.stdout.write('#number of bins to which each bin hat a segment transfer\n')
+#     sys.stdout.write('#bin   number of target bins')
+#     for bin_id,n_connected in enumerate(connected_bins):
+#         sys.stdout.write('{bin:<3}   {n:<6d}\n'.format(bin = bin_id,
+#                                                    n = n_connected))
+            
+
+# # Print number of transitions into bins 
+#     in_transitions = sorted(in_transitions,key=lambda x: x[1], reverse=True)
+#     sys.stdout.write('#total number of incoming segments\n')
+#     for bin_data in in_transitions:
+#         sys.stdout.write('{bin:<4d}   {transitions:<6d}\n'.format(bin=bin_data[0], transitions=bin_data[1]))
+# 
+# # Print number of transitions out of bins 
+#     out_transitions = sorted(out_transitions,key=lambda x: x[1], reverse=True)
+#     sys.stdout.write('#total number of outgoing segments\n')
+#     for bin_data in out_transitions:
+#         sys.stdout.write('{bin:<4d}   {transitions:<6d}\n'.format(bin=bin_data[0], transitions=bin_data[1]))
+
+                
+# TRANSITIONS OUT OF BIN RESOLVED WITH TARGET BIN
+#     transition_lists = [[] for i in range(N_BINS)]
+# 
+#     for it_id,iteration in enumerate(iterations):
+#         for bin_id in range(N_BINS):
+#             if len(iteration.bins) > bin_id: 
+#                 transitions_in_this_iteration = 0
+#                 for segment in iteration.bins[bin_id].initial_segments:
+#                     if segment.getParentBinId() == args.bin_index:
+#                         if segment.getParentIterationId() == it_id - 1:
+#                             rate = segment.getProbability() / \
+#                                     iterations[it_id-1].\
+#                                      bins[segment.getParentBinId()].\
+#                                      getProbability()
+#                         else:
+#                             sys.stderr.write("WARNING: approximate rate for segment {}.\n".format(segment.getNameString()))
+#                             rate = 1.0 / iteration.bins[args.bin_index].getTargetNumberOfSegments()
+#  
+#                         transitions_in_this_iteration += rate 
+#                 if len(transition_lists[bin_id]) == 0:
+#                     transition_lists[bin_id].append(transitions_in_this_iteration)
+#                 else:
+#                     transition_lists[bin_id].append(transition_lists[bin_id][-1] + \
+#                                                transitions_in_this_iteration)
+#             else:
+#                 transition_lists[bin_id].append(0)
+#              
+#     f, ax = plt.subplots(1,1)
+#     for bin_id, bin_transitions in enumerate(transition_lists):
+#         if bin_id != args.bin_index and bin_transitions[-1] != 0:
+#             x_values = [x for x in range(len(bin_transitions))]
+#             ax.plot(x_values,bin_transitions, label = "bin {}".format(bin_id))
+#     ax.legend(loc=(1.1,0.5))
+#     plt.show()
+
+#     sys.stdout.write('#to bin   transitions\n')
+#     for target_bin_id, transitions in enumerate(transitions_matrix[args.bin_index][:]):
+#         if transitions != 0:
+#             sys.stdout.write("{0:>3}      {1:>5}\n".format(target_bin_id, transitions))
+
+# INCOMING TRANSITIONS PER BIN OVER ITERATIONS
+#     transition_lists = [[] for i in range(N_BINS)] 
+#     for it_id,iteration in enumerate(iterations):
+#         for bin_id in range(N_BINS):
+#             if len(iteration.bins) > bin_id:
+#                 # count transitions into this bin in this iteration
+#                 in_transitions = 0
+#                 for initial_segment in iteration.bins[bin_id].initial_segments:
+#                     if initial_segment.getParentBinId() != bin_id:
+#                         in_transitions += 1
+# 
+#                 # store number of in_transitions
+#                 if len(transition_lists[bin_id]) == 0:
+#                     transition_lists[bin_id].append(in_transitions)
+#                 else:
+#                     transition_lists[bin_id].append(transition_lists[bin_id][-1] + \
+#                                                in_transitions)
+#             else:
+#                 transition_lists[bin_id].append(0)
+#               
+#     f, ax = plt.subplots(1,1)
+#     for bin_id, bin_transitions in enumerate(transition_lists):
+#         if bin_id != args.bin_index and bin_transitions[-1] != 0:
+#             x_values = [x for x in range(len(bin_transitions))]
+#             ax.plot(x_values,bin_transitions, label = "bin {}".format(bin_id))
+#     ax.legend(loc=(1.1,0.5))
+#     plt.show()
