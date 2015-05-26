@@ -3,6 +3,21 @@ import sys
 import numpy as np
 import constants
 
+def CalculateTransitionsMatrix(iterations):
+    """
+    @return matrix [nbins x nbins] with number of transitions 
+            from each bin (row) to all the others (column). 
+    """
+    matrix_size = iterations[-1].getNumberOfBins() 
+    transitions_matrix = np.zeros((matrix_size, matrix_size), dtype=int)
+    
+    for iteration in iterations:
+        for _bin in iteration:
+            for segment in _bin.initial_segments:
+                transitions_matrix[segment.getParentBinId()][segment.getBinId()] += 1 
+    
+    return transitions_matrix
+
 def checkBin(_bin, rate_matrices, CONV_THRES, debug):
     """
     checks if RMSFs of outgoing rates of 
