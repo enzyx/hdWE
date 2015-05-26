@@ -5,7 +5,9 @@ from topol.matrix_gly import glycine
 class AAClassifier():
     def __init__(self, aa_sequence):
         """
-        asdf
+        Reads the primary sequence and returns the required angles.
+        Can calculated the ramachandran bin id from given set of 
+        angles. This class is a container for a specific sequence.
         """
         self.aa_sequence        = aa_sequence
         self.required_dihedrals = self.__generateRequiredDihedrals()
@@ -13,25 +15,26 @@ class AAClassifier():
     def __getProlineId(self, omega, psi):
         """
         @return str(proline bin id)
+        input angles range from [-180.0, 180.0[
         """
-        omega = int(omega + 179)
-        psi   = int(180 - psi)
+        omega = int(omega + 180)
+        psi   = int(179 - psi)
         return str(proline[psi][omega])
     
     def __getAlanineId(self, phi, psi):
         """
         @return str(alanine bin id)
         """
-        phi   = int(phi + 179)
-        psi   = int(180 - psi)
+        phi   = int(phi + 180)
+        psi   = int(179 - psi)
         return str(alanine[psi][phi])
     
     def __getGlycineId(self, phi, psi):
         """
         @return str(alanine bin id)
         """
-        phi   = int(phi + 179)
-        psi   = int(180 - psi)
+        phi   = int(phi + 180)
+        psi   = int(179 - psi)
         return str(glycine[psi][phi])
     
     
