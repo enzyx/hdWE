@@ -88,10 +88,13 @@ if args.histogram != '':
     rama_hist_sorted = sorted(rama_hist.items(), key=lambda x: x[1]['count'], reverse=True)
     rama_hist_file = open(args.histogram, 'w')
     for i in rama_hist_sorted:
+        mean_passage_time = 0.0
+        if i[1]['transitions'] > 0:
+            mean_passage_time = float(i[1]['count'])/float(i[1]['transitions'])
         rama_hist_file.write("{0:s}   {1: 8d} {2: 8d} {3: 15.8f}\n".format(i[0], 
                                                                 i[1]['count'], 
                                                                 i[1]['transitions'], 
-                                                                float(i[1]['count'])/float(i[1]['transitions'])))
+                                                                mean_passage_time))
     rama_hist_file.close()
 
 # Get the bin id
