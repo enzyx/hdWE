@@ -1,5 +1,5 @@
 from topol.matrix_pro import proline
-from topol.matrix_ala import alanine
+from topol.matrix_ala_colorful import alanine
 from topol.matrix_gly import glycine
 
 class AAClassifier():

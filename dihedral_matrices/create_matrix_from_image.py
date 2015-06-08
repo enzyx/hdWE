@@ -26,7 +26,7 @@ def main():
     # beta sheet phi,psi = -135, 135
     colors.append(image.getpixel((44,45)))
 #    colors.append(image.getpixel((45,44)))
-    fraction = 10
+    fraction = 1
     for i in xrange(height):
         for j in xrange(width):
             if i%fraction==0 and j%fraction==0:
