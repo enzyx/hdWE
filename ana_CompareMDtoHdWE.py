@@ -88,7 +88,7 @@ for loop_bin in bin_data:
 # Sort by p_md and write to output file if requested by user
 if args.md_probs:
     f = open(args.md_probs, 'w')
-    f.write("# rama_id   p_md   p_hdWE   bin_id")
+    f.write("# rama_id   p_md   p_hdWE   bin_id\n")
     for b in sorted(bin_data, key=lambda e:e['p_md'], reverse=True):
         f.write("{0:s} {1:15e} {2:15e} {3:d}\n".format(b["rama_id"], b["p_md"], b["p_hdWE"], b["id"]))
     f.close()

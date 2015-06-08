@@ -73,18 +73,25 @@ if not args.keep:
 
 if args.histogram != '':
     rama_hist = {}
-    for rama_id in rama_bins:
+    old_rama_id = rama_bins[0]
+    rama_hist[old_rama_id] = {'count': 1, 'transitions': 0}
+    for rama_id in rama_bins[1:]:
         try:
-            rama_hist[rama_id] += 1
+            rama_hist[rama_id]['count'] += 1
         except KeyError:
-            rama_hist[rama_id] = 1
+            rama_hist[rama_id] = {'count': 1, 'transitions': 0}
+        # Count transitions
+        if old_rama_id != rama_id:
+            rama_hist[old_rama_id]['transitions'] += 1
+        old_rama_id = rama_id
     # Sort
-    data = sorted(rama_hist, key=lambda pf: [pf[0]])
-    rama_hist = (sorted(rama_hist.items(), key=lambda x:x[1]))
-    rama_hist.reverse()
+    rama_hist_sorted = sorted(rama_hist.items(), key=lambda x: x[1]['count'], reverse=True)
     rama_hist_file = open(args.histogram, 'w')
-    for i in rama_hist:
-        rama_hist_file.write("{0:s}   {1: 8d}\n".format(i[0], i[1]))
+    for i in rama_hist_sorted:
+        rama_hist_file.write("{0:s}   {1: 8d} {2: 8d} {3: 8d}\n".format(i[0], 
+                                                                i[1]['count'], 
+                                                                i[1]['transitions']), 
+                                                                float(i[1]['count'])/float(i[1]['transitions']))
     rama_hist_file.close()
 
 # Get the bin id
