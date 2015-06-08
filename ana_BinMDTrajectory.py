@@ -15,9 +15,6 @@ parser =argparse.ArgumentParser(description=__doc__, formatter_class=argparse.Ra
 parser.add_argument('-c', '--conf', dest="input_md_conf", 
                     type=str, default = 'hdWE.conf',
                     help="MD-Software configuration file")
-# parser.add_argument('-f', '--file', type=str, dest="trajectory", 
-#                     metavar="TRAJFILE", required=True,
-#                     help="MD trajectory file")
 parser.add_argument('-f', '--file', type=str, nargs='+',
                     dest="trajectories", metavar="TRAJFILE", required=True,
                     help="MD trajectory file")
