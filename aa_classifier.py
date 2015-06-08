@@ -11,33 +11,43 @@ class AAClassifier():
         """
         self.aa_sequence        = aa_sequence
         self.required_dihedrals = self.__generateRequiredDihedrals()
-         
+    
+    def __mapX(self, angle):
+        """
+        Get X the index for the dihedral map functions [0..359]
+        """
+        return int(angle + 180) % 360
+    
+    def __mapY(self, angle):
+        """
+        Get Y the index for the dihedral map functions [0..359]
+        """
+        return int(179 - angle) % 360
+    
     def __getProlineId(self, omega, psi):
         """
         @return str(proline bin id)
-        input angles range from [-180.0, 180.0[
         """
-        omega = int(omega + 180)
-        psi   = int(179 - psi)
-        return str(proline[psi][omega])
+        X   = self.__mapX(omega)
+        Y   = self.__mapY(psi)
+        return str(proline[Y][X])
     
     def __getAlanineId(self, phi, psi):
         """
         @return str(alanine bin id)
         """
-        phi   = int(phi + 180)
-        psi   = int(179 - psi)
-        return str(alanine[psi][phi])
+        X   = self.__mapX(phi)
+        Y   = self.__mapY(psi)
+        return str(alanine[Y][X])
     
     def __getGlycineId(self, phi, psi):
         """
         @return str(alanine bin id)
         """
-        phi   = int(phi + 180)
-        psi   = int(179 - psi)
-        return str(glycine[psi][phi])
-    
-    
+        X   = self.__mapX(phi)
+        Y   = self.__mapY(psi)
+        return str(glycine[Y][X])
+        
     def getBinId(self, dihedrals):
         """
         @param dihedrals get from cpptraj
