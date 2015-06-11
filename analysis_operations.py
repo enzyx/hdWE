@@ -2,16 +2,21 @@ import numpy
 from copy import deepcopy
 import constants
     
-def meanRateMatrix(iterations, begin, end):
+def meanRateMatrix(iterations, begin=0, end=-1):
     """
     Calculates the mean values of the bin-to-bin rates over a given
     range of iterations  (end iteration is including) and returns the mean rate Matrix.
     The mean value of outrates of bins that do not exists over the full iteration range is calculated
     only over the existing iterations in order to not underestimate them.
     """
+    # Accept default values for begin and end
+    if end == -1:
+        end = len(iterations) - 1 
+    
     # Initialize mean rate matrix
-    mean_rate_matrix = numpy.zeros([iterations[end].getNumberOfBins(), iterations[end].getNumberOfBins()], float)  
-    bin_exists_since = numpy.zeros([iterations[end].getNumberOfBins()], int)  
+    N = iterations[end].getNumberOfBins()
+    mean_rate_matrix = numpy.zeros([N,N], float)  
+    bin_exists_since = numpy.zeros([N], int)  
     
     # Sum rates
     for iterations_loop in iterations[begin:end + 1]:
@@ -29,6 +34,25 @@ def meanRateMatrix(iterations, begin, end):
                 mean_rate_matrix[i,j] =  mean_rate_matrix[i,j] / bin_exists_since[i]
              
     return mean_rate_matrix
+
+def cumulativeTransitionMatrix(iterations, begin=0, end=-1):
+    """
+    Return the cumulative Transition matrix of iterations[begin, end] 
+    (end is inculded).
+    """
+    # Accept default values for begin and end
+    if end == -1:
+        end = len(iterations) - 1 
+    
+    N = iterations[end].getNumberOfBins()
+    cumulative_transition_matrix = numpy.zeros((N,N), int)  
+    for this_iteration in iterations[begin:end + 1]:
+        this_transition_matrix = this_iteration.TransitionMatrix()
+        M = len(this_transition_matrix)
+        for i in range(M):
+            for j in range(M):
+                cumulative_transition_matrix[i,j] += this_transition_matrix[i,j]
+    return cumulative_transition_matrix
     
 def meanBinProbabilities(iterations, begin, end):
     """

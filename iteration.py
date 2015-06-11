@@ -145,12 +145,13 @@ class Iteration(object):
         Calculates the Flux Matrix for the given iteration.
         """
         # Initialize array for flux matrix
-        flux_matrix = numpy.zeros([self.getNumberOfBins(), self.getNumberOfBins()], float)
+        N = self.getNumberOfBins()
+        flux_matrix = numpy.zeros((N,N), float)
         # Sum all probability that enters a bin from the parent bins
-        for bin_l in self.bins:
-            for segment_l in bin_l.initial_segments:
-                flux_matrix[segment_l.getParentBinId(), bin_l.getId()] += \
-                segment_l.getProbability()
+        for this_bin in self:
+            for this_segment in this_bin.initial_segments:
+                flux_matrix[this_segment.getParentBinId(), this_bin.getId()] += \
+                                                this_segment.getProbability()
         return flux_matrix
         
     def RateMatrix(self):
@@ -159,25 +160,37 @@ class Iteration(object):
         rate from bin i to bin j are stored in value [i][j]
         """
         # Initialize array for rate matrix
-        rate_matrix = numpy.zeros([self.getNumberOfBins(), self.getNumberOfBins()], float)
+        N = self.getNumberOfBins()
+        rate_matrix = numpy.zeros((N,N), float)
         # Sum all probability that enters a bin from the parent bins
-        for this_bin in self.bins:
+        for this_bin in self:
             for this_segment in this_bin.initial_segments:
-                if self.bins[this_segment.getParentBinId()].getProbability() > constants.num_boundary:
-                    rate_matrix[this_segment.getParentBinId(), this_bin.getId()] += \
-                    this_segment.getProbability()
+                rate_matrix[this_segment.getParentBinId(), this_segment.getBinId()] += \
+                this_segment.getProbability()
         
         # Normalize all outrates with respect to a bin:
         for i in range(0,len(rate_matrix)):
             previous_iteration_parent_probability = 0.0
-            #TODO: Shouldn't this be equal to something like:
-            #      parent_bins[i].getProbability()? Please comment (Fabi)
+            # Sum up the parent bin's probabilities
             for j in range(0,len(rate_matrix)):
                 previous_iteration_parent_probability += rate_matrix[i,j]
             if previous_iteration_parent_probability > constants.num_boundary:
                 for j in range(0,len(rate_matrix)):
                     rate_matrix[i,j] /= previous_iteration_parent_probability
         return rate_matrix
+    
+    def TransitionMatrix(self):
+        """
+        Return the transition matrix for this iteration.
+        Element [i,j] contains the number of segments migrating from
+        bin i to bin j during this iteration. 
+        """
+        N = self.getNumberOfBins()
+        transition_matrix = numpy.zeros((N,N), int)
+        for this_bin in self:
+            for this_segment in this_bin.initial_segments:
+                transition_matrix[this_segment.getParentBinId(), this_segment.getBinId()] += 1
+        return transition_matrix
     
     def getBinProbabilities(self):
         """
