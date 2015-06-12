@@ -11,6 +11,7 @@ from iteration import Iteration
 from logger import Logger
 import threading
 import resorting
+import recycling
 import reweighting
 from thread_container import ThreadContainer
 import os
@@ -142,8 +143,7 @@ for iteration_counter in range(len(iterations), MAX_ITERATIONS + 1):
                      md_module,
                      INITIAL_TARGET_NUMBER_OF_SEGMENTS,
                      START_STATES,
-                     END_STATES,
-                     STEADY_STATE)
+                     END_STATES)
     
     # 2. Backup the segments lists of all bins
     #    - Saving the segment assignments for correct
@@ -155,8 +155,9 @@ for iteration_counter in range(len(iterations), MAX_ITERATIONS + 1):
         
     # 3. Assign recycled probabilities
     if STEADY_STATE:
-        resorting.assignRecycledProbability(iterations[-1])
-            
+        recycling.recycleProbability(iterations[-1])
+        print(iterations[-1].getProbabilityFlow())
+    
     # 4. Reweighting of bin probabilities
     #    The order of the following steps should no longer matter.  
     if iterations[-1].getNumberOfBins() > 1 and REWEIGHTING_RANGE > 0.0:
