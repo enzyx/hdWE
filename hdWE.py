@@ -156,7 +156,7 @@ for iteration_counter in range(len(iterations), MAX_ITERATIONS + 1):
     # 3. Assign recycled probabilities
     if STEADY_STATE:
         recycling.recycleProbability(iterations[-1])
-        print(iterations[-1].getProbabilityFlow())
+        print(" - Recyled Probability: {0:f}".format(iterations[-1].getProbabilityFlow()))
     
     # 4. Reweighting of bin probabilities
     #    The order of the following steps should no longer matter.  
