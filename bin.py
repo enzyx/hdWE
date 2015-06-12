@@ -11,7 +11,7 @@ class Bin(object):
     """
     def __init__(self, iteration_id, bin_id, reference_iteration_id, 
                  reference_bin_id, reference_segment_id, 
-                 target_number_of_segments, rama_id, outrates_converged):
+                 target_number_of_segments, coordinate_ids, start_states, end_states):
         """
         @param ref_coords the path to reference coordinates defining the bin
         @param trajectories single or list of trajectories to 
@@ -25,11 +25,10 @@ class Bin(object):
         self.reference_segment_id      = reference_segment_id       # int
         # How many segments we want in this bin
         self.target_number_of_segments = target_number_of_segments  # int
-        # are the outrates converged
-        self.b_outrates_converged      = outrates_converged
-        # The dihedral bin reference string (only for 
-        # combinatoric ramachandran binning)
-        self.rama_id                   = str(rama_id)
+        # coordinate bin ids for considered binning dimensions
+        self.coordinate_ids            = coordinate_ids
+        self.is_start_bin              = self.__testBinState(start_states)
+        self.is_end_bin                = self.__testBinState(end_states) 
         # The array of segments
         self.segments                  = []
         # In this array the segments are copied before resampling happens.
@@ -205,11 +204,23 @@ class Bin(object):
         for index in range(len(self.segments)):
             self.segments[index].setSegmentId(index)
     
-    def getRamaId(self):
+    def isStartStateBin(self):
         """
-        @return ramachandran bin id
+        @return Is this bin a start state bin
         """
-        return self.rama_id
+        return self.is_start_bin
+    
+    def isEndStateBin(self):
+        """
+        @return Is this bin a end state bin
+        """
+        return self.is_end_bin
+    
+    def getCoordinateIds(self):
+        """
+        @return list of coordinate ids
+        """
+        return self.coordinate_ids
     
     def getReferenceNameString(self):
         """
@@ -290,10 +301,10 @@ class Bin(object):
         """
         @return Current number of segments if converged is false.
         """
-        if self.isConverged() == False:
-            return len(self.segments)
-        else:
-            return 0
+        #if self.isConverged() == False:
+        return len(self.segments)
+        #else:
+        #    return 0
     
     def getTargetNumberOfSegments(self):
         """
@@ -301,11 +312,19 @@ class Bin(object):
         """
         return self.target_number_of_segments
     
-    def setConverged(self, boolean):
-        self.b_outrates_converged = boolean
-    
-    def isConverged(self):
-        return self.b_outrates_converged
+    def __testBinState(self, STATES):
+        """
+        tests if coordinate ids of bin are in STATES (e.g. start or end state)
+        @return boolean
+        """
+        if type(STATES) == bool:
+            return STATES
+        
+        for state in STATES:
+            # compare element wise
+            if self.getCoordinateIds() == state:
+                return True
+        return False
     
     def __iter__(self):
         """

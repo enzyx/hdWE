@@ -8,7 +8,7 @@ class Iteration(object):
     """
     Defines one iteration of the hdWE algorithm
     """
-    def __init__(self, iteration_id):
+    def __init__(self, iteration_id, boundaries):
         """ 
         @param ref_coords the path to reference coordinates defining the bin
         @param trajectories single or list of trajectories to 
@@ -16,12 +16,15 @@ class Iteration(object):
         """
         # points to the reference structure of this bin
         self.iteration_id = iteration_id    # int
+        self.boundaries   = boundaries 
         # the array of segments
-        self.bins = []                      
+        self.bins = []
+        self.probability_flow = 0.0                      
 
     def generateBin(self, reference_iteration_id, 
                     reference_bin_id, reference_segment_id,
-                    target_number_of_segments, rama_id, outrates_converged = False):
+                    target_number_of_segments, coordinate_ids, 
+                    start_states, end_states):
         """
         Initialize a new instance of class Bin and append to bins
         @return  bin_id returns the id of the created bin
@@ -32,8 +35,9 @@ class Iteration(object):
                     reference_bin_id           = reference_bin_id, 
                     reference_segment_id       = reference_segment_id, 
                     target_number_of_segments  = target_number_of_segments, 
-                    rama_id                    = rama_id,
-                    outrates_converged         = outrates_converged)
+                    coordinate_ids             = coordinate_ids,
+                    start_states               = start_states,
+                    end_states                 = end_states)
         return self.__addBin(__bin)
 
     def __addBin(self, _bin):
@@ -46,6 +50,9 @@ class Iteration(object):
     
     def getId(self):
         return self.iteration_id
+        
+    def getBoundaries(self):
+        return self.boundaries
         
     def getNameString(self):
         """Returns iteration index as a string
@@ -96,7 +103,7 @@ class Iteration(object):
         
     def getTargetNumberOfSegments(self):
         """
-        Returns the current number of segments
+        Returns the target number of segments
         """
         __number_of_segments = 0
         for __bin in self.bins:
@@ -211,4 +218,30 @@ class Iteration(object):
             if buf_prob > max_bin_probability:
                 max_bin_probability = buf_prob
 
-        return max_bin_probability        
+        return max_bin_probability
+    
+    def getStartStateBins(self):
+        """
+        @return the list of bins in end state 
+        """
+        start_bins = []
+        for this_bin in self.bins:
+            if this_bin.isStartStateBin():
+                start_bins.append(this_bin)
+        return start_bins
+    
+    def getEndStateBins(self):
+        """
+        @return the list of bins in start state 
+        """
+        end_bins = []
+        for this_bin in self.bins:
+            if this_bin.isEndStateBin():
+                end_bins.append(this_bin)
+        return end_bins
+    
+    def setProbabilityFlow(self, probability_flow):
+        self.probability_flow = probability_flow
+
+    def getProbabilityFlow(self):
+        return self.probability_flow

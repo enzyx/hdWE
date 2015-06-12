@@ -56,6 +56,9 @@ class Segment(object):
     def subProbability(self, probability):
         self.probability -= probability
 
+    def multProbability(self, factor):
+        self.probability *= factor
+        
     def getId(self):
         return self.segment_id
     

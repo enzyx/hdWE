@@ -57,8 +57,26 @@ def prepare(WORKDIR, JOBNAME, starting_structure, OVERWRITE, APPEND, DEBUG):
                 continue
             os.mkdir(WORKDIR + sub_dir)
         shutil.copyfile(WORKDIR + starting_structure, "{wd}/{jn}-run/00000_00000_00000.rst7".format(wd=WORKDIR, jn=JOBNAME))
+        
+def parseInitialBoundaries(config):
+    initial_boundaries = []
+    config_string = config.get('hdWE', 'boundaries')
+    for boundary_string in config_string.split(','):
+        initial_boundaries.append([])
+        for value in boundary_string.split():
+            initial_boundaries[-1].append(int(value))
+    return initial_boundaries
 
-def create_initial_iteration(target_number_of_segments, md_module):
+def parseState(config_string):
+    end_state = []
+    for coordinate_string in config_string.split('|'):
+        end_state.append([])
+        for coordinate_ids in coordinate_string.split(','):
+            end_state[-1].append(int(coordinate_ids.strip()))        
+    
+    return end_state
+
+def create_initial_iteration(target_number_of_segments, initial_boundaries, md_module, START_STATES, END_STATES):
     """
     Creates the first bin, with the starting structure as refcoords
     and n_segs_per_bin trajectories with probability 1/n_segs_per_bin.
@@ -70,13 +88,15 @@ def create_initial_iteration(target_number_of_segments, md_module):
                               iteration_id = 0, 
                               bin_id = 0, 
                               segment_id = 0)
-    initial_rama_id = md_module.calcRamaId(initial_segment)
-    iteration0 = Iteration(iteration_id=0)
+    initial_coordinate_ids = md_module.calcSegmentCoordinateIds(initial_segment, initial_boundaries)
+    iteration0 = Iteration(iteration_id = 0, boundaries = initial_boundaries)
     iteration0.generateBin(reference_iteration_id    = iteration0.getId(),
                            reference_bin_id          = 0,
                            reference_segment_id      = 0,
                            target_number_of_segments = target_number_of_segments,
-                           rama_id                   = initial_rama_id)
+                           coordinate_ids            = initial_coordinate_ids,
+                           start_states              = START_STATES,
+                           end_states                = END_STATES)
     iteration0.bins[0].generateSegment(probability         = 1.0,
                                        parent_iteration_id = 0,
                                        parent_bin_id       = 0, 

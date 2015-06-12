@@ -12,7 +12,6 @@ from logger import Logger
 import threading
 import resorting
 import reweighting
-import convergenceCheck
 from thread_container import ThreadContainer
 import os
 import glob
@@ -45,22 +44,23 @@ CONFIGFILE = args.configfile
 config = ConfigParser.ConfigParser()
 config.read(CONFIGFILE)
 
-WORKDIR               = config.get('hdWE','WORKDIR')
-JOBNAME               = config.get('hdWE','JOBNAME')
-LOGDIR                = constants.getLogDirPath(WORKDIR, JOBNAME)
-RUNDIR                = constants.getRunDirPath(WORKDIR, JOBNAME)
-APPEND                = args.append
-OVERWRITE             = args.overwrite
-DEBUG                 = args.debug
-MAX_ITERATIONS        = int(config.get('hdWE','max-iterations'))
-SEGMENTS_PER_BIN      = int(config.get('hdWE','segments-per-bin'))
-STARTING_STRUCTURE    = config.get('hdWE','starting-structure')
-REWEIGHTING_RANGE     = float(config.get('hdWE','reweighting-range'))
-CONVERGENCE_RANGE     = int(config.get('hdWE','convergence-range'))
-CONVERGENCE_THRESHOLD = float(config.get('hdWE','convergence-threshold'))
-NUMBER_OF_THREADS     = int(config.get('hdWE','number-of-threads'))
-MERGE_MODE            = int(config.get('hdWE','merge-mode'))
-MAX_NUMBER_OF_BINS    = int(config.get('hdWE','max-bins'))
+WORKDIR                           = config.get('hdWE','WORKDIR')
+JOBNAME                           = config.get('hdWE','JOBNAME')
+LOGDIR                            = constants.getLogDirPath(WORKDIR, JOBNAME)
+RUNDIR                            = constants.getRunDirPath(WORKDIR, JOBNAME)
+APPEND                            = args.append
+OVERWRITE                         = args.overwrite
+DEBUG                             = args.debug
+MAX_ITERATIONS                    = int(config.get('hdWE','max-iterations'))
+INITIAL_TARGET_NUMBER_OF_SEGMENTS = int(config.get('hdWE','segments-per-bin'))
+INITIAL_BOUNDARIES                = initiate.parseInitialBoundaries(config)
+STARTING_STRUCTURE                = config.get('hdWE','starting-structure')
+REWEIGHTING_RANGE                 = float(config.get('hdWE','reweighting-range'))
+NUMBER_OF_THREADS                 = int(config.get('hdWE','number-of-threads'))
+MERGE_MODE                        = int(config.get('hdWE','merge-mode'))
+STEADY_STATE                      = bool(config.get('hdWE', 'steady-state').lower() == "true")
+START_STATES                      = initiate.parseState(config.get('hdWE', 'start-state'))
+END_STATES                        = initiate.parseState(config.get('hdWE', 'end-state'))
 
 if "amber" in config.sections():
     MD_PACKAGE = "amber"
@@ -111,7 +111,11 @@ if APPEND:
     iterations = logger.loadIterations()
     #TODO: check if all files are present  
 else:
-    iterations.append(initiate.create_initial_iteration(SEGMENTS_PER_BIN, md_module))
+    iterations.append(initiate.create_initial_iteration(INITIAL_TARGET_NUMBER_OF_SEGMENTS, 
+                                                        INITIAL_BOUNDARIES, 
+                                                        md_module, 
+                                                        START_STATES, 
+                                                        END_STATES))
     logger.log(iterations[0], CONFIGFILE)
 
 
@@ -127,17 +131,19 @@ for iteration_counter in range(len(iterations), MAX_ITERATIONS + 1):
     # 1. Sorting of segments into bins
     #    - initialize new iteration.
     #    - copy existing bins from the previous iteration into the new iteration.
-    #    - Calculate the rmsd of each segment to all existing bins.
+    #    - Calculate the coordinate of each segment.
     #    - Generate new bins if required
     sys.stdout.write(' - Setting up new Iteration and sorting Segments into Bins\n')
     sys.stdout.flush()  
     
-    iterations.append(Iteration(iteration_counter)) 
-    resorting.copyBinStructureToLastIteration(iterations, SEGMENTS_PER_BIN)
+    iterations.append(Iteration(iteration_counter, iterations[-1].getBoundaries())) 
+    resorting.copyBinStructureToLastIteration(iterations)
     resorting.resort(iterations, 
                      md_module,
-                     SEGMENTS_PER_BIN,
-                     MAX_NUMBER_OF_BINS)
+                     INITIAL_TARGET_NUMBER_OF_SEGMENTS,
+                     START_STATES,
+                     END_STATES,
+                     STEADY_STATE)
     
     # 2. Backup the segments lists of all bins
     #    - Saving the segment assignments for correct
@@ -146,8 +152,12 @@ for iteration_counter in range(len(iterations), MAX_ITERATIONS + 1):
     #    - This list should be immutable 
     for this_bin in iterations[-1]:
         this_bin.backupInitialSegments()
+        
+    # 3. Assign recycled probabilities
+    if STEADY_STATE:
+        resorting.assignRecycledProbability(iterations[-1])
             
-    # 3. Reweighting of bin probabilities
+    # 4. Reweighting of bin probabilities
     #    The order of the following steps should no longer matter.  
     if iterations[-1].getNumberOfBins() > 1 and REWEIGHTING_RANGE > 0.0:
         sys.stdout.write(' - Reweighting Bin Probabilities\n')
@@ -157,15 +167,7 @@ for iteration_counter in range(len(iterations), MAX_ITERATIONS + 1):
                                              REWEIGHTING_RANGE,
                                              WORKDIR,
                                              JOBNAME)
-    # 4. Check convergence of the bins
-    if iteration_counter > CONVERGENCE_RANGE:    
-        sys.stdout.write(' - Checking Bin Convergence\n')
-        sys.stdout.flush() 
-        convergenceCheck.checkOutratesForConvergence(iterations, 
-                                                     CONVERGENCE_RANGE,
-                                                     CONVERGENCE_THRESHOLD,
-                                                     DEBUG)
-
+        
     # 5. Resampling
     sys.stdout.write(' - Resampling\n')
     sys.stdout.flush() 
@@ -189,7 +191,7 @@ for iteration_counter in range(len(iterations), MAX_ITERATIONS + 1):
     md_module.RunMDs(iterations[-1])
     
     
-    # 7. log everything
+    # 6. log everything
     logger.log(iterations[-1], CONFIGFILE)
 
     #if DEBUG: 
@@ -201,14 +203,7 @@ for iteration_counter in range(len(iterations), MAX_ITERATIONS + 1):
         n_segments += iteration_loop.getNumberOfPropagatedSegments()
     sys.stdout.write(' - (Total number of propagated segments: ' + str(n_segments-1)+ ')\n')
     sys.stdout.flush()
-
-    all_converged = True
-    for bin_loop in iterations[-1]:
-        if bin_loop.isConverged() == False:
-            all_converged = False
-    if all_converged == True:
-        print('\nExploring Mode: All bins are converged                                         ')
-        break        
+    
     #check for empty bins #TODO: make this a function of iterations
     empty_bins = 0
     for bin_loop in iterations[-1]:

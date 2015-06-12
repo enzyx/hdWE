@@ -8,7 +8,8 @@ from datetime import datetime
 from thread_container import ThreadContainer
 import pickle
 import uuid
-from aa_classifier import AAClassifier
+import bin_classifier
+
 
 class MD_module():
     
@@ -35,6 +36,7 @@ class MD_module():
         self.amber_topology_file   = config.get('amber','topology-path')
         self.amber_infile          = config.get('amber','infile-path')
         self.amber_binary          = config.get('amber','binary')
+        self.coordinate_masks_file = config.get('amber', 'coordinate-masks')
         self.parallelization_mode  = config.get('amber','parallelization-mode')
         # Only search mpirun binary in config file if MPI switched on
         if self.parallelization_mode == 'mpi':
@@ -54,8 +56,13 @@ class MD_module():
         if not os.path.isfile(self.amber_infile):
             raise Exception("No infile found at given path:\n{}".format(self.amber_infile))
         
-        self.aa_sequence           = config.get('hdWE', 'aa-sequence')
-        self.aa_classifier         = AAClassifier(self.aa_sequence)
+        # get coordiante masks
+        self.COORDINATE_MASKS = []
+        c_mask_file = open(self.coordinate_masks_file,'r')
+        for line in c_mask_file.readlines():
+            self.COORDINATE_MASKS.append(line.strip())
+        self.N_DIMENSIONS = len(self.COORDINATE_MASKS)
+        
     
     def setIteration(self, iteration):
         self.iteration = iteration
@@ -185,17 +192,17 @@ class MD_module():
             MD_run_count  = 0
             MD_skip_count = 0
             for bin_loop in self.iteration:
-                if bin_loop.isConverged() == False:
-                    for segment_loop in bin_loop:
-                        MD_run_count  += 1
-                        self.RunSegmentMD(segment_loop, MD_run_count, MD_skip_count)
-                        self.printMdStatus(segment_loop, MD_run_count, MD_skip_count)
-                else:
-                    for segment_loop in bin_loop:
-                        MD_skip_count += 1  
-                        MD_run_count  += 1
-                        self.SkipSegmentMD(segment_loop, MD_run_count, MD_skip_count)
-                        self.printMdStatus(segment_loop, MD_run_count, MD_skip_count)                 
+                #if bin_loop.isConverged() == False:
+                for segment_loop in bin_loop:
+                    MD_run_count  += 1
+                    self.RunSegmentMD(segment_loop, MD_run_count, MD_skip_count)
+                    self.printMdStatus(segment_loop, MD_run_count, MD_skip_count)
+                #else:
+                #    for segment_loop in bin_loop:
+                #        MD_skip_count += 1  
+                #        MD_run_count  += 1
+                #        self.SkipSegmentMD(segment_loop, MD_run_count, MD_skip_count)
+                #        self.printMdStatus(segment_loop, MD_run_count, MD_skip_count)                 
                   
         #Thread Parallel Run   
         if self.parallelization_mode=='thread':
@@ -203,20 +210,20 @@ class MD_module():
             MD_skip_count = 0
             thread_container = ThreadContainer()
             for bin_loop in self.iteration:
-                if bin_loop.isConverged() == False:
-                    for segment_loop in bin_loop:
-                        MD_run_count  += 1
-                        thread_container.appendJob(threading.Thread(target=self.RunSegmentMD, 
-                                                                    args=(segment_loop, MD_run_count, MD_skip_count, )))
-                        if thread_container.getNumberOfJobs() >= self.number_of_threads:
-                            thread_container.runJobs()
-                        self.printMdStatus(segment_loop, MD_run_count, MD_skip_count)
-                else:
-                    for segment_loop in bin_loop:
-                        MD_skip_count += 1
-                        MD_run_count  += 1
-                        self.SkipSegmentMD(segment_loop, MD_run_count, MD_skip_count)     
-                        self.printMdStatus(segment_loop, MD_run_count, MD_skip_count)
+                #if bin_loop.isConverged() == False:
+                for segment_loop in bin_loop:
+                    MD_run_count  += 1
+                    thread_container.appendJob(threading.Thread(target=self.RunSegmentMD, 
+                                                                args=(segment_loop, MD_run_count, MD_skip_count, )))
+                    if thread_container.getNumberOfJobs() >= self.number_of_threads:
+                        thread_container.runJobs()
+                    self.printMdStatus(segment_loop, MD_run_count, MD_skip_count)
+                #else:
+                #    for segment_loop in bin_loop:
+                #        MD_skip_count += 1
+                #        MD_run_count  += 1
+                #        self.SkipSegmentMD(segment_loop, MD_run_count, MD_skip_count)     
+                #        self.printMdStatus(segment_loop, MD_run_count, MD_skip_count)
             # Finish jobs in queue
             thread_container.runJobs()
             self.printMdStatus(segment_loop, MD_run_count, MD_skip_count)
@@ -253,10 +260,10 @@ class MD_module():
                                                 out  = outfile_path)
         return line
     
-    def calcRamaId(self, segment):
+    def calcSegmentCoordinateIds(self, segment, bin_boundaries):
         """
-        Calculates the combinatory bin coordinate according to the backbone dihedrals
-        @return A bin id of the for e.g "001211011" for the given segment 
+        Calculates the coordinates of a segment with respect to all binned dimensions
+        @return 
         """
         # Write the cpptraj infile
         segment_name_string = segment.getNameString() 
@@ -275,9 +282,9 @@ class MD_module():
         else:
             cpptraj_outfile_path = "/tmp/{0}_{1}.cpptraj_out".format(segment_name_string, UUID)
         
-        for residue in self.aa_classifier.getRequiredDihedrals():
-            for angle in residue['required_angles']:
-                cpptraj_infile.write(self.getCpptrajDihedralLine(residue['res_id'], angle, cpptraj_outfile_path))
+        for coordinate_mask in self.COORDINATE_MASKS:
+                cpptraj_infile.write('{mask} out {out}\n'.format(mask = coordinate_mask,
+                                                                 out  = cpptraj_outfile_path))
         
         # Write changes to file
         cpptraj_infile.close()
@@ -296,16 +303,21 @@ class MD_module():
                 
         # Load cpptraj output as numpy array
         try:
-            dihedrals = numpy.loadtxt(cpptraj_outfile_path) 
+            coordinates = numpy.loadtxt(cpptraj_outfile_path) 
             # Delete the first entry which refers to the frame index
-            dihedrals = numpy.delete(dihedrals, 0)
+            coordinates = numpy.delete(coordinates, 0)
         except:
             #TODO What should happen then?
             print('amber_module error: cpptraj output {0} can not '\
                   'be found or loaded.'.format(cpptraj_outfile_path))
 
-        # Get the bin id
-        return self.aa_classifier.getBinId(dihedrals)
+        # Get the coordinate ids
+        segment_coordinate_ids = bin_classifier.getCoordinateIds(coordinates, bin_boundaries)
+        
+        #print ("\nsegment {}".format(segment.getNameString()))
+        #print ("coordinates: ", coordinates[0])
+        #print ("coordinate_ids: ", segment_coordinate_ids[0]) 
+        return segment_coordinate_ids
 
     def loadIterationFromDumpFile(self):
         """
@@ -330,43 +342,44 @@ class MD_module():
         """
         os.remove(self.ITERATION_DUMP_FNAME)
     
-    def dumpRamaIdsToFile(self, rama_ids):
+    def dumpAllCoordinateIdsToFile(self, rama_ids):
         """
-        Store the rmsd matrix to dump file
+        Store the coordinate matrix to dump file
         """        
-        rama_ids_dump_file = open(self.RAMA_IDS_DUMP_FNAME , 'w')
-        pickle.dump(rama_ids, rama_ids_dump_file)
-        rama_ids_dump_file.close()
+        all_coordinate_ids_dump_file = open(self.ALL_COORDINATE_IDS_DUMP_FNAME , 'w')
+        pickle.dump(rama_ids, all_coordinate_ids_dump_file)
+        all_coordinate_ids_dump_file.close()
 
-    def loadRamaIdsFromDumpFile(self):
+    def loadAllCoordinateIdsFromDumpFile(self):
         """
-        Load the rmsd matrix from dump file
+        Load the coordinate matrix from dump file
         """
-        rama_ids_dump_file = open(self.RAMA_IDS_DUMP_FNAME , 'r')
-        rama_ids = pickle.load(rama_ids_dump_file)
-        rama_ids_dump_file.close()
-        return rama_ids
+        all_coordinate_ids_dump_file = open(self.ALL_COORDINATE_IDS_DUMP_FNAME , 'r')
+        all_coordinate_ids = pickle.load(all_coordinate_ids_dump_file)
+        all_coordinate_ids_dump_file.close()
+        return all_coordinate_ids
 
-    def removeRamaIdsDumpFile(self):
-        """ Remove rmsd matrix dump file """
-        os.remove(self.RAMA_IDS_DUMP_FNAME)
-    
-    def calcRamaIds(self, iteration):
+    def removeAllCoordinateIdsDumpFile(self):
+        """ Remove coordinate matrix dump file """
+        os.remove(self.ALL_COORDINATE_IDS_DUMP_FNAME)
+
+    def calcCoordinateIds(self, iteration):
         """
-        Returns an array with rama ids per segment
+        Returns an array with coordinate ids per segment
         """
         self.setIteration(iteration)
         if self.parallelization_mode in ["serial", "thread"]:
-            rama_ids = [''] * iteration.getNumberOfSegments()
+            all_coordinate_ids = numpy.zeros([iteration.getNumberOfSegments(),self.N_DIMENSIONS], dtype = int)
             # calculate entries
             i = 0
             for bin_loop in self.iteration:
                 for segment in bin_loop:
-                    rama_id = self.calcRamaId(segment)
+                    segment_coordinate_ids = self.calcSegmentCoordinateIds(segment, iteration.getBoundaries())
                     # fill matrix
-                    rama_ids[i] = rama_id
+                    for dim in range(self.N_DIMENSIONS):
+                        all_coordinate_ids[i,dim] = segment_coordinate_ids[dim]
                     i += 1
-            return rama_ids
+            return all_coordinate_ids
         
         if self.parallelization_mode == "mpi":            
             # dump the iteration object to a file
@@ -380,11 +393,11 @@ class MD_module():
                                                         "MPIRAMA",
                                                         self.configfile, 
                                                         str(self.debug)))
-            rama_ids = self.loadRamaIdsFromDumpFile()
+            all_coordinate_ids = self.loadAllCoordinateIdsFromDumpFile()
             if not self.debug:
-                self.removeRamaIdsDumpFile()
+                self.removeAllCoordinateIdsDumpFile()
            
-            return rama_ids
+            return all_coordinate_ids
         
     def ana_calcCoordinateOfSegment(self, segment, cpptraj_lines, use_trajectory):
         """
@@ -450,15 +463,15 @@ def doMPIMD(CONFIGFILE, debug):
     md_skip_count = 0
     for loop_bin in md_module.iteration:
         for loop_segment in loop_bin:
-            if not loop_bin.isConverged():
-                if workcount % size == rank:
-                    # Run MD on this node
-                    md_module.RunSegmentMD(loop_segment, workcount, md_skip_count)
-            else:
-                md_skip_count += 1
-                if workcount % size == rank:
-                    # Run MD skip
-                    md_module.SkipSegmentMD(loop_segment, workcount, md_skip_count)
+            #if not loop_bin.isConverged():
+            if workcount % size == rank:
+                # Run MD on this node
+                md_module.RunSegmentMD(loop_segment, workcount, md_skip_count)
+            #else:
+            #    md_skip_count += 1
+            #    if workcount % size == rank:
+            #        # Run MD skip
+            #        md_module.SkipSegmentMD(loop_segment, workcount, md_skip_count)
             workcount += 1
             # Log if rank 0
             if rank == 0:
@@ -489,27 +502,27 @@ def doMPICalcRamaIds(CONFIGFILE, debug):
         sys.stderr.write("Number of MPI processes: {0}\n".format(size))
         sys.stderr.flush()
 
-    # Setup the list of rama ids
+    # Setup the list of lists coordinate ids
     #TODO: use a matrix of strings and implement the necessary
     #      MPI code to collect 
-    rama_ids = numpy.array([0] * iteration.getNumberOfSegments())
+    all_coordinate_ids = numpy.array([0] * iteration.getNumberOfSegments())
     # calculate entries
     i = 0
     for this_bin in iteration:
         for segment in this_bin:
             if i % size == rank:
-                rama_id = md_module.calcRamaId(segment)
+                segment_coordinate_ids = md_module.calcSegmentCoordinateIds(segment)
                 # fill matrix
-                rama_ids[i] = int(rama_id)
+                all_coordinate_ids[i] = segment_coordinate_ids
             i += 1
     # Collect the matrix on the root process (rank == 0)
-    rama_ids = comm.reduce(rama_ids, op = MPI.SUM, root=0)
+    all_coordinate_ids = comm.reduce(all_coordinate_ids, op = MPI.SUM, root=0)
     # Dump matrix to file
     if rank == 0:
-        md_module.dumpRamaIdsToFile(list(numpy.array(rama_ids, 'S')))
+        md_module.dumpRamaIdsToFile(list(numpy.array(all_coordinate_ids, 'S')))
         if debug:
-            print("Rama Ids: ", rama_ids)
-            print("Finished MPI Rama ids calculation")
+            print("All Coordinate Ids: ", all_coordinate_ids)
+            print("Finished MPI Coordinate ids calculation")
 
 class MD_analysis_module():
     """ a MD module for analysis operations
