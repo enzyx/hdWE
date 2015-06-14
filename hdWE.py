@@ -192,19 +192,21 @@ for iteration_counter in range(len(iterations), MAX_ITERATIONS + 1):
     sys.stdout.write(' - Run MDs\n')
     sys.stdout.flush() 
     md_module.RunMDs(iterations[-1])
-    
+    sys.stdout.write('\n')
+    sys.stdout.flush() 
+        
     
     # 6. log everything
     logger.log(iterations[-1], CONFIGFILE)
 
     #if DEBUG: 
-    print(" - The overall probabiliy is {0:05f}".format(iterations[-1].getProbability()))
+    print("\n    The overall probabiliy is {0:05f}".format(iterations[-1].getProbability()))
 
     #count total n of segments during iterations
     n_segments = 0
     for iteration_loop in iterations:
         n_segments += iteration_loop.getNumberOfPropagatedSegments()
-    sys.stdout.write(' - (Total number of propagated segments: ' + str(n_segments-1)+ ')\n')
+    sys.stdout.write('    Total number of propagated segments: ' + str(n_segments-1)+ '\n')
     sys.stdout.flush()
     
     #check for empty bins #TODO: make this a function of iterations

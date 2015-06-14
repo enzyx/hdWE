@@ -172,11 +172,10 @@ class MD_module():
         
         number_MD_runs = self.iteration.getNumberOfSegments()
         string = '\r     Number of bins {nbins}; '\
-                 'Segment {segment:05d}/{all_segments:05d}; '\
-                 'Skipped segments: {skip:d}'.format(nbins = self.iteration.getNumberOfBins(),
-                                                     segment = MD_run_count,
-                                                     all_segments = number_MD_runs,
-                                                     skip = MD_skip_count)
+                 'Segment {segment:05d}/{all_segments:05d}'.format(
+                         nbins        = self.iteration.getNumberOfBins(),
+                         segment      = MD_run_count,
+                         all_segments = number_MD_runs)
         return string
     
     def printMdStatus(self, segment, MD_run_count, MD_skip_count):
