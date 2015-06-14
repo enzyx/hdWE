@@ -284,6 +284,16 @@ class Bin(object):
         for segment in self.segments:
             probability += segment.getProbability()
         return probability
+        
+    def getInitialProbability(self):
+        """
+        Returns the initial (before resampling and recycling )
+        cumulative probability of all bin trajectories
+        """
+        probability = 0.0
+        for segment in self.initial_segments:
+            probability += segment.getProbability()
+        return probability
     
     def getNumberOfSegments(self):
         """

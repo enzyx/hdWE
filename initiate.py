@@ -64,7 +64,7 @@ def parseInitialBoundaries(config):
     for boundary_string in config_string.split(','):
         initial_boundaries.append([])
         for value in boundary_string.split():
-            initial_boundaries[-1].append(int(value))
+            initial_boundaries[-1].append(float(value))
     return initial_boundaries
 
 def parseState(config_string):

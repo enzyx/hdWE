@@ -145,6 +145,7 @@ for iteration_counter in range(len(iterations), MAX_ITERATIONS + 1):
                      START_STATES,
                      END_STATES)
     
+    
     # 2. Backup the segments lists of all bins
     #    - Saving the segment assignments for correct
     #      rate matrix calculation in the original_segments
@@ -168,7 +169,7 @@ for iteration_counter in range(len(iterations), MAX_ITERATIONS + 1):
                                              REWEIGHTING_RANGE,
                                              WORKDIR,
                                              JOBNAME)
-        
+
     # 5. Resampling
     sys.stdout.write(' - Resampling\n')
     sys.stdout.flush() 
@@ -185,6 +186,7 @@ for iteration_counter in range(len(iterations), MAX_ITERATIONS + 1):
     else:
         for this_bin in iterations[-1]:
             this_bin.resampleSegments(MERGE_MODE)
+
 
     # 6. Run MDs
     sys.stdout.write(' - Run MDs\n')
