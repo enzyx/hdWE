@@ -1,5 +1,5 @@
-import numpy
-import bin_classifier      
+#import numpy
+#import lib.bin_classifier as bin_classifier      
 
 def copyBinStructureToLastIteration(iterations):
     """

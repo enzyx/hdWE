@@ -1,8 +1,8 @@
 import os
 import shutil
 import glob
-from iteration import Iteration
-from segment import Segment
+from lib.iteration import Iteration
+from lib.segment import Segment
 
 def prepare(WORKDIR, JOBNAME, starting_structure, OVERWRITE, APPEND, DEBUG):
     """

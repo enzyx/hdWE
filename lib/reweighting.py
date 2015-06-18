@@ -1,7 +1,7 @@
 from __future__ import print_function
 import numpy
-import constants
-import analysis_operations
+import lib.constants as constants
+import lib.analysis_operations as analysis_operations
 
 def reweightBinProbabilities(iterations, reweighting_range, WORKDIR, JOBNAME):
     '''

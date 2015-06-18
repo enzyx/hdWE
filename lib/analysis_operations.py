@@ -1,6 +1,6 @@
 import numpy
 from copy import deepcopy
-import constants
+import lib.constants as constants
     
 def meanRateMatrix(iterations, begin=0, end=-1):
     """

@@ -2,10 +2,10 @@
 from __future__ import print_function
 import argparse
 import numpy
-import constants
+import lib.constants as constants
 import scipy.stats
-import functions_ana_general
-import functions_ana_plainMD
+import lib.functions_ana_general as functions_ana_general
+import lib.functions_ana_plainMD as functions_ana_plainMD
 from math import log
 import scikits.bootstrap
 

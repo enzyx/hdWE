@@ -1,2 +1,0 @@
-- Parallelisierung  von MD runs, Sorting and Resampling vereinheitlichen
-- Sorting aus hdWE.py herausnehmen bzw. lesbar machen

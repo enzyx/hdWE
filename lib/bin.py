@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 from __future__ import print_function
-from segment import Segment
+from lib.segment import Segment
 import random as rnd
 import copy
 

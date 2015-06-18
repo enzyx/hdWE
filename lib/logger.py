@@ -3,6 +3,7 @@ import shutil
 import os 
 import re 
 import glob
+import lib.iteration as iteration
 
 class Logger():
     # Global class variables for log filename formatting

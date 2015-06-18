@@ -5,7 +5,8 @@ Calculates the rate from a hdWE steady state run.
 from __future__ import print_function
 import numpy
 import scipy.stats
-from logger import Logger
+from lib.logger import Logger
+from lib.functions_ana_general import autocorrelation_function
 import argparse 
 import scikits.bootstrap
  
@@ -23,25 +24,23 @@ parser.add_argument('-e', '--last_it', dest="last_iteration",
                     type=int, default=-1,
                     help="Last iteration to to use.")  
 parser.add_argument('-o', '--output', dest="output_path", 
-                    type=str, default='ana_SS_rate.output',
+                    type=str, default='ana_SS_rate',
                     help="Output filename")  
                
-def autocorr(x, t):
-    return numpy.corrcoef(numpy.array([x[0:len(x)-t], x[t:len(x)]]))               
+            
                
 # Initialize
 print('\033[1mCalculating Rate.\033[0m')      
 args = parser.parse_args()
-
-# get the Iterations from logger module
 logger = Logger(args.logdir)
 iterations = logger.loadIterations(begin=args.first_iteration, end=args.last_iteration)
 
-# get the recycled probability in each iteration, which is the probability
-# that reached end state bins
+# get the recycled probability and number of recycled segments in each iteration
+# recycled segments are those that reached end state bins
+
+# Mean Recycled Probability
 recycled_probability = []
 N_recycled_segments  = 0
-
 for this_iteration in iterations:
     if len(this_iteration.getEndStateBins()) > 0:
         for this_bin in this_iteration.getEndStateBins():
@@ -49,24 +48,24 @@ for this_iteration in iterations:
                 N_recycled_segments += this_bin.getNumberOfInitialSegments()
     else:
         recycled_probability.append(0.0)
-
-auto = []
-for i in range(len(recycled_probability)/2):
-    auto.append(autocorr(recycled_probability, i)[0,1])
-
-numpy.savetxt('auto.dat', auto)
-
 meanCI_rate = scipy.stats.bayes_mvs(recycled_probability, 0.95)[0]
-#print( scikits.bootstrap.ci(recycled_probability, numpy.mean, alpha = 0.05) )
 
-recycled_probability_cumulative = []
-for i in range(1,len(recycled_probability)):
-    recycled_probability_cumulative.append(numpy.mean(recycled_probability[0:i]))
+# Cumulative Mean Recycled Probability
+recycled_probability_cumulative = numpy.zeros([len(recycled_probability),3])
+for i in range(2,len(recycled_probability)):
+    recycled_probability_cumulative_tmp = scipy.stats.bayes_mvs(recycled_probability[0:i], 0.95)[0]
+    recycled_probability_cumulative[i,0] = recycled_probability_cumulative_tmp[0]
+    recycled_probability_cumulative[i,1] = recycled_probability_cumulative_tmp[1][0]    
+    recycled_probability_cumulative[i,2] = recycled_probability_cumulative_tmp[1][1]
 
+
+# Autocorrelation Function
+autocorr = autocorrelation_function(recycled_probability)
 
 # print
-numpy.savetxt(args.output_path, recycled_probability)
-numpy.savetxt(args.output_path+'_cumulative', recycled_probability_cumulative)
+numpy.savetxt(args.output_path+'.rate', recycled_probability)
+numpy.savetxt(args.output_path+'.rate_cumulative', recycled_probability_cumulative) 
+numpy.savetxt(args.output_path+'.autocorrelation', autocorr)
 
 print(' Number of recycled segments: {:9d}'.format( N_recycled_segments ) )
 print(' Rate: {mean:5.3e}   CI: {lCI:5.3e} to {uCI:5.3e}'.format(

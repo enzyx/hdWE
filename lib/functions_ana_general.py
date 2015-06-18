@@ -22,3 +22,13 @@ def histogram(data, N_bins):
         hist[i,1] /= len(hist)
    
     return hist
+    
+def autocorrelation_function(x):
+    """
+    Returns the autocorrelation function of a data set, using numpy.corrcoef.
+    """
+    autocorrelation_function = []
+    for t in range(len(x)/2):
+        correlation_coefficient = numpy.corrcoef(numpy.array([x[0:len(x)-t], x[t:len(x)]]))[0,1] 
+        autocorrelation_function.append(correlation_coefficient)
+    return autocorrelation_function 

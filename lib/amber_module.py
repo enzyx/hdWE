@@ -5,10 +5,10 @@ import numpy
 import threading
 import sys
 from datetime import datetime
-from thread_container import ThreadContainer
+from lib.thread_container import ThreadContainer
 import pickle
 import uuid
-import bin_classifier
+import lib.bin_classifier as bin_classifier
 
 
 class MD_module():

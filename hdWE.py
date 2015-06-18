@@ -6,17 +6,17 @@ from __future__ import print_function
 import sys
 import ConfigParser
 import argparse
-import initiate
-from iteration import Iteration
-from logger import Logger
 import threading
-import resorting
-import recycling
-import reweighting
-from thread_container import ThreadContainer
 import os
 import glob
-import constants
+from   lib.thread_container import ThreadContainer
+from   lib.iteration import Iteration
+from   lib.logger import Logger 
+import lib.initiate as initiate
+import lib.constants as constants
+import lib.resorting as resorting
+import lib.recycling as recycling
+import lib.reweighting as reweighting
 
 #### Parse command line #### 
 
@@ -101,7 +101,7 @@ logger = Logger(LOGDIR)
 
 # Check MD suite
 if(MD_PACKAGE == "amber"):
-    from amber_module import MD_module
+    from lib.amber_module import MD_module
     md_module = MD_module(CONFIGFILE, DEBUG)
 if(MD_PACKAGE == "gromacs"):
     print("Sorry, support for gromacs is not implemented yet.")

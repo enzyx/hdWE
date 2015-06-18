@@ -1,5 +1,5 @@
 import numpy
-import constants
+import lib.constants as constants
 from math import log
 
 def PMF(data, N_bins):
