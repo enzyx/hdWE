@@ -46,7 +46,7 @@ class MD_module():
         # local link to iteration
         self.iteration             = None
         self.ITERATION_DUMP_FNAME  = '{jn}-run/iteration.dump'.format(jn=self.jobname)
-        self.RAMA_IDS_DUMP_FNAME= '{jn}-run/rama_ids.dump'.format(jn=self.jobname)
+        self.COORDINATE_IDS_DUMP_FNAME = '{jn}-run/coordinate_ids.dump'.format(jn=self.jobname)
         
         self.keep_trajectory_files = bool(config.get('hdWE', 'keep-trajectory-files').lower() == "true")
                        
@@ -262,7 +262,7 @@ class MD_module():
     def calcSegmentCoordinateIds(self, segment, bin_boundaries):
         """
         Calculates the coordinates of a segment with respect to all binned dimensions
-        @return 
+        @return a list of coordinate ids for given segment
         """
         # Write the cpptraj infile
         segment_name_string = segment.getNameString() 
@@ -341,34 +341,34 @@ class MD_module():
         """
         os.remove(self.ITERATION_DUMP_FNAME)
     
-    def dumpAllCoordinateIdsToFile(self, rama_ids):
+    def dumpCoordinateIdsToFile(self, coordinate_ids):
         """
         Store the coordinate matrix to dump file
         """        
-        all_coordinate_ids_dump_file = open(self.ALL_COORDINATE_IDS_DUMP_FNAME , 'w')
-        pickle.dump(rama_ids, all_coordinate_ids_dump_file)
-        all_coordinate_ids_dump_file.close()
+        coordinate_ids_dump_file = open(self.COORDINATE_IDS_DUMP_FNAME , 'w')
+        pickle.dump(coordinate_ids, coordinate_ids_dump_file)
+        coordinate_ids_dump_file.close()
 
-    def loadAllCoordinateIdsFromDumpFile(self):
+    def loadCoordinateIdsFromDumpFile(self):
         """
         Load the coordinate matrix from dump file
         """
-        all_coordinate_ids_dump_file = open(self.ALL_COORDINATE_IDS_DUMP_FNAME , 'r')
-        all_coordinate_ids = pickle.load(all_coordinate_ids_dump_file)
-        all_coordinate_ids_dump_file.close()
-        return all_coordinate_ids
+        coordinate_ids_dump_file = open(self.COORDINATE_IDS_DUMP_FNAME , 'r')
+        coordinate_ids = pickle.load(coordinate_ids_dump_file)
+        coordinate_ids_dump_file.close()
+        return coordinate_ids
 
-    def removeAllCoordinateIdsDumpFile(self):
+    def removeCoordinateIdsDumpFile(self):
         """ Remove coordinate matrix dump file """
-        os.remove(self.ALL_COORDINATE_IDS_DUMP_FNAME)
+        os.remove(self.COORDINATE_IDS_DUMP_FNAME)
 
     def calcCoordinateIds(self, iteration):
         """
-        Returns an array with coordinate ids per segment
+        Returns a matrix[n_segments, n_dimensions] of coordinate ids for each segment
         """
         self.setIteration(iteration)
         if self.parallelization_mode in ["serial", "thread"]:
-            all_coordinate_ids = numpy.zeros([iteration.getNumberOfSegments(),self.N_DIMENSIONS], dtype = int)
+            coordinate_ids = numpy.zeros([iteration.getNumberOfSegments(),self.N_DIMENSIONS], dtype = int)
             # calculate entries
             i = 0
             for bin_loop in self.iteration:
@@ -376,27 +376,27 @@ class MD_module():
                     segment_coordinate_ids = self.calcSegmentCoordinateIds(segment, iteration.getBoundaries())
                     # fill matrix
                     for dim in range(self.N_DIMENSIONS):
-                        all_coordinate_ids[i,dim] = segment_coordinate_ids[dim]
+                        coordinate_ids[i,dim] = segment_coordinate_ids[dim]
                     i += 1
-            return all_coordinate_ids
+            return coordinate_ids
         
         if self.parallelization_mode == "mpi":            
             # dump the iteration object to a file
             self.dumpIterationToFile()
             # Call myself with MPI...
             if self.debug:
-                print("Switching to MPI for RMSD calculation.")
+                print("Switching to MPI for coordinate ID calculation.")
             os.system("{0} {1} {2} {3} {4} {5} ".format(self.mpirun, 
                                                         sys.executable,
                                                         os.path.realpath(__file__),
-                                                        "MPIRAMA",
+                                                        "MPIANA",
                                                         self.configfile, 
                                                         str(self.debug)))
-            all_coordinate_ids = self.loadAllCoordinateIdsFromDumpFile()
+            coordinate_ids = self.loadCoordinateIdsFromDumpFile()
             if not self.debug:
-                self.removeAllCoordinateIdsDumpFile()
+                self.removeCoordinateIdsDumpFile()
            
-            return all_coordinate_ids
+            return coordinate_ids
         
     def ana_calcCoordinateOfSegment(self, segment, cpptraj_lines, use_trajectory):
         """
@@ -488,7 +488,7 @@ def doMPIMD(CONFIGFILE, debug):
         if not debug:
             md_module.removeIterationDumpFile()
 
-def doMPICalcRamaIds(CONFIGFILE, debug):
+def doMPICalcCoordinateIds(CONFIGFILE, debug):
     # Read in the call arguments
     CONFIGFILE               = CONFIGFILE
     debug                    = bool(debug == "True")
@@ -502,25 +502,24 @@ def doMPICalcRamaIds(CONFIGFILE, debug):
         sys.stderr.flush()
 
     # Setup the list of lists coordinate ids
-    #TODO: use a matrix of strings and implement the necessary
-    #      MPI code to collect 
-    all_coordinate_ids = numpy.array([0] * iteration.getNumberOfSegments())
+    coordinate_ids = numpy.zeros([iteration.getNumberOfSegments(), md_module.N_DIMENSIONS], dtype = int)
     # calculate entries
     i = 0
     for this_bin in iteration:
-        for segment in this_bin:
+        for this_segment in this_bin:
             if i % size == rank:
-                segment_coordinate_ids = md_module.calcSegmentCoordinateIds(segment)
+                segment_coordinate_ids = md_module.calcSegmentCoordinateIds(this_segment, iteration.getBoundaries())
                 # fill matrix
-                all_coordinate_ids[i] = segment_coordinate_ids
+                for j in range(md_module.N_DIMENSIONS):
+                    coordinate_ids[i][j] = segment_coordinate_ids[j]
             i += 1
     # Collect the matrix on the root process (rank == 0)
-    all_coordinate_ids = comm.reduce(all_coordinate_ids, op = MPI.SUM, root=0)
+    coordinate_ids = comm.reduce(coordinate_ids, op = MPI.SUM, root=0)
     # Dump matrix to file
     if rank == 0:
-        md_module.dumpRamaIdsToFile(list(numpy.array(all_coordinate_ids, 'S')))
+        md_module.dumpCoordinateIdsToFile(list(numpy.array(coordinate_ids, 'S')))
         if debug:
-            print("All Coordinate Ids: ", all_coordinate_ids)
+            print("All Coordinate Ids: ", coordinate_ids)
             print("Finished MPI Coordinate ids calculation")
 
 class MD_analysis_module():
@@ -553,6 +552,6 @@ if __name__ == "__main__":
     if sys.argv[1] == "MPIMD":
         doMPIMD(CONFIGFILE=sys.argv[2], 
                 debug=sys.argv[3])
-    if sys.argv[1] == "MPIRAMA":
-        doMPICalcRamaIds(CONFIGFILE=sys.argv[2],
+    if sys.argv[1] == "MPIANA":
+        doMPICalcCoordinateIds(CONFIGFILE=sys.argv[2],
                          debug=sys.argv[3])
