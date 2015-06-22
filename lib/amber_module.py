@@ -438,7 +438,10 @@ class MD_module():
     def removeCoordinateFiles(self, iteration):
         for this_bin in iteration:
             for this_segment in this_bin:
-                os.remove("{jn}-run/{seg}.rst7".format(jn=self.jobname, seg=this_segment.getNameString()))
+                try:
+                    os.remove("{jn}-run/{seg}.rst7".format(jn=self.jobname, seg=this_segment.getNameString()))
+                except OSError:
+                    continue
     
 ###########################################
 def doMPIMD(CONFIGFILE, debug):

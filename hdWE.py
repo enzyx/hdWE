@@ -200,13 +200,13 @@ for iteration_counter in range(len(iterations), MAX_ITERATIONS + 1):
     # 6. log everything
     logger.log(iterations[-1], CONFIGFILE)
 
-    #if DEBUG: 
-    print("\n    The overall probabiliy is {0:05f}".format(iterations[-1].getProbability()))
-
     # 7. delete unwanted files
     print(" - Deleting md files")
     if iterations[-2].getId() % KEEP_COORDS_FREQUENCY != 0:
-        md_module.deleteFiles(iterations[-2])
+        md_module.removeCoordinateFiles(iterations[-2])
+
+    #if DEBUG: 
+    print("\n    The overall probabiliy is {0:05f}".format(iterations[-1].getProbability()))
 
     #count total n of segments during iterations
     n_segments = 0
