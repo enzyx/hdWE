@@ -12,12 +12,12 @@ def recycleProbability(iteration):
     if iteration.getProbabilityFlow() > 0.0:
         # Check if segments exist in start state bins
         start_segments = 0
-        # It is assumed that the starting structure lies in the starting state 
-        # then the corresponding bin id is 0
         for start_bin in iteration.getStartStateBins():
             start_segments += start_bin.getNumberOfSegments()
         
         # No segments exist in start state bins, spawn a segment
+        # It is assumed that the starting structure lies in the starting state, 
+        # then the corresponding bin id is 0
         if start_segments == 0:
             iteration.bins[0].generateSegment(probability         = iteration.getProbabilityFlow(),
                                               parent_iteration_id = 0,
@@ -51,7 +51,7 @@ def calculateProbabilityFlow(iteration):
         for end_state_segment in end_state_bin:
             probability_flow += end_state_segment.getProbability()
     
-    # reassign flown probility
+    # reassign flown probability
     iteration.setProbabilityFlow(probability_flow)
     
 def emptyEndStateBins(iteration):

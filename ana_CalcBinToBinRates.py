@@ -1,13 +1,12 @@
 #!/usr/bin/env python2
 """
-
+Return the bin to bin transition matrix or the the rate matrix
 """
-
-
 from __future__ import print_function
 import numpy
-from logger import Logger
-import argparse  
+from lib.logger import Logger
+import argparse
+import lib.analysis_operations as analysis_operations
 
 ###### Parse command line ###### 
 parser =argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
@@ -33,22 +32,21 @@ logger = Logger(args.logdir)
 iterations = logger.loadIterations(args.first_iteration, args.last_iteration)
 
 N = iterations[-1].getNumberOfBins()
-transition_matrix = numpy.zeros((N,N))
+transition_matrix = numpy.zeros((N,N), int)
 
 if args.bin_to_bin_transitions:
     for iteration in iterations:
         for this_bin in iteration:
             for segment in this_bin.initial_segments:
-                transition_matrix[segment.getParentBinId(), segment.getBinId()] += 1
+                transition_matrix[iteration.bins[segment.getParentBinId()].getCoordinateIds(), 
+                                  iteration.bins[segment.getBinId()].getCoordinateIds()]      += 1
     
     if not args.outfile: 
         print( transition_matrix )
     else:
         numpy.savetxt(args.outfile, transition_matrix, fmt='% 4d')
 else:
-    rateMatrix=numpy.zeros((N,N))
-    for iteration in iterations:
-        rateMatrix += iteration.RateMatrix()
+    rateMatrix = analysis_operations.meanRateMatrix(iterations)
     if not args.outfile:
         print(rateMatrix)
     else:

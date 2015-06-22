@@ -8,7 +8,7 @@ import scipy.stats
 from lib.logger import Logger
 from lib.functions_ana_general import autocorrelation_function
 import argparse 
-import scikits.bootstrap
+#import scikits.bootstrap
  
 
 ###### Parse command line ###### 
@@ -48,6 +48,15 @@ for this_iteration in iterations:
                 N_recycled_segments += this_bin.getNumberOfInitialSegments()
     else:
         recycled_probability.append(0.0)
+# Get probability in start state
+p_start = 0.0
+for this_iteration in iterations:
+    if len(this_iteration.getStartStateBins()) > 0:
+        for this_bin in this_iteration.getStartStateBins():
+            p_start += this_bin.getProbability()
+p_start /= len(iterations)
+print("Mean start state probability = {:5.4e}".format(p_start))
+
 meanCI_rate = scipy.stats.bayes_mvs(recycled_probability, 0.95)[0]
 
 # Cumulative Mean Recycled Probability

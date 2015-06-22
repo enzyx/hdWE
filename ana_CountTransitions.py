@@ -4,13 +4,10 @@ Calculates the PMF along an arbitrary coordinate
 from the data of a hdWE run.
 """
 from __future__ import print_function
-import numpy
-import constants
 import sys
-import segment
-from logger import Logger
-from math import log
-from amber_module import MD_module
+import lib.segment as segment
+from lib.logger import Logger
+from lib.amber_module import MD_module
 import argparse  
 
 ### classes ### 

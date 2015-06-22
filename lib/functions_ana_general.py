@@ -31,4 +31,13 @@ def autocorrelation_function(x):
     for t in range(len(x)/2):
         correlation_coefficient = numpy.corrcoef(numpy.array([x[0:len(x)-t], x[t:len(x)]]))[0,1] 
         autocorrelation_function.append(correlation_coefficient)
-    return autocorrelation_function 
+    return autocorrelation_function
+
+def binIdToCoordinateId(iteration):
+    """
+    @return An array with indices corresponding between binId and coordinate Id
+    """
+    sort_indices = []
+    for this_bin in iteration:
+        sort_indices.append(this_bin.getCoordinateIds())
+    return sort_indices

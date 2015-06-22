@@ -7,7 +7,7 @@ import scipy.stats
 import lib.functions_ana_general as functions_ana_general
 import lib.functions_ana_plainMD as functions_ana_plainMD
 from math import log
-import scikits.bootstrap
+#import scikits.bootstrap
 
 # Parse command line
 parser = argparse.ArgumentParser(description=
@@ -86,18 +86,18 @@ if not(args.state_A==None and args.state_B==None):
    
     ####### Transition time distribution
     distr_header_line = 'Transition time in tau, Probability'
-    if len(transition_times_into_B) > 1:
-        transition_into_B_distribution = functions_ana_general.histogram(transition_times_into_B, 100)
-        numpy.savetxt(args.distr_into_B_output, transition_into_B_distribution, header = distr_header_line)
-    else:
-        print('No transitions to state B.')        
-    
-    if len(transition_times_into_A) > 1:
-        transition_into_A_distribution = functions_ana_general.histogram(transition_times_into_A, 100)
-        numpy.savetxt(args.distr_into_A_output, transition_into_A_distribution, header = distr_header_line)
-    else:
-        print('No transitions to state A.') 
-                 
+#     if len(transition_times_into_B) > 2:
+#         transition_into_B_distribution = functions_ana_general.histogram(transition_times_into_B, 100)
+#         numpy.savetxt(args.distr_into_B_output, transition_into_B_distribution, header = distr_header_line)
+#     else:
+#         print('No transitions to state B.')        
+#     
+#     if len(transition_times_into_A) > 2:
+#         transition_into_A_distribution = functions_ana_general.histogram(transition_times_into_A, 100)
+#         numpy.savetxt(args.distr_into_A_output, transition_into_A_distribution, header = distr_header_line)
+#     else:
+#         print('No transitions to state A.') 
+#                  
     ####### 95% Confidence intervals
     # First Passage Times                 
     meanCI_first_passage_times_into_B = scipy.stats.bayes_mvs(first_passage_times_into_B, 0.95)[0]

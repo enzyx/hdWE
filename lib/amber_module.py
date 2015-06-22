@@ -1,3 +1,7 @@
+"""
+MD module provides an interface to the AMBER molecular dynamics
+toolchain.
+"""
 from __future__ import print_function
 import os
 import ConfigParser
@@ -5,15 +9,20 @@ import numpy
 import threading
 import sys
 from datetime import datetime
-from lib.thread_container import ThreadContainer
 import pickle
 import uuid
+# We need the hdWE program path in the PYTHONPATH when
+# amber_module is started by mpirun
+if __name__ == "__main__":
+    filepath  = os.path.realpath(__file__)
+    dirname   = os.path.dirname(filepath)
+    parentdir = os.path.dirname(dirname)
+    sys.path.append(parentdir)
+from lib.thread_container import ThreadContainer
 import lib.bin_classifier as bin_classifier
 
-
 class MD_module():
-    
-    # WORKDIR                    = ''
+    # WORKDIR                     = ''
     # debug                       = False
     # configuration_file          = ''   path to the amer configuration file that contains the 
     #                                    following entries:
@@ -240,24 +249,6 @@ class MD_module():
                                   "MPIMD",
                                   self.configfile,
                                   str(self.debug)))
-
-    def getCpptrajDihedralLine(self, index, tDihedral, outfile_path):
-        if tDihedral == "omega":
-            line = "dihedral omega_{ind}   :{mind}@CA  :{mind}@C   :{ind}@N   :{ind}@CA  out {out}\n".format(
-                                                ind  = index,
-                                                mind = index - 1,
-                                                out  = outfile_path)
-        if tDihedral == "phi":
-            line = "dihedral phi_{ind}     :{mind}@C   :{ind}@N   :{ind}@CA  :{ind}@C   out {out}\n".format(
-                                                ind  = index, 
-                                                mind = index - 1,
-                                                out  = outfile_path)
-        if tDihedral == "psi": 
-            line = "dihedral psi_{ind}     :{ind}@N   :{ind}@CA  :{ind}@C   :{pind}@N   out {out}\n".format(
-                                                ind  = index,
-                                                pind = index + 1,
-                                                out  = outfile_path)
-        return line
     
     def calcSegmentCoordinateIds(self, segment, bin_boundaries):
         """
@@ -313,6 +304,9 @@ class MD_module():
         # Get the coordinate ids
         segment_coordinate_ids = bin_classifier.getCoordinateIds(coordinates, bin_boundaries)
         
+        if not self.debug:
+            os.remove(cpptraj_outfile_path)
+            os.remove(cpptraj_infile_path)
         #print ("\nsegment {}".format(segment.getNameString()))
         #print ("coordinates: ", coordinates[0])
         #print ("coordinate_ids: ", segment_coordinate_ids[0]) 
@@ -480,7 +474,7 @@ def doMPIMD(CONFIGFILE, debug):
     comm.barrier()
     if rank == 0:
         md_module.printMdStatus(loop_segment, workcount, md_skip_count)
-        sys.stdout.write("\n")
+        #sys.stdout.write("\n")
         if debug:
             sys.stdout.write("Finishing MPI\n")
         sys.stdout.flush()
@@ -517,7 +511,7 @@ def doMPICalcCoordinateIds(CONFIGFILE, debug):
     coordinate_ids = comm.reduce(coordinate_ids, op = MPI.SUM, root=0)
     # Dump matrix to file
     if rank == 0:
-        md_module.dumpCoordinateIdsToFile(list(numpy.array(coordinate_ids, 'S')))
+        md_module.dumpCoordinateIdsToFile(coordinate_ids)
         if debug:
             print("All Coordinate Ids: ", coordinate_ids)
             print("Finished MPI Coordinate ids calculation")
@@ -544,7 +538,7 @@ class MD_analysis_module():
         
 # Call only in MPI mode
 if __name__ == "__main__":
-    from mpi4py import MPI
+    from mpi4py import MPI    
     comm = MPI.COMM_WORLD
     rank = comm.Get_rank()
     size = comm.Get_size()
@@ -554,4 +548,4 @@ if __name__ == "__main__":
                 debug=sys.argv[3])
     if sys.argv[1] == "MPIANA":
         doMPICalcCoordinateIds(CONFIGFILE=sys.argv[2],
-                         debug=sys.argv[3])
+                               debug=sys.argv[3])

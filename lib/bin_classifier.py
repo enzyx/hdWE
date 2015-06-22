@@ -15,5 +15,5 @@ def getCoordinateIds(coordinates, bin_boundaries):
                 break
         if segment_coordinate_ids[-1] == -1:
             segment_coordinate_ids[-1] = len(bin_boundaries[dimension])
-
+    
     return np.array(segment_coordinate_ids)
