@@ -435,6 +435,12 @@ class MD_module():
         else:
             return coordinates[:,1]
     
+    def removeCoordinateFiles(self, iteration):
+        for this_bin in iteration:
+            for this_segment in this_bin:
+                os.remove("{jn}-run/{seg}.rst7".format(jn=self.jobname, seg=this_segment.getNameString()))
+    
+###########################################
 def doMPIMD(CONFIGFILE, debug):
     """
     This function can run on multiple MPI processes in parallel

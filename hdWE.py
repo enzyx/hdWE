@@ -62,6 +62,7 @@ MERGE_MODE                        = int(config.get('hdWE','merge-mode'))
 STEADY_STATE                      = bool(config.get('hdWE', 'steady-state').lower() == "true")
 START_STATES                      = initiate.parseState(config.get('hdWE', 'start-state'))
 END_STATES                        = initiate.parseState(config.get('hdWE', 'end-state'))
+KEEP_COORDS_FREQUENCY             = initiate.parseState(config.get('hdWE', 'keep-coords-frequency'))
 
 if "amber" in config.sections():
     MD_PACKAGE = "amber"
@@ -201,6 +202,11 @@ for iteration_counter in range(len(iterations), MAX_ITERATIONS + 1):
 
     #if DEBUG: 
     print("\n    The overall probabiliy is {0:05f}".format(iterations[-1].getProbability()))
+
+    # 7. delete unwanted files
+    print(" - Deleting md files")
+    if iterations[-2].getId() % KEEP_COORDS_FREQUENCY != 0:
+        md_module.deleteFiles(iterations[-2])
 
     #count total n of segments during iterations
     n_segments = 0
