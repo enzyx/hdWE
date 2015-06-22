@@ -59,10 +59,10 @@ STARTING_STRUCTURE                = config.get('hdWE','starting-structure')
 REWEIGHTING_RANGE                 = float(config.get('hdWE','reweighting-range'))
 NUMBER_OF_THREADS                 = int(config.get('hdWE','number-of-threads'))
 MERGE_MODE                        = int(config.get('hdWE','merge-mode'))
+KEEP_COORDS_FREQUENCY             = int(config.get('hdWE', 'keep-coords-frequency'))
 STEADY_STATE                      = bool(config.get('hdWE', 'steady-state').lower() == "true")
 START_STATES                      = initiate.parseState(config.get('hdWE', 'start-state'))
 END_STATES                        = initiate.parseState(config.get('hdWE', 'end-state'))
-KEEP_COORDS_FREQUENCY             = initiate.parseState(config.get('hdWE', 'keep-coords-frequency'))
 
 if "amber" in config.sections():
     MD_PACKAGE = "amber"
