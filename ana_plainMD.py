@@ -74,8 +74,8 @@ if not(args.state_A==None and args.state_B==None):
     state_B = numpy.sort(state_B)
 
     ####### times
-    first_passage_times_into_B, transition_times_into_B, waiting_times_in_B =  functions_ana_plainMD.transitions_from_coordinates(coordinates, state_A, state_B)
-    first_passage_times_into_A, transition_times_into_A, waiting_times_in_A =  functions_ana_plainMD.transitions_from_coordinates(coordinates, state_B, state_A)
+    first_passage_times_into_B, transition_times_into_B =  functions_ana_plainMD.transitions_from_coordinates(coordinates, state_A, state_B)
+    first_passage_times_into_A, transition_times_into_A =  functions_ana_plainMD.transitions_from_coordinates(coordinates, state_B, state_A)
     
     N_transitions_into_B = len(transition_times_into_B)    
     N_transitions_into_A = len(transition_times_into_A)
@@ -105,9 +105,6 @@ if not(args.state_A==None and args.state_B==None):
     # Transition Times
     meanCI_transition_times_into_B    = scipy.stats.bayes_mvs(transition_times_into_B, 0.95)[0]
     meanCI_transition_times_into_A    = scipy.stats.bayes_mvs(transition_times_into_A, 0.95)[0]
-    # Waiting Times
-    meanCI_largest_waiting_times_in_B = scipy.stats.bayes_mvs(waiting_times_in_B, 0.95)[0]
-    meanCI_largest_waiting_times_in_A = scipy.stats.bayes_mvs(waiting_times_in_A, 0.95)[0]
     # Residence Times
     # Workaround because of bootstrap memory error for large coordinate sets:
     #sumCI_residence_times_in_A          = [numpy.sum(residence_times_in_A)]
@@ -143,10 +140,6 @@ if not(args.state_A==None and args.state_B==None):
           mean = meanCI_transition_times_into_B[0],
           lCI  = meanCI_transition_times_into_B[1][0],
           uCI  = meanCI_transition_times_into_B[1][1]))
-    print('    Mean Largest Waiting time:  {mean:5.3e}   CI: {lCI:5.3e} to {uCI:5.3e}'.format(
-          mean = meanCI_largest_waiting_times_in_B[0],
-          lCI  = meanCI_largest_waiting_times_in_B[1][0],
-          uCI  = meanCI_largest_waiting_times_in_B[1][1]))
     print('')
     print('    Total Residence time in A:  {mean:5.3e}   CI: {lCI:5.3e} to {uCI:5.3e}'.format(
           mean = sumCI_residence_times_in_A[0],
@@ -169,10 +162,6 @@ if not(args.state_A==None and args.state_B==None):
           mean = meanCI_transition_times_into_A[0],
           lCI  = meanCI_transition_times_into_A[1][0],
           uCI  = meanCI_transition_times_into_A[1][1]))
-    print('    Mean Largest Waiting time:  {mean:5.3e}   CI: {lCI:5.3e} to {uCI:5.3e}'.format(
-          mean = meanCI_largest_waiting_times_in_A[0],
-          lCI  = meanCI_largest_waiting_times_in_A[1][0],
-          uCI  = meanCI_largest_waiting_times_in_A[1][1]))
     print('')
     print('    Total Residence Time in A:  {mean:5.3e}   CI: {lCI:5.3e} to {uCI:5.3e}'.format(
           mean = sumCI_residence_times_in_B[0],

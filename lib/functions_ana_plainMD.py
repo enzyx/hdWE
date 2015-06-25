@@ -60,39 +60,36 @@ def rate(N_transitions_into_target_state, total_residence_time_in_start_state):
 def transitions_from_coordinates(coordinates, start_state, end_state):
     first_passage_times    = []
     transition_times       = []
-    largest_waiting_times  = []
     in_transition          = False
     first_passage_time_tmp = 0
+    transition_time_tmp = 0
+    
     for coord in coordinates:
         if in_transition == False:
             # if in start state, start with transition time counting
             if inState(coord, start_state):
                 in_transition          = True
-                first_passage_time_tmp = 0
-                transition_starts      = []
+                first_passage_time_tmp = 1
+                
         if in_transition == True:
+            if not inState(coord, start_state):
+                transition_time_tmp += 1
+            else:
+                transition_time_tmp = 0
             # if in transition, save transition time if arrived in end state,
             # otherwise add frame to transition time 
             # and keep track of new possible transition starting points
             if inState(coord, end_state):
-                first_passage_times_one_event = []
-                for start in transition_starts:
-                    first_passage_times_one_event.append(first_passage_time_tmp - start)
- 
-                transition_times.append(first_passage_time_tmp - transition_starts[-1])
-                largest_waiting_times.append(transition_starts[-1])
-                first_passage_times.append(numpy.mean(first_passage_times_one_event))
-                    
+                first_passage_times.append(first_passage_time_tmp)
                 in_transition    = False
+                transition_times.append(transition_time_tmp)
             else:
-                if inState(coord, start_state):
-                    transition_starts.append(first_passage_time_tmp)
                 first_passage_time_tmp += 1
 
     if len(first_passage_times) == 0:
         print(' No transitions found.')
       
-    return first_passage_times, transition_times, largest_waiting_times
+    return first_passage_times, transition_times
     
 def residence_times_from_coordinates(coordinates, state):
 
