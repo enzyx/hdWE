@@ -51,3 +51,13 @@ else:
         print(rateMatrix)
     else:
         numpy.savetxt(args.outfile, rateMatrix, fmt='%.2f')
+
+start_start_rate = 0.0
+for i in range(len(rateMatrix)):
+    for j in range(len(rateMatrix)):
+        if iterations[-1].bins[j].isStartStateBin() == True:
+            start_start_rate += rateMatrix[i,j] * iterations[-1].bins[i].getProbability()
+
+print (start_start_rate)
+        
+
