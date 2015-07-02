@@ -1,5 +1,6 @@
 import pickle
 import shutil
+import sys
 import os 
 import re 
 import glob
@@ -18,6 +19,7 @@ class Logger():
         
         """
         self.logdir = "{ld}/".format(ld=LOGDIR)
+        self.iteration_counter = 0
         
     def logConfigFile(self, CONFIGFILE, iteration_id):
         """
@@ -51,6 +53,7 @@ class Logger():
         """
         Load the local copy of iteration from the 
         given file name 
+        @return iteration from given filename
         """
         iteration_file = open(fname, 'r')
         iteration = pickle.load(iteration_file)
@@ -60,7 +63,8 @@ class Logger():
     def loadIteration(self, iteration_id):
         """
         Load the local copy of iteration 
-        for the given ID 
+        for the given ID
+        @ iteration with given iteration_id 
         """
         # Sanitize the iteration_id if necessary
         if iteration_id < 0:
@@ -70,6 +74,27 @@ class Logger():
                                id=iteration_id)
         return self.__loadIterationFile(iteration_fname)
 
+    
+    def loadFirstIteration(self, begin = 0):
+        """
+        Load the first iteration and set iteration_counter
+        @return the first iteration
+        """
+        iteration =  self.loadIteration(begin)
+        self.iteration_counter = begin + 1
+        return iteration
+    
+    def loadNextIteration(self):
+        """
+        Load the next iteration according to 
+        iteration_counter
+        @return the next iteration
+        """
+        iteration =  self.loadIteration(self.iteration_counter)
+        self.iteration_counter += 1
+        return iteration
+        
+
     def loadConfigFile(self, iteration_id):
         """
         @return Filename of a config file for iteration_id
@@ -78,6 +103,15 @@ class Logger():
         if iteration_id < 0:
             iteration_id = self.getLastIterationId()
         return self.CONFIG_FNAME_FORMAT.format(dir=self.logdir, id=iteration_id)
+    
+    def loadConfigParameter(self, parameter_key, config_section = 'hdWE', iteration_id = 0):
+        """
+        @return parameter from .conf of given iteration
+        """
+        import ConfigParser
+        config = ConfigParser.ConfigParser()
+        config.read(self.loadConfigFile(iteration_id))
+        return config.get(config_section, parameter_key)
         
     def loadLastIterations(self, N=1):
         """
@@ -125,6 +159,28 @@ class Logger():
                                                            last_found = iterations[-1].getId()))
         
         return iterations
+    
+    def loadIterationList(self, iteration_ids):
+        """
+        @return list of iterations with given iteration_ids
+        """
+        iterations = []
+        for iteration_id in iteration_ids:    
+            if os.path.isfile(
+                           self.ITERATION_FNAME_FORMAT.format(
+                                    dir=self.logdir, 
+                                    id=iteration_id)):
+                iteration = self.loadIteration(iteration_id)
+                iterations.append(iteration)
+            else:
+                sys.stderr.write("Could not read iteration {}\n".format(iteration_id))
+            
+        # We want to raise an error if
+        # no iterations were read in
+        if len(iterations) == 0:
+            raise Exception("Could not read any of the desired iteration files.")       
+        
+        return iterations    
 
     def getLastIterationId(self):
         """
