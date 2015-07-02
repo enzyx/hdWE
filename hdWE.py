@@ -58,7 +58,6 @@ INITIAL_BOUNDARIES                = initiate.parseInitialBoundaries(config)
 STARTING_STRUCTURE                = config.get('hdWE','starting-structure')
 REWEIGHTING_RANGE                 = float(config.get('hdWE','reweighting-range'))
 NUMBER_OF_THREADS                 = int(config.get('hdWE','number-of-threads'))
-MERGE_MODE                        = int(config.get('hdWE','merge-mode'))
 KEEP_COORDS_FREQUENCY             = int(config.get('hdWE', 'keep-coords-frequency'))
 STEADY_STATE                      = bool(config.get('hdWE', 'steady-state').lower() == "true")
 START_STATES                      = initiate.parseState(config.get('hdWE', 'start-state'))
@@ -124,9 +123,8 @@ else:
 #############################
 #         Main Loop         #
 #############################
-for iteration_counter in range(len(iterations), MAX_ITERATIONS + 1):
-    sys.stdout.write('\033[1m\nhdWE Status:\033[0m ' + 'Iteration '
-    + str(iteration_counter).zfill(5) + '\n')    
+for iteration_counter in range(iterations[-1].getId() + 1, MAX_ITERATIONS + 1):
+    sys.stdout.write('\033[1m\nhdWE Status:\033[0m Iteration {:05d}\n'.format(iteration_counter))
     sys.stdout.flush()
 
 
@@ -154,7 +152,7 @@ for iteration_counter in range(len(iterations), MAX_ITERATIONS + 1):
     #    - This list should be immutable 
     for this_bin in iterations[-1]:
         this_bin.backupInitialSegments()
-        
+
     # 3. Assign recycled probabilities
     if STEADY_STATE:
         recycling.recycleProbability(iterations[-1])
@@ -178,7 +176,7 @@ for iteration_counter in range(len(iterations), MAX_ITERATIONS + 1):
     if NUMBER_OF_THREADS > 1:
         thread_container = ThreadContainer()
         for this_bin in iterations[-1]:
-            thread_container.appendJob(threading.Thread(target=this_bin.resampleSegments(MERGE_MODE) ))
+            thread_container.appendJob(threading.Thread(target=this_bin.resampleSegments() ))
             if thread_container.getNumberOfJobs() >= NUMBER_OF_THREADS:
                 thread_container.runJobs()
         # Run remaining jobs
@@ -186,7 +184,7 @@ for iteration_counter in range(len(iterations), MAX_ITERATIONS + 1):
     # Serial
     else:
         for this_bin in iterations[-1]:
-            this_bin.resampleSegments(MERGE_MODE)
+            this_bin.resampleSegments()
 
 
     # 6. Run MDs
@@ -207,13 +205,6 @@ for iteration_counter in range(len(iterations), MAX_ITERATIONS + 1):
 
     #if DEBUG: 
     print("\n    The overall probabiliy is {0:05f}".format(iterations[-1].getProbability()))
-
-    #count total n of segments during iterations
-    n_segments = 0
-    for iteration_loop in iterations:
-        n_segments += iteration_loop.getNumberOfPropagatedSegments()
-    sys.stdout.write('    Total number of propagated segments: ' + str(n_segments-1)+ '\n')
-    sys.stdout.flush()
     
     #check for empty bins #TODO: make this a function of iterations
     empty_bins = 0
@@ -221,16 +212,14 @@ for iteration_counter in range(len(iterations), MAX_ITERATIONS + 1):
         if bin_loop.getNumberOfSegments() == 0:
             empty_bins += 1
     print('    Empty bins: ' + str(empty_bins))
+    
+    # Save some RAM
+    iterations = iterations[-2:]
 
 #############################
 #     End of Main Loop      #
 #############################
-
-#count total n of segments
-n_segments = 0
-for iteration_loop in iterations:
-    n_segments += iteration_loop.getNumberOfPropagatedSegments()
-print('\nhdWE completed. Total number of propagated segments: ' + str(n_segments-1) + '         ')
+print('\nhdWE completed.')
 
 
 
