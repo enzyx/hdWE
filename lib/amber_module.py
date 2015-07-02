@@ -392,14 +392,13 @@ class MD_module():
            
             return coordinate_ids
         
-    def ana_calcCoordinateOfSegment(self, segment, cpptraj_lines, use_trajectory):
+    def ana_calcCoordinateOfSegment(self, segment_name_string, cpptraj_lines, use_trajectory):
         """
         Calculates the value of a coordinate corresponding to a segment and defined
         in cpptraj_line via cpptraj.
         """
         
         #Write the cpptraj infile
-        segment_name_string = segment.getNameString() 
         cpptraj_infile_path = "{seg}.ana_calculatePMF_cpptraj_in".format(seg=segment_name_string)
         cpptraj_output_path = "{seg}.ana_calculatePMF_cpptraj_output".format(seg=segment_name_string)
         cpptraj_infile      = open(cpptraj_infile_path,'w')

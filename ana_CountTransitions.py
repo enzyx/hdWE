@@ -236,7 +236,7 @@ for iteration_loop in iterations:
                                                                bin_total = iteration_loop.getNumberOfBins()))
         sys.stdout.flush()
         for segment_loop in bin_loop:
-            segment_coordinates = md_module.ana_calcCoordinateOfSegment(segment_loop, cpptraj_lines, use_trajectory = False)
+            segment_coordinates = md_module.ana_calcCoordinateOfSegment(segment_loop.getNameString(), cpptraj_lines, use_trajectory = False)
             segment_probability = segment_loop.getProbability()
             
             iter_data.bins[-1].segments.append(SegmentData(iteration_index     = iteration_loop.getId(),

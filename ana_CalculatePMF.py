@@ -135,7 +135,7 @@ datapoints = []        # a list of Datapoint structures with coordinate and prob
 
 first_it_id = iterations[0].getId()
 last_it_id  = iterations[-1].getId()
-data_per_segment = len(md_module.ana_calcCoordinateOfSegment(iterations[0].bins[0].segments[0],
+data_per_segment = len(md_module.ana_calcCoordinateOfSegment(iterations[0].bins[0].segments[0].getNameString(),
                                                              cpptraj_lines,
                                                              use_trajectory = args.use_trajectory))
 
@@ -159,7 +159,7 @@ for iteration_loop in iterations:
                                                                bin_total = iteration_loop.getNumberOfBins()))
         sys.stdout.flush()
         for segment_loop in bin_loop:
-            segment_coordinates = md_module.ana_calcCoordinateOfSegment(segment_loop, cpptraj_lines, use_trajectory = args.use_trajectory)
+            segment_coordinates = md_module.ana_calcCoordinateOfSegment(segment_loop.getNameString(), cpptraj_lines, use_trajectory = args.use_trajectory)
             segment_probability = segment_loop.getProbability()
             for i,coord in enumerate(segment_coordinates):
                 datapoints.append(Datapoint(coord, segment_probability))
@@ -180,7 +180,7 @@ for bin_loop in iterations[-1]:
                   iteration_id = bin_loop.getReferenceIterationId(),
                   bin_id       = bin_loop.getReferenceBinId(),
                   segment_id   = bin_loop.getReferenceSegmentId() )
-    coordinate = md_module.ana_calcCoordinateOfSegment(segment_tmp, 
+    coordinate = md_module.ana_calcCoordinateOfSegment(segment_tmp.getNameString(0), 
                                                        cpptraj_lines, 
                                                        use_trajectory=False)
     references.append(SegmentData(iteration_loop.getId(), bin_loop.getId(), coordinate))       
