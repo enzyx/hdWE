@@ -27,8 +27,8 @@ class Bin(object):
         self.target_number_of_segments = target_number_of_segments  # int
         # coordinate bin ids for considered binning dimensions
         self.coordinate_ids            = coordinate_ids
-        self.is_start_bin              = self.__testBinState(start_states)
-        self.is_end_bin                = self.__testBinState(end_states) 
+        self.is_start_bin              = self.testBinState(start_states)
+        self.is_end_bin                = self.testBinState(end_states) 
         # The array of segments
         self.segments                  = []
         # In this array the segments are copied before resampling happens.
@@ -271,10 +271,7 @@ class Bin(object):
         """
         @return Current number of segments if converged is false.
         """
-        #if self.isConverged() == False:
         return len(self.segments)
-        #else:
-        #    return 0
     
     def getTargetNumberOfSegments(self):
         """
@@ -282,7 +279,7 @@ class Bin(object):
         """
         return self.target_number_of_segments
     
-    def __testBinState(self, STATES):
+    def testBinState(self, STATES):
         """
         tests if coordinate ids of bin are in STATES (e.g. start or end state)
         @return boolean

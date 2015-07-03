@@ -74,7 +74,6 @@ class Logger():
                                id=iteration_id)
         return self.__loadIterationFile(iteration_fname)
 
-    
     def loadFirstIteration(self, begin = 0):
         """
         Load the first iteration and set iteration_counter
