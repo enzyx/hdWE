@@ -174,7 +174,7 @@ class Iteration(object):
         for this_bin in self:
             for this_segment in this_bin.initial_segments:
                 rate_matrix[this_segment.getParentBinId(), this_segment.getBinId()] += \
-                this_segment.getProbability()
+                    sum(this_segment.getProbability())
         
         # Normalize all outrates with respect to a bin:
         for i in range(0,len(rate_matrix)):

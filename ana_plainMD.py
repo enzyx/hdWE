@@ -81,7 +81,7 @@ if not(args.state_A==None and args.state_B==None):
     N_transitions_into_A = len(transition_times_into_A)
       
     residence_times_in_A = functions_ana_plainMD.residence_times_from_coordinates(coordinates, state_A)    
-    residence_times_in_B = functions_ana_plainMD.residence_times_from_coordinates(coordinates, state_B)     
+    residence_times_in_B = functions_ana_plainMD.residence_times_from_coordinates(coordinates, state_B)   
     
    
     ####### Transition time distribution
