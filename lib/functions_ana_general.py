@@ -41,3 +41,33 @@ def binIdToCoordinateId(iteration):
     for this_bin in iteration:
         sort_indices.append(this_bin.getCoordinateIds())
     return sort_indices
+
+def block_bootstrap(data, function, block_size, number_of_samples = 10000, alpha = 0.05):
+    """
+    @return Performs a block bootstrap analysis on a time series of sampling data.
+    The mean value of a given function of the sampling data and the corresponding confidence intervals are returned.
+    """ 
+    from random import randint
+    
+    
+    def resample(data, block_size):
+        number_of_blocks = int (len(data) / block_size )
+        data_resampled = []
+        for j in range(0,number_of_blocks):
+            random_block_index = randint(0, number_of_blocks - 1)
+            data_block_tmp = data[block_size * random_block_index:block_size * (random_block_index + 1) ]
+            data_resampled = numpy.append(data_resampled, data_block_tmp)
+  
+        return data_resampled
+            
+    # Resample data and evaluate function 
+    function_values = []
+    for i in range(0, number_of_samples):
+        data_resampled = resample(data, block_size)
+        function_values.append( function(data_resampled) )
+        
+    print numpy.mean(function_values), numpy.std(function_values)
+    
+    
+    
+    

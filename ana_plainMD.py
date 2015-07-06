@@ -11,7 +11,7 @@ from math import log
 
 # Parse command line
 parser = argparse.ArgumentParser(description=
-    'Calculates PMF and rates for a plain MD. The reaction coordinate cpptraj_output is required.')
+                    'Calculates PMF and rates for a plain MD. The reaction coordinate cpptraj_output is required.')
 parser.add_argument('-b', '--begin_frame', dest="begin_frame",
                     required=False, type=int, default=0,
                     help="First frame to use for PMF calculation.")                    
@@ -50,7 +50,6 @@ args = parser.parse_args()
 coordinates_tmp = numpy.loadtxt(args.cpptraj_output, usecols=(1,) )
 if args.end_frame == -1:
     args.end_frame = len(coordinates_tmp) - 1
-
 coordinates = numpy.zeros([args.end_frame - args.begin_frame])
 coordinates = coordinates_tmp[args.begin_frame:args.end_frame]
 
@@ -79,9 +78,9 @@ if not(args.state_A==None and args.state_B==None):
     
     N_transitions_into_B = len(transition_times_into_B)    
     N_transitions_into_A = len(transition_times_into_A)
-      
+    
     residence_times_in_A = functions_ana_plainMD.residence_times_from_coordinates(coordinates, state_A)    
-    residence_times_in_B = functions_ana_plainMD.residence_times_from_coordinates(coordinates, state_B)     
+    residence_times_in_B = functions_ana_plainMD.residence_times_from_coordinates(coordinates, state_B)
     
    
     ####### Transition time distribution

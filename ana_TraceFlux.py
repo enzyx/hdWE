@@ -3,6 +3,7 @@ import argparse
 import sys
 import numpy as np
 from lib.logger import Logger
+import lib.functions_ana_general as functions_ana_general
 
 #####################
 ###### classes ######
@@ -216,6 +217,8 @@ for i in range(len(flux_into_A)):
                          probability_from_B[i]))
 
 fout.close()
+
+
 
 print "A --> B"
 print   np.mean(flux_into_B[200:])    
