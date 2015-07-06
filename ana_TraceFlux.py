@@ -4,6 +4,7 @@ import sys
 import numpy as np
 from lib.logger import Logger
 import lib.functions_ana_general as functions_ana_general
+import lib.reweighting as reweighting
 
 #####################
 ###### classes ######
@@ -67,8 +68,13 @@ parser.add_argument('--state-B', dest="state_B",
                     help="Boundaries of the end state for rate calculation.")
 parser.add_argument('--output', dest="output_file", 
                     required=False, type=str, default='ana_trace_flux.dat',
-                    help="output filename for A and B flux properties")  
-
+                    help="output filename for A and B flux properties")
+parser.add_argument('-r', '--reweighting-range', dest="reweighting_range",
+                    type=float, default=0.5,
+                    help="Reweighting range.")  
+parser.add_argument('-w', '--reweighting-iterations', dest="reweighting_iterations",
+                    type=int, default=-1,
+                    help="Apply reweighting to first N iterations.")
 
 # Initialize
 args = parser.parse_args()
@@ -97,6 +103,13 @@ for this_bin in current_iteration:
             this_segment.setProbability(np.array([0.0,1.0/N]))
         else:
             this_segment.setProbability(np.array([0.5/N,0.5/N]))
+    for this_segment in this_bin.initial_segments:
+        if state_list[this_bin.getId()] == 'A':
+            this_segment.setProbability(np.array([1.0/N,0.0]))
+        elif state_list[this_bin.getId()] == 'B':
+            this_segment.setProbability(np.array([0.0,1.0/N]))
+        else:
+            this_segment.setProbability(np.array([0.5/N,0.5/N]))
             
 
 flux_into_A         = []
@@ -105,6 +118,11 @@ probability_state_A = []
 probability_state_B = []
 probability_from_A  = []
 probability_from_B  = []
+#TODO: remove the iterations list and save only the last rate matrices
+#      to be memory efficient
+iterations = [current_iteration]
+reweighter = reweighting.Reweighting(reweighting_range=args.reweighting_range)
+reweighter.storeRateMatrix(current_iteration)
 
 # Iteration Loop
 for i in range(first_iteration + 1, last_iteration + 1):
@@ -123,6 +141,7 @@ for i in range(first_iteration + 1, last_iteration + 1):
     probability_from_B_iter  = 0.0  
        
     for this_bin in current_iteration:
+                    
         # assign new probability to initial segments
         for this_initial_segment in this_bin.initial_segments:
             new_probability = previous_iteration\
@@ -198,7 +217,15 @@ for i in range(first_iteration + 1, last_iteration + 1):
     probability_state_A.append(probability_state_A_iter)         
     probability_state_B.append(probability_state_B_iter)   
     probability_from_A.append(probability_from_A_iter)         
-    probability_from_B.append(probability_from_B_iter)  
+    probability_from_B.append(probability_from_B_iter)
+    
+    # Reweighting of bin probabilities
+    #    The order of the following steps should no longer matter.  
+    if i < args.reweighting_iterations:
+        # Keep track of the rate matrix
+        reweighter.storeRateMatrix(current_iteration)
+        if current_iteration.getNumberOfBins() > 1:
+            reweighter.reweightBinProbabilities(current_iteration)
 
 
 ##########################
@@ -219,22 +246,22 @@ for i in range(len(flux_into_A)):
 fout.close()
 
 
-
+x = 100
 print "A --> B"
-print   np.mean(flux_into_B[200:])    
-print   np.mean(probability_state_A[200:])
-print   np.mean(probability_from_A[200:])  
+print   np.mean(flux_into_B[x:])    
+print   np.mean(probability_state_A[x:])
+print   np.mean(probability_from_A[x:])  
 print 'rate:'
-print   np.mean(flux_into_B[200:])  / np.mean(probability_state_A[200:])
+print   np.mean(flux_into_B[x:])  / np.mean(probability_state_A[x:])
 print '1/mfpt:'
-print   np.mean(flux_into_B[200:])  / np.mean(probability_from_A[200:])   
+print   np.mean(flux_into_B[x:])  / np.mean(probability_from_A[x:])   
 
 
 print "B --> A"
-print   np.mean(flux_into_A[200:])    
-print   np.mean(probability_state_B[200:])
-print   np.mean(probability_from_B[200:])  
+print   np.mean(flux_into_A[x:])    
+print   np.mean(probability_state_B[x:])
+print   np.mean(probability_from_B[x:])  
 print 'rate:'
-print   np.mean(flux_into_A[200:])  / np.mean(probability_state_B[200:])
+print   np.mean(flux_into_A[x:])  / np.mean(probability_state_B[x:])
 print '1/mfpt:'
-print   np.mean(flux_into_A[200:])  / np.mean(probability_from_B[200:])    
+print   np.mean(flux_into_A[x:])  / np.mean(probability_from_B[x:])    

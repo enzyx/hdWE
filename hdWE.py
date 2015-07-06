@@ -56,7 +56,6 @@ MAX_ITERATIONS                    = int(config.get('hdWE','max-iterations'))
 INITIAL_TARGET_NUMBER_OF_SEGMENTS = int(config.get('hdWE','segments-per-bin'))
 INITIAL_BOUNDARIES                = initiate.parseInitialBoundaries(config)
 STARTING_STRUCTURE                = config.get('hdWE','starting-structure')
-REWEIGHTING_RANGE                 = float(config.get('hdWE','reweighting-range'))
 NUMBER_OF_THREADS                 = int(config.get('hdWE','number-of-threads'))
 KEEP_COORDS_FREQUENCY             = int(config.get('hdWE', 'keep-coords-frequency'))
 STEADY_STATE                      = bool(config.get('hdWE', 'steady-state').lower() == "true")
@@ -157,19 +156,8 @@ for iteration_counter in range(iterations[-1].getId() + 1, MAX_ITERATIONS + 1):
     if STEADY_STATE:
         recycling.recycleProbability(iterations[-1])
         print(" - Recyled Probability: {0:f}".format(iterations[-1].getProbabilityFlow()))
-    
-    # 4. Reweighting of bin probabilities
-    #    The order of the following steps should no longer matter.  
-    if iterations[-1].getNumberOfBins() > 1 and REWEIGHTING_RANGE > 0.0:
-        sys.stdout.write(' - Reweighting Bin Probabilities\n')
-        sys.stdout.flush()
-        #TODO: why does reweighting need the workdir and jobname? fix it! 
-        reweighting.reweightBinProbabilities(iterations,
-                                             REWEIGHTING_RANGE,
-                                             WORKDIR,
-                                             JOBNAME)
 
-    # 5. Resampling
+    # 4. Resampling
     sys.stdout.write(' - Resampling\n')
     sys.stdout.flush() 
     # Parallel
@@ -187,7 +175,7 @@ for iteration_counter in range(iterations[-1].getId() + 1, MAX_ITERATIONS + 1):
             this_bin.resampleSegments()
 
 
-    # 6. Run MDs
+    # 5. Run MDs
     sys.stdout.write(' - Run MDs\n')
     sys.stdout.flush() 
     md_module.RunMDs(iterations[-1])
@@ -204,7 +192,7 @@ for iteration_counter in range(iterations[-1].getId() + 1, MAX_ITERATIONS + 1):
         md_module.removeCoordinateFiles(iterations[-2])
 
     #if DEBUG: 
-    print("\n    The overall probabiliy is {0:05f}".format(iterations[-1].getProbability()))
+    print("\n    The overall probability is {0:05f}".format(iterations[-1].getProbability()))
     
     #check for empty bins #TODO: make this a function of iterations
     empty_bins = 0
