@@ -76,7 +76,7 @@ def parseState(config_string):
     
     return end_state
 
-def create_initial_iteration(target_number_of_segments, initial_boundaries, md_module, START_STATES, END_STATES):
+def create_initial_iteration(target_number_of_segments, initial_boundaries, md_module):
     """
     Creates the first bin, with the starting structure as refcoords
     and n_segs_per_bin trajectories with probability 1/n_segs_per_bin.
@@ -94,9 +94,7 @@ def create_initial_iteration(target_number_of_segments, initial_boundaries, md_m
                            reference_bin_id          = 0,
                            reference_segment_id      = 0,
                            target_number_of_segments = target_number_of_segments,
-                           coordinate_ids            = initial_coordinate_ids,
-                           start_states              = START_STATES,
-                           end_states                = END_STATES)
+                           coordinate_ids            = initial_coordinate_ids)
     iteration0.bins[0].generateSegment(probability         = 1.0,
                                        parent_iteration_id = 0,
                                        parent_bin_id       = 0, 

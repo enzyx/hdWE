@@ -11,7 +11,7 @@ class Bin(object):
     """
     def __init__(self, iteration_id, bin_id, reference_iteration_id, 
                  reference_bin_id, reference_segment_id, 
-                 target_number_of_segments, coordinate_ids, start_states, end_states):
+                 target_number_of_segments, coordinate_ids):
         """
         @param ref_coords the path to reference coordinates defining the bin
         @param trajectories single or list of trajectories to 
@@ -27,8 +27,6 @@ class Bin(object):
         self.target_number_of_segments = target_number_of_segments  # int
         # coordinate bin ids for considered binning dimensions
         self.coordinate_ids            = coordinate_ids
-        self.is_start_bin              = self.testBinState(start_states)
-        self.is_end_bin                = self.testBinState(end_states) 
         # The array of segments
         self.segments                  = []
         # In this array the segments are copied before resampling happens.

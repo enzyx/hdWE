@@ -7,6 +7,21 @@ import numpy
 from lib.logger import Logger
 import argparse
 import lib.analysis_operations as analysis_operations
+import sys
+
+###### Function ######
+def printMatrix(matrix):
+    digits = str(len(str(matrix.max())) + 1)
+    for i in range(len(matrix)):
+        for j in range(len(matrix)):
+            if i==j:
+                sformat = "\033[0;31m{: "+digits+"d}\033[0m"
+            elif i==j+1 or i==j-1:
+                sformat = "\033[0;32m{: "+digits+"d}\033[0m"
+            else:
+                sformat = "{: "+digits+"d}"
+            sys.stdout.write(sformat.format(matrix[i][j]))
+        sys.stdout.write('\n')
 
 ###### Parse command line ###### 
 parser =argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
@@ -42,7 +57,7 @@ if args.bin_to_bin_transitions:
                                   iteration.bins[segment.getBinId()].getCoordinateIds()]      += 1
     
     if not args.outfile: 
-        print( transition_matrix )
+        printMatrix( transition_matrix )
     else:
         numpy.savetxt(args.outfile, transition_matrix, fmt='% 4d')
 else:
@@ -52,12 +67,12 @@ else:
     else:
         numpy.savetxt(args.outfile, rateMatrix, fmt='%.2f')
 
-start_start_rate = 0.0
-for i in range(len(rateMatrix)):
-    for j in range(len(rateMatrix)):
-        if iterations[-1].bins[j].isStartStateBin() == True:
-            start_start_rate += rateMatrix[i,j] * iterations[-1].bins[i].getProbability()
-
-print (start_start_rate)
+# start_start_rate = 0.0
+# for i in range(len(rateMatrix)):
+#     for j in range(len(rateMatrix)):
+#         if iterations[-1].bins[j].isStartStateBin() == True:
+#             start_start_rate += rateMatrix[i,j] * iterations[-1].bins[i].getProbability()
+# 
+# print (start_start_rate)
         
 

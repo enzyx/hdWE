@@ -17,7 +17,7 @@ def copyBinStructureToLastIteration(iterations):
                                       start_states              = parent_bin.isStartStateBin(),
                                       end_states                = parent_bin.isEndStateBin())
 
-def resort(iterations, md_module, INITIAL_TARGET_NUMBER_OF_SEGMENTS, START_STATES, END_STATES):
+def resort(iterations, md_module, INITIAL_TARGET_NUMBER_OF_SEGMENTS):
     """
     Resorts final segments of parent iteration into bins and creates new bins if necessary
     """
@@ -54,9 +54,7 @@ def resort(iterations, md_module, INITIAL_TARGET_NUMBER_OF_SEGMENTS, START_STATE
                                                        reference_bin_id            = parent_segment.getBinId(),
                                                        reference_segment_id        = parent_segment.getId(),
                                                        target_number_of_segments   = INITIAL_TARGET_NUMBER_OF_SEGMENTS,
-                                                       coordinate_ids              = coordinate_ids[segment_id],
-                                                       start_states                = START_STATES,
-                                                       end_states                  = END_STATES)
+                                                       coordinate_ids              = coordinate_ids[segment_id])
                 current_iteration.bins[bin_id].generateSegment(probability         = parent_segment.getProbability(),
                                                                parent_iteration_id = parent_segment.getIterationId(),
                                                                parent_bin_id       = parent_segment.getBinId(),
