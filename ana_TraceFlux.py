@@ -65,7 +65,7 @@ parser.add_argument('--state-A', dest="state_A",
 parser.add_argument('--state-B', dest="state_B",
                     required=False, type=float, nargs=2, 
                     help="Boundaries of the end state for rate calculation.")
-parser.add_argument('--output', dest="output_file", 
+parser.add_argument('-o', '--output', dest="output_file", 
                     required=False, type=str, default='ana_trace_flux.dat',
                     help="output filename for A and B flux properties")
 parser.add_argument('-r', '--reweighting-range', dest="reweighting_range",
@@ -244,7 +244,7 @@ for i in range(len(flux_into_A)):
 
 fout.close()
 
-x = 100
+x = 300
 print "A --> B"
 print   np.mean(flux_into_B[x:])    
 print   np.mean(probability_state_A[x:])
