@@ -66,7 +66,7 @@ parser.add_argument('--state-A', dest="state_A",
 parser.add_argument('--state-B', dest="state_B",
                     required=False, type=float, nargs=2, 
                     help="Boundaries of the end state for rate calculation.")
-parser.add_argument('--output', dest="output_file", 
+parser.add_argument('-o', '--output', dest="output_file", 
                     required=False, type=str, default='ana_trace_flux.dat',
                     help="output filename for A and B flux properties")
 parser.add_argument('-r', '--reweighting-range', dest="reweighting_range",
@@ -118,9 +118,7 @@ probability_state_A = []
 probability_state_B = []
 probability_from_A  = []
 probability_from_B  = []
-#TODO: remove the iterations list and save only the last rate matrices
-#      to be memory efficient
-iterations = [current_iteration]
+
 reweighter = reweighting.Reweighting(reweighting_range=args.reweighting_range)
 reweighter.storeRateMatrix(current_iteration)
 
@@ -171,7 +169,6 @@ for i in range(first_iteration + 1, last_iteration + 1):
                 this_segment.setProbability(split_dict[this_segment.getParentNameString()])
         
         # Merge
-        
         elif this_bin.getNumberOfSegments() < this_bin.getNumberOfInitialSegments():
             merge_dict = {}
             kept_prob = 0.0
@@ -245,8 +242,7 @@ for i in range(len(flux_into_A)):
 
 fout.close()
 
-
-x = 100
+x = 500
 print "A --> B"
 print   np.mean(flux_into_B[x:])    
 print   np.mean(probability_state_A[x:])
@@ -255,7 +251,6 @@ print 'rate:'
 print   np.mean(flux_into_B[x:])  / np.mean(probability_state_A[x:])
 print '1/mfpt:'
 print   np.mean(flux_into_B[x:])  / np.mean(probability_from_A[x:])   
-
 
 print "B --> A"
 print   np.mean(flux_into_A[x:])    

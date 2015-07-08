@@ -134,10 +134,10 @@ class Reweighting(object):
                                                     reweight_factor)
     
                 # Log: Print the reweighted bin probablities
-                bin_probabilities = iteration.getBinProbabilities()
                 print('     Reweighting: Success. Skipped bins: ' + str(delete_bin_index))
-                print('     New chi square (equilibriums condition): {0:g}'.format(
-                    self.calcChiSquare(sum(bin_probabilities), mean_rate_matrix)))
+#                 bin_probabilities = iteration.getBinProbabilities()
+#                 print('     New chi square (equilibriums condition): {0:g}'.format(
+#                     self.calcChiSquare(sum(bin_probabilities), mean_rate_matrix)))
                 return
         except:
             # Raise Error if the steady state equations could no successfully be solved

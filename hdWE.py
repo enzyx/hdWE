@@ -16,7 +16,6 @@ import lib.initiate as initiate
 import lib.constants as constants
 import lib.resorting as resorting
 import lib.recycling as recycling
-import lib.reweighting as reweighting
 
 #### Parse command line #### 
 
@@ -58,9 +57,6 @@ INITIAL_BOUNDARIES                = initiate.parseInitialBoundaries(config)
 STARTING_STRUCTURE                = config.get('hdWE','starting-structure')
 NUMBER_OF_THREADS                 = int(config.get('hdWE','number-of-threads'))
 KEEP_COORDS_FREQUENCY             = int(config.get('hdWE', 'keep-coords-frequency'))
-STEADY_STATE                      = bool(config.get('hdWE', 'steady-state').lower() == "true")
-START_STATES                      = initiate.parseState(config.get('hdWE', 'start-state'))
-END_STATES                        = initiate.parseState(config.get('hdWE', 'end-state'))
 
 if "amber" in config.sections():
     MD_PACKAGE = "amber"
@@ -113,9 +109,7 @@ if APPEND:
 else:
     iterations.append(initiate.create_initial_iteration(INITIAL_TARGET_NUMBER_OF_SEGMENTS, 
                                                         INITIAL_BOUNDARIES, 
-                                                        md_module, 
-                                                        START_STATES, 
-                                                        END_STATES))
+                                                        md_module))
     logger.log(iterations[0], CONFIGFILE)
 
 
@@ -139,10 +133,7 @@ for iteration_counter in range(iterations[-1].getId() + 1, MAX_ITERATIONS + 1):
     resorting.copyBinStructureToLastIteration(iterations)
     resorting.resort(iterations, 
                      md_module,
-                     INITIAL_TARGET_NUMBER_OF_SEGMENTS,
-                     START_STATES,
-                     END_STATES)
-    
+                     INITIAL_TARGET_NUMBER_OF_SEGMENTS)
     
     # 2. Backup the segments lists of all bins
     #    - Saving the segment assignments for correct
@@ -152,12 +143,7 @@ for iteration_counter in range(iterations[-1].getId() + 1, MAX_ITERATIONS + 1):
     for this_bin in iterations[-1]:
         this_bin.backupInitialSegments()
 
-    # 3. Assign recycled probabilities
-    if STEADY_STATE:
-        recycling.recycleProbability(iterations[-1])
-        print(" - Recyled Probability: {0:f}".format(iterations[-1].getProbabilityFlow()))
-
-    # 4. Resampling
+    # 3. Resampling
     sys.stdout.write(' - Resampling\n')
     sys.stdout.flush() 
     # Parallel
@@ -174,19 +160,17 @@ for iteration_counter in range(iterations[-1].getId() + 1, MAX_ITERATIONS + 1):
         for this_bin in iterations[-1]:
             this_bin.resampleSegments()
 
-
-    # 5. Run MDs
+    # 4. Run MDs
     sys.stdout.write(' - Run MDs\n')
     sys.stdout.flush() 
     md_module.RunMDs(iterations[-1])
     sys.stdout.write('\n')
     sys.stdout.flush() 
-        
     
-    # 6. log everything
+    # 5. log everything
     logger.log(iterations[-1], CONFIGFILE)
 
-    # 7. delete unwanted files
+    # 6. delete unwanted files
     print(" - Deleting md files")
     if iterations[-2].getId() % KEEP_COORDS_FREQUENCY != 0:
         md_module.removeCoordinateFiles(iterations[-2])

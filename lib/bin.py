@@ -11,7 +11,7 @@ class Bin(object):
     """
     def __init__(self, iteration_id, bin_id, reference_iteration_id, 
                  reference_bin_id, reference_segment_id, 
-                 target_number_of_segments, coordinate_ids, start_states, end_states):
+                 target_number_of_segments, coordinate_ids):
         """
         @param ref_coords the path to reference coordinates defining the bin
         @param trajectories single or list of trajectories to 
@@ -27,8 +27,6 @@ class Bin(object):
         self.target_number_of_segments = target_number_of_segments  # int
         # coordinate bin ids for considered binning dimensions
         self.coordinate_ids            = coordinate_ids
-        self.is_start_bin              = self.testBinState(start_states)
-        self.is_end_bin                = self.testBinState(end_states) 
         # The array of segments
         self.segments                  = []
         # In this array the segments are copied before resampling happens.
@@ -164,18 +162,7 @@ class Bin(object):
         for index in range(len(self.segments)):
             self.segments[index].setSegmentId(index)
     
-    def isStartStateBin(self):
-        """
-        @return Is this bin a start state bin
-        """
-        return self.is_start_bin
-    
-    def isEndStateBin(self):
-        """
-        @return Is this bin a end state bin
-        """
-        return self.is_end_bin
-    
+   
     def getCoordinateIds(self):
         """
         @return list of coordinate ids
@@ -279,20 +266,7 @@ class Bin(object):
         """
         return self.target_number_of_segments
     
-    def testBinState(self, STATES):
-        """
-        tests if coordinate ids of bin are in STATES (e.g. start or end state)
-        @return boolean
-        """
-        if type(STATES) == bool:
-            return STATES
-        
-        for state in STATES:
-            # compare element wise
-            if self.getCoordinateIds() == state:
-                return True
-        return False
-    
+   
     def __iter__(self):
         """
         Defines the class as iterable.

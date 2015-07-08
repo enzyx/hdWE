@@ -5,7 +5,6 @@ the data of a hdWE run. Last iteration is including.
 """
 from __future__ import print_function
 import numpy
-import sys
 from lib.logger import Logger
 import lib.constants as constants
 from math import log
@@ -33,40 +32,71 @@ parser.add_argument("--probability", dest="probability", action="store_true",
 # Initialize
 print('\033[1mCalculating Bin Free Energies\033[0m (Free Energy is given in kcal/mol at 298K).')
 args = parser.parse_args()
+last_iteration = args.last_iteration 
+first_iteration = args.first_iteration
 logger = Logger(args.logdir)
-iterations = logger.loadIterations(args.first_iteration, args.last_iteration)
-
+if last_iteration < 0:
+    last_iteration = logger.getLastIterationId()
+    
+n_iterations = last_iteration - first_iteration + 1 
+    
 #initialize bin probability evolution array with size of last frame number_of_bins
-n_iterations = len(iterations)
-bin_probabilities = numpy.zeros([n_iterations, iterations[-1].getNumberOfBins(),2], float)
-
+iteration = logger.loadIterations(logger.getLastIterationId(), logger.getLastIterationId())[0]
+n_bins = iteration.getNumberOfBins()
+bin_probabilities = numpy.zeros([n_iterations, iteration.getNumberOfBins(),2], float)
 for i in range(0,len(bin_probabilities[:,0,0])):
     for j in range(0,len(bin_probabilities[0,:,0])):
         for k in range(0,2):
-            bin_probabilities[i,j,k] = 'Inf'
+            bin_probabilities[i,j,k] = 0
 
 
 
-for i in range(n_iterations):
-    for j in range(iterations[i].getNumberOfBins()):
-        bin_probabilities[i,j,0] = iterations[i].bins[j].getProbability()
+
+
+for i in range(first_iteration, last_iteration):
+    print(i)
+    iteration = logger.loadIterations(i, i)[0]
+    i = i - first_iteration
+    for j in range(iteration.getNumberOfBins()):
+        bin_probabilities[i,j,0] = iteration.bins[j].getProbability()
         if bin_probabilities[i,j,0] > 0.0:
             bin_probabilities[i,j,1] = - constants.kT * log(bin_probabilities[i,j,0]) 
         else:
             bin_probabilities[i,j,1] = 'Inf'
     minimum_free_energy = min(bin_probabilities[i,:,1])
-    for j in range(0,iterations[i].getNumberOfBins()):
+    for j in range(0,iteration.getNumberOfBins()):
         bin_probabilities[i,j,1] -= minimum_free_energy        
 
 # resort bins to represent the more meaningful coordinate sorting
-resort_indices = binIdToCoordinateId(iterations[-1])
-tmp_bin_probabilities = numpy.zeros([n_iterations, iterations[-1].getNumberOfBins(),2], float)
+resort_indices = binIdToCoordinateId(iteration)
+print(resort_indices)
+tmp_bin_probabilities = numpy.zeros([n_iterations, n_bins,2], float)
 for i in range(bin_probabilities.shape[0]):
     for j in range(bin_probabilities.shape[1]):
         tmp_bin_probabilities[i,resort_indices[j],0] = bin_probabilities[i,j,0]
         tmp_bin_probabilities[i,resort_indices[j],1] = bin_probabilities[i,j,1]
 bin_probabilities = tmp_bin_probabilities 
+mean_bin_free_energies = numpy.zeros([n_bins,2], float)
+for j in range(0,n_bins):
+    if j == 0:
+        mean_bin_free_energies[j,0] = iteration.boundaries[0][0]
+    elif j == (n_bins - 1):
+        mean_bin_free_energies[j,0] = iteration.boundaries[0][j-1]
+    else:
+        mean_bin_free_energies[j,0] = (iteration.boundaries[0][j-1] + iteration.boundaries[0][j] ) / 2
+    mean_bin_free_energies[j,1] = numpy.sum(bin_probabilities[:,j,0])
 
+#for j in range(0,len(mean_bin_free_energies)):
+#        if mean_bin_free_energies[j,1] > 0.0:
+#            mean_bin_free_energies[j,1] = - constants.kT * log(mean_bin_free_energies[j,1]) 
+#
+#minimum_free_energy = min(mean_bin_free_energies[:,1])
+#
+#for j in range(0,len(mean_bin_free_energies)):
+#    mean_bin_free_energies[j,1] -= minimum_free_energy 
+    
+    
+numpy.savetxt(args.output_path+'mean', mean_bin_free_energies)   
 #Save to file
 if args.probability == True:
     header_line = 'Probability at: Bin, Iteration'            
