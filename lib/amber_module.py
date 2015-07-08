@@ -76,7 +76,7 @@ class MD_module():
     def setIteration(self, iteration):
         self.iteration = iteration
     
-    def RunSegmentMD(self, segment, MD_run_count, MD_skip_count):
+    def runSegmentMD(self, segment):
         """
         Function that runs one single segment MD.
         """
@@ -136,10 +136,10 @@ class MD_module():
             if not self.keep_trajectory_files:
                 try: os.remove(amber_trajectory_path)
                 except OSError: pass            
-        
+    
     def SkipSegmentMD(self, segment, MD_run_count, MD_skip_count):
         """Function that runs one single segment MD."""
-        command_line = self.SkipCommandLineString(segment)
+        command_line = self.skipCommandLineString(segment)
         #Command line for debugging
         if self.debug:
                 os.system('echo ' + command_line + \
@@ -154,7 +154,7 @@ class MD_module():
         os.system(command_line)
         logfile.close()
     
-    def SkipCommandLineString(self, segment):
+    def skipCommandLineString(self, segment):
         """
         Returns the command line for linking segment restart files of skipped bins to next iteration.
         """
@@ -192,7 +192,7 @@ class MD_module():
         sys.stdout.write(self.writeMdStatus(segment, MD_run_count, MD_skip_count))
         sys.stdout.flush()  
     
-    def RunMDs(self, iteration):
+    def runMDs(self, iteration):
         """Propagates the trajectories corresponding to an iteration using amber."""
         self.iteration = iteration
         #Serial Run
@@ -203,7 +203,7 @@ class MD_module():
                 #if bin_loop.isConverged() == False:
                 for segment_loop in bin_loop:
                     MD_run_count  += 1
-                    self.RunSegmentMD(segment_loop, MD_run_count, MD_skip_count)
+                    self.runSegmentMD(segment_loop)
                     self.printMdStatus(segment_loop, MD_run_count, MD_skip_count)
                 #else:
                 #    for segment_loop in bin_loop:
@@ -221,8 +221,8 @@ class MD_module():
                 #if bin_loop.isConverged() == False:
                 for segment_loop in bin_loop:
                     MD_run_count  += 1
-                    thread_container.appendJob(threading.Thread(target=self.RunSegmentMD, 
-                                                                args=(segment_loop, MD_run_count, MD_skip_count, )))
+                    thread_container.appendJob(threading.Thread(target=self.runSegmentMD, 
+                                                                args=(segment_loop, )))
                     if thread_container.getNumberOfJobs() >= self.number_of_threads:
                         thread_container.runJobs()
                     self.printMdStatus(segment_loop, MD_run_count, MD_skip_count)
@@ -249,11 +249,12 @@ class MD_module():
                                   "MPIMD",
                                   self.configfile,
                                   str(self.debug)))
-    
-    def calcSegmentCoordinateIds(self, segment, bin_boundaries):
+
+    def calcSegmentCoordinates(self, segment):
         """
-        Calculates the coordinates of a segment with respect to all binned dimensions
-        @return a list of coordinate ids for given segment
+        Calculates the coordinates of a segment with respect to defined dimensions
+        sets segment.coordinates to calculated ones
+        @return list of float coordinates 
         """
         # Write the cpptraj infile
         segment_name_string = segment.getNameString() 
@@ -298,19 +299,16 @@ class MD_module():
             coordinates = numpy.delete(coordinates, 0)
         except:
             #TODO What should happen then?
-            print('amber_module error: cpptraj output {0} can not '\
-                  'be found or loaded.'.format(cpptraj_outfile_path))
-
-        # Get the coordinate ids
-        segment_coordinate_ids = bin_classifier.getCoordinateIds(coordinates, bin_boundaries)
+            sys.stderr.write('amber_module error: cpptraj output {0} can not '\
+                  'be found or loaded.\n'.format(cpptraj_outfile_path))
         
         if not self.debug:
             os.remove(cpptraj_outfile_path)
             os.remove(cpptraj_infile_path)
         #print ("\nsegment {}".format(segment.getNameString()))
         #print ("coordinates: ", coordinates[0])
-        #print ("coordinate_ids: ", segment_coordinate_ids[0]) 
-        return segment_coordinate_ids
+        segment.setCoordinates(coordinates)
+        return coordinates
 
     def loadIterationFromDumpFile(self):
         """
@@ -356,41 +354,23 @@ class MD_module():
         """ Remove coordinate matrix dump file """
         os.remove(self.COORDINATE_IDS_DUMP_FNAME)
 
-    def calcCoordinateIds(self, iteration):
+    def calcCoordinates(self, iteration):
         """
-        Returns a matrix[n_segments, n_dimensions] of coordinate ids for each segment
+        Calculates the coordinates with respect 
+        to binned dimensions
+        for all segments in iteration
         """
+        
         self.setIteration(iteration)
         if self.parallelization_mode in ["serial", "thread"]:
-            coordinate_ids = numpy.zeros([iteration.getNumberOfSegments(),self.N_DIMENSIONS], dtype = int)
-            # calculate entries
-            i = 0
-            for bin_loop in self.iteration:
-                for segment in bin_loop:
-                    segment_coordinate_ids = self.calcSegmentCoordinateIds(segment, iteration.getBoundaries())
-                    # fill matrix
-                    for dim in range(self.N_DIMENSIONS):
-                        coordinate_ids[i,dim] = segment_coordinate_ids[dim]
-                    i += 1
-            return coordinate_ids
+            # calculate and set coordinates
+            for this_bin in iteration:
+                for this_segment in this_bin:
+                    self.calcSegmentCoordinates(this_segment)
         
         if self.parallelization_mode == "mpi":            
-            # dump the iteration object to a file
-            self.dumpIterationToFile()
-            # Call myself with MPI...
-            if self.debug:
-                print("Switching to MPI for coordinate ID calculation.")
-            os.system("{0} {1} {2} {3} {4} {5} ".format(self.mpirun, 
-                                                        sys.executable,
-                                                        os.path.realpath(__file__),
-                                                        "MPIANA",
-                                                        self.configfile, 
-                                                        str(self.debug)))
-            coordinate_ids = self.loadCoordinateIdsFromDumpFile()
-            if not self.debug:
-                self.removeCoordinateIdsDumpFile()
-           
-            return coordinate_ids
+            # not implemented yet
+            sys.stderr.write('ERROR: mpi coordinate calculation not implemented yet\n')
         
     def ana_calcCoordinateOfSegment(self, segment_name_string, cpptraj_lines, use_trajectory):
         """
@@ -467,7 +447,7 @@ def doMPIMD(CONFIGFILE, debug):
             #if not loop_bin.isConverged():
             if workcount % size == rank:
                 # Run MD on this node
-                md_module.RunSegmentMD(loop_segment, workcount, md_skip_count)
+                md_module.runSegmentMD(loop_segment)
             #else:
             #    md_skip_count += 1
             #    if workcount % size == rank:
@@ -490,7 +470,7 @@ def doMPIMD(CONFIGFILE, debug):
         if not debug:
             md_module.removeIterationDumpFile()
 
-def doMPICalcCoordinateIds(CONFIGFILE, debug):
+def doMPICalcCoordinateIds_old(CONFIGFILE, debug):
     # Read in the call arguments
     CONFIGFILE               = CONFIGFILE
     debug                    = bool(debug == "True")
@@ -524,6 +504,41 @@ def doMPICalcCoordinateIds(CONFIGFILE, debug):
             print("All Coordinate Ids: ", coordinate_ids)
             print("Finished MPI Coordinate ids calculation")
 
+def doMPICalcCoordinates(CONFIGFILE, debug):
+    # Read in the call arguments
+    CONFIGFILE               = CONFIGFILE
+    debug                    = bool(debug == "True")
+    # Initialize MD module
+    md_module = MD_module(CONFIGFILE = CONFIGFILE, debug = debug)
+    md_module.loadIterationFromDumpFile()
+    iteration = md_module.iteration
+    
+    if debug and rank == 0:
+        sys.stderr.write("Number of MPI processes: {0}\n".format(size))
+        sys.stderr.flush()
+
+    # Setup the list of lists coordinates
+    coordinates = numpy.zeros([iteration.getNumberOfSegments(), md_module.N_DIMENSIONS], dtype = int)
+    # calculate entries
+    i = 0
+    for this_bin in iteration:
+        for this_segment in this_bin:
+            if i % size == rank:
+                segment_coordinates = md_module.calcSegmentCoordinates(this_segment, iteration.getBoundaries())
+                # fill matrix
+                for j in range(md_module.N_DIMENSIONS):
+                    coordinates[i][j] = segment_coordinates[j]
+            i += 1
+    # Collect the matrix on the root process (rank == 0)
+    coordinates = comm.reduce(coordinates, op = MPI.SUM, root=0)
+    # Dump matrix to file
+    if rank == 0:
+        md_module.dumpCoordinatesToFile(coordinates)
+        if debug:
+            print("All Coordinate Ids: ", coordinates)
+            print("Finished MPI Coordinates calculation")
+
+
 class MD_analysis_module():
     """ a MD module for analysis operations
         does not need the CONFIGFILE
@@ -554,6 +569,6 @@ if __name__ == "__main__":
     if sys.argv[1] == "MPIMD":
         doMPIMD(CONFIGFILE=sys.argv[2], 
                 debug=sys.argv[3])
-    if sys.argv[1] == "MPIANA":
-        doMPICalcCoordinateIds(CONFIGFILE=sys.argv[2],
+    if sys.argv[1] == "MPICOORD":
+        doMPICalcCoordinates(CONFIGFILE=sys.argv[2],
                                debug=sys.argv[3])

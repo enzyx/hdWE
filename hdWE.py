@@ -178,15 +178,17 @@ for iteration_counter in range(iterations[-1].getId() + 1, MAX_ITERATIONS + 1):
     # 5. Run MDs
     sys.stdout.write(' - Run MDs\n')
     sys.stdout.flush() 
-    md_module.RunMDs(iterations[-1])
+    md_module.runMDs(iterations[-1])
     sys.stdout.write('\n')
     sys.stdout.flush() 
-        
     
-    # 6. log everything
+    # 6. Calculate Segment Coordinates
+    md_module.calcCoordinates(iterations[-1])    
+
+    # 7. log everything
     logger.log(iterations[-1], CONFIGFILE)
 
-    # 7. delete unwanted files
+    # 8. delete unwanted files
     print(" - Deleting md files")
     if iterations[-2].getId() % KEEP_COORDS_FREQUENCY != 0:
         md_module.removeCoordinateFiles(iterations[-2])

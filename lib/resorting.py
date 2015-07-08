@@ -23,24 +23,22 @@ def resort(iterations, md_module, INITIAL_TARGET_NUMBER_OF_SEGMENTS, START_STATE
     """
     parent_iteration    = iterations[-2]
     current_iteration   = iterations[-1]
-    coordinate_ids      = md_module.calcCoordinateIds(parent_iteration)
     
     # Sanity check for RMSD matrix
     #     if rama_ids.min() == 0.0:
     #         print("\x1b[31m Warning!\x1b[0m SegmentsToBins RMSD Matrix has entries 0.00000!"\
     #               " This is extremely unlikely!")
     
-    segment_id = -1
     for parent_bin in parent_iteration:
         for parent_segment in parent_bin:
             is_segment_handled = False
-            segment_id += 1
+            these_coordinate_ids = parent_segment.getCoordinateIds(current_iteration.getBoundaries())
                 
             # 1. Check if parent_segment fits into a bin of
             #    the previous iteration
             if not is_segment_handled:
                 for this_bin in current_iteration.bins:
-                    if coordinate_ids[segment_id] == this_bin.getCoordinateIds():
+                    if these_coordinate_ids == this_bin.getCoordinateIds():
                         this_bin.generateSegment(probability         = parent_segment.getProbability(),
                                                  parent_iteration_id = parent_segment.getIterationId(),
                                                  parent_bin_id       = parent_segment.getBinId(),
@@ -54,7 +52,7 @@ def resort(iterations, md_module, INITIAL_TARGET_NUMBER_OF_SEGMENTS, START_STATE
                                                        reference_bin_id            = parent_segment.getBinId(),
                                                        reference_segment_id        = parent_segment.getId(),
                                                        target_number_of_segments   = INITIAL_TARGET_NUMBER_OF_SEGMENTS,
-                                                       coordinate_ids              = coordinate_ids[segment_id],
+                                                       coordinate_ids              = these_coordinate_ids,
                                                        start_states                = START_STATES,
                                                        end_states                  = END_STATES)
                 current_iteration.bins[bin_id].generateSegment(probability         = parent_segment.getProbability(),
