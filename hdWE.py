@@ -183,8 +183,10 @@ for iteration_counter in range(iterations[-1].getId() + 1, MAX_ITERATIONS + 1):
     sys.stdout.flush() 
     
     # 6. Calculate Segment Coordinates
+    sys.stdout.write(' - Calculate Coordinates\n')
+    sys.stdout.flush() 
     md_module.calcCoordinates(iterations[-1])    
-
+    
     # 7. log everything
     logger.log(iterations[-1], CONFIGFILE)
 
@@ -193,8 +195,8 @@ for iteration_counter in range(iterations[-1].getId() + 1, MAX_ITERATIONS + 1):
     if iterations[-2].getId() % KEEP_COORDS_FREQUENCY != 0:
         md_module.removeCoordinateFiles(iterations[-2])
 
-    #if DEBUG: 
-    print("\n    The overall probability is {0:05f}".format(iterations[-1].getProbability()))
+    if DEBUG: 
+        print("\n    The overall probability is {0:05f}".format(iterations[-1].getProbability()))
     
     #check for empty bins #TODO: make this a function of iterations
     empty_bins = 0
