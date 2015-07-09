@@ -54,6 +54,8 @@ parser = argparse.ArgumentParser(description=
 parser.add_argument('-l', '--log', type=str, dest="logdir",
                     required=True, default="hdWE-log", metavar="DIR",
                     help="The logdir to load.")
+parser.add_argument('-B', '--trace-flux-start', dest="trace_flux_start",
+                    type=int, default=0, metavar='INT')
 parser.add_argument('-b', '--first_it', dest="first_iteration",
                     type=int, default=0, metavar='INT',
                     help="First iteration to use.")
@@ -78,7 +80,7 @@ parser.add_argument('-w', '--reweighting-iterations', dest="reweighting_iteratio
 
 # Initialize
 args = parser.parse_args()
-first_iteration = args.first_iteration
+first_iteration = args.trace_flux_start
 last_iteration  = args.last_iteration
 state_A         = [np.sort(args.state_A)] 
 state_B         = [np.sort(args.state_B)]
@@ -242,21 +244,22 @@ for i in range(len(flux_into_A)):
 
 fout.close()
 
-x = 500
+analysis_start = args.first_iteration
+analysis_end   = args.last_iteration
 print "A --> B"
-print   np.mean(flux_into_B[x:])    
-print   np.mean(probability_state_A[x:])
-print   np.mean(probability_from_A[x:])  
+print   np.mean(flux_into_B[analysis_start:analysis_end])    
+print   np.mean(probability_state_A[analysis_start:analysis_end])
+print   np.mean(probability_from_A[analysis_start:analysis_end])  
 print 'rate:'
-print   np.mean(flux_into_B[x:])  / np.mean(probability_state_A[x:])
+print   np.mean(flux_into_B[analysis_start:analysis_end])  / np.mean(probability_state_A[analysis_start:analysis_end])
 print '1/mfpt:'
-print   np.mean(flux_into_B[x:])  / np.mean(probability_from_A[x:])   
+print   np.mean(flux_into_B[analysis_start:analysis_end])  / np.mean(probability_from_A[analysis_start:analysis_end])   
 
 print "B --> A"
-print   np.mean(flux_into_A[x:])    
-print   np.mean(probability_state_B[x:])
-print   np.mean(probability_from_B[x:])  
+print   np.mean(flux_into_A[analysis_start:analysis_end])    
+print   np.mean(probability_state_B[analysis_start:analysis_end])
+print   np.mean(probability_from_B[analysis_start:analysis_end])  
 print 'rate:'
-print   np.mean(flux_into_A[x:])  / np.mean(probability_state_B[x:])
+print   np.mean(flux_into_A[analysis_start:analysis_end])  / np.mean(probability_state_B[analysis_start:analysis_end])
 print '1/mfpt:'
-print   np.mean(flux_into_A[x:])  / np.mean(probability_from_B[x:])    
+print   np.mean(flux_into_A[analysis_start:analysis_end])  / np.mean(probability_from_B[analysis_start:analysis_end])    
