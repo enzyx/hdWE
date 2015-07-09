@@ -7,7 +7,6 @@ from __future__ import print_function
 import numpy
 import lib.constants as constants
 import sys
-import lib.segment as segment
 from lib.logger import Logger
 from math import log
 from lib.amber_module import MD_module
@@ -155,21 +154,17 @@ for i in range(first_it_id, last_it_id + 1):
     # skip iterations without saved data
     if i%keep_coords_frequency != 0:
         continue
-    sys.stdout.write('Iteration {:05d}\r'.format(i))
+    
+    sys.stdout.write(' Reading coordinates for iteration '\
+                     '{it_id:05d}/{first_it:05d}-{last_it:05d}\r'.format(it_id     = i,
+                                                           first_it  = first_it_id,
+                                                           last_it   = last_it_id))
     sys.stdout.flush()
     current_iteration = logger.loadIteration(i)
         
     for bin_loop in current_iteration:
-        sys.stdout.write(' Calculating coordinates for iteration '\
-                         '{it_id:05d}/{first_it:05d}-{last_it:05d}, '\
-                         'Bin {bin_id:05d}/{bin_total:05d}\r'.format(it_id     = current_iteration.getId(),
-                                                               first_it  = first_it_id,
-                                                               last_it   = last_it_id,
-                                                               bin_id    = bin_loop.getId()+1,
-                                                               bin_total = current_iteration.getNumberOfBins()))
-        sys.stdout.flush()
         for segment_loop in bin_loop:
-            segment_coordinates = md_module.ana_calcCoordinateOfSegment(segment_loop.getNameString(), cpptraj_lines, use_trajectory = args.use_trajectory)
+            segment_coordinates = segment_loop.getCoordinates()
             segment_probability = segment_loop.getProbability()
             for i,coord in enumerate(segment_coordinates):
                 datapoints.append(Datapoint(coord, segment_probability))
@@ -184,22 +179,7 @@ last_iteration = current_iteration
 # the number of datapoints per segment
 # (if trajectory was used and more than one configuration is available)                    
 data_per_segment = len(segment_coordinates)                     
-
-# Calculate the coordinate values of the bin reference structures
-# doesn't work for now as we don't have all structures
-# sys.stdout.write(' Calculating coordinates of bin references\n')
-# for bin_loop in last_iteration:
-#     #create temporary segment to pass to md_module, because the bin reference segment
-#     #is not necessarilly within the loaded range of iterations
-#     segment_tmp = segment.Segment(probability = 0, parent_iteration_id = 0, parent_bin_id = 0, parent_segment_id = 0,
-#                   iteration_id = bin_loop.getReferenceIterationId(),
-#                   bin_id       = bin_loop.getReferenceBinId(),
-#                   segment_id   = bin_loop.getReferenceSegmentId() )
-#     coordinate = md_module.ana_calcCoordinateOfSegment(segment_tmp.getNameString(), 
-#                                                        cpptraj_lines, 
-#                                                        use_trajectory=False)
-#     references.append(SegmentData(last_iteration.getId(), bin_loop.getId(), coordinate))       
-            
+                
 #Calculate the weighted histogram and PMF 
 sys.stdout.write(' Creating weighted histogram and PMF\n')
 #Setup variables

@@ -15,7 +15,6 @@ from   lib.logger import Logger
 import lib.initiate as initiate
 import lib.constants as constants
 import lib.resorting as resorting
-import lib.recycling as recycling
 
 #### Parse command line #### 
 
@@ -107,7 +106,7 @@ if APPEND:
     iterations = logger.loadIterations()
     #TODO: check if all files are present  
 else:
-    iterations.append(initiate.create_initial_iteration(INITIAL_TARGET_NUMBER_OF_SEGMENTS, 
+    iterations.append(initiate.createInitialIteration(INITIAL_TARGET_NUMBER_OF_SEGMENTS, 
                                                         INITIAL_BOUNDARIES, 
                                                         md_module))
     logger.log(iterations[0], CONFIGFILE)
@@ -135,6 +134,7 @@ for iteration_counter in range(iterations[-1].getId() + 1, MAX_ITERATIONS + 1):
                      md_module,
                      INITIAL_TARGET_NUMBER_OF_SEGMENTS)
     
+    
     # 2. Backup the segments lists of all bins
     #    - Saving the segment assignments for correct
     #      rate matrix calculation in the original_segments
@@ -160,23 +160,29 @@ for iteration_counter in range(iterations[-1].getId() + 1, MAX_ITERATIONS + 1):
         for this_bin in iterations[-1]:
             this_bin.resampleSegments()
 
+
     # 4. Run MDs
     sys.stdout.write(' - Run MDs\n')
     sys.stdout.flush() 
-    md_module.RunMDs(iterations[-1])
+    md_module.runMDs(iterations[-1])
     sys.stdout.write('\n')
     sys.stdout.flush() 
     
-    # 5. log everything
+    # 5. Calculate Segment Coordinates
+    sys.stdout.write(' - Calculate Coordinates\n')
+    sys.stdout.flush() 
+    md_module.calcCoordinates(iterations[-1])    
+    
+    # 6. log everything
     logger.log(iterations[-1], CONFIGFILE)
 
-    # 6. delete unwanted files
+    # 7. delete unwanted files
     print(" - Deleting md files")
     if iterations[-2].getId() % KEEP_COORDS_FREQUENCY != 0:
         md_module.removeCoordinateFiles(iterations[-2])
 
-    #if DEBUG: 
-    print("\n    The overall probability is {0:05f}".format(iterations[-1].getProbability()))
+    if DEBUG: 
+        print("\n    The overall probability is {0:05f}".format(iterations[-1].getProbability()))
     
     #check for empty bins #TODO: make this a function of iterations
     empty_bins = 0

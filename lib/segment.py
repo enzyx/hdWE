@@ -11,6 +11,7 @@ class Segment(object):
         self.bin_id              = bin_id               # int
         self.segment_id          = segment_id           # int
         self.iteration_id        = iteration_id         # int
+        self.coordinates         = None                 # list of floats
 
     def __getNameString(self, iteration_id, bin_id, segment_id):
         """
@@ -76,6 +77,20 @@ class Segment(object):
         
     def getParentSegmentId(self):
         return self.parent_segment_id
+    
+    def getCoordinates(self):
+        return self.coordinates
+    
+    def setCoordinates(self, coordinates):
+        self.coordinates = coordinates
+    
+    def getCoordinateIds(self, boundaries):
+        """
+        returns the coordinateIDs of a segment with respect to 
+        given boundaries
+        """
+        import lib.bin_classifier as bin_classifier
+        return bin_classifier.getCoordinateIds(self.coordinates, boundaries)
         
     def __eq__(self, other_segment): 
         return self.__dict__ == other_segment.__dict__

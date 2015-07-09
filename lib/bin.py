@@ -162,7 +162,6 @@ class Bin(object):
         for index in range(len(self.segments)):
             self.segments[index].setSegmentId(index)
     
-   
     def getCoordinateIds(self):
         """
         @return list of coordinate ids
@@ -265,8 +264,7 @@ class Bin(object):
         @return Target number of segments
         """
         return self.target_number_of_segments
-    
-   
+
     def __iter__(self):
         """
         Defines the class as iterable.
