@@ -143,19 +143,15 @@ for i in range(first_it_id, last_it_id + 1):
     # skip iterations without saved data
     if i%keep_coords_frequency != 0:
         continue
-    sys.stdout.write('Iteration {:05d}\r'.format(i))
+    
+    sys.stdout.write(' Reading coordinates for iteration '\
+                     '{it_id:05d}/{first_it:05d}-{last_it:05d}\r'.format(it_id     = i,
+                                                           first_it  = first_it_id,
+                                                           last_it   = last_it_id))
     sys.stdout.flush()
     current_iteration = logger.loadIteration(i)
         
     for bin_loop in current_iteration:
-        sys.stdout.write(' Calculating coordinates for iteration '\
-                         '{it_id:05d}/{first_it:05d}-{last_it:05d}, '\
-                         'Bin {bin_id:05d}/{bin_total:05d}\r'.format(it_id     = current_iteration.getId(),
-                                                               first_it  = first_it_id,
-                                                               last_it   = last_it_id,
-                                                               bin_id    = bin_loop.getId()+1,
-                                                               bin_total = current_iteration.getNumberOfBins()))
-        sys.stdout.flush()
         for segment_loop in bin_loop:
             segment_coordinates = segment_loop.getCoordinates()
             segment_probability = segment_loop.getProbability()
