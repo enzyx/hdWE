@@ -13,9 +13,7 @@ def copyBinStructureToLastIteration(iterations):
                                       reference_bin_id          = parent_bin.getReferenceBinId(),
                                       reference_segment_id      = parent_bin.getReferenceSegmentId(),
                                       target_number_of_segments = parent_bin.getTargetNumberOfSegments(),
-                                      coordinate_ids            = parent_bin.getCoordinateIds(),
-                                      start_states              = parent_bin.isStartStateBin(),
-                                      end_states                = parent_bin.isEndStateBin())
+                                      coordinate_ids            = parent_bin.getCoordinateIds())
 
 def resort(iterations, md_module, INITIAL_TARGET_NUMBER_OF_SEGMENTS):
     """
