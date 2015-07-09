@@ -3,7 +3,7 @@ import argparse
 import sys
 import numpy as np
 from lib.logger import Logger
-import lib.functions_ana_general as functions_ana_general
+import lib.functions_ana_general as f
 import lib.reweighting as reweighting
 
 #####################
@@ -69,7 +69,7 @@ parser.add_argument('--state-B', dest="state_B",
                     required=False, type=float, nargs=2, 
                     help="Boundaries of the end state for rate calculation.")
 parser.add_argument('-o', '--output', dest="output_file", 
-                    required=False, type=str, default='ana_trace_flux.dat',
+                    required=False, type=str, default='ana_trace_flux',
                     help="output filename for A and B flux properties")
 parser.add_argument('-r', '--reweighting-range', dest="reweighting_range",
                     type=float, default=0.5,
@@ -230,9 +230,12 @@ for i in range(first_iteration + 1, last_iteration + 1):
 ##########################
 ######### OUTPUT #########
 ##########################
-fout = open(args.output_file, 'w')
+b = args.first_iteration
+e = args.last_iteration
+
+# Data time series
+fout = open(args.output_file + '.dat', 'w')
 fout.write("# F->A           P_A            P->A            F->B            P_B             P->B \n")
-# loop over one of the properties and write to file
 for i in range(len(flux_into_A)):
     fout.write("{:8.7e}   {:8.7e}   {:8.7e}   {:8.7e}   {:8.7e}   {:8.7e}\n".format(
                          flux_into_A[i], 
@@ -241,25 +244,62 @@ for i in range(len(flux_into_A)):
                          flux_into_B[i], 
                          probability_state_B[i], 
                          probability_from_B[i]))
-
 fout.close()
 
-analysis_start = args.first_iteration
-analysis_end   = args.last_iteration
+# Cumulative mean of the time series
+cum_flux_into_A         = f.cumulative_mean(flux_into_A[b:e])
+cum_probability_state_A = f.cumulative_mean(probability_state_A[b:e])
+cum_probability_from_A  = f.cumulative_mean(probability_from_A[b:e])
+cum_flux_into_B         = f.cumulative_mean(flux_into_B[b:e])
+cum_probability_state_B = f.cumulative_mean(probability_state_B[b:e])
+cum_probability_from_B  = f.cumulative_mean(probability_from_B[b:e])
+
+fout = open(args.output_file + '.cum', 'w')
+for i in range(len(cum_flux_into_A)):
+    fout.write("{:8.7e}   {:8.7e}   {:8.7e}   {:8.7e}   {:8.7e}   {:8.7e}\n".format(
+                         cum_flux_into_A[i], 
+                         cum_probability_state_A[i], 
+                         cum_probability_from_A[i], 
+                         cum_flux_into_B[i], 
+                         cum_probability_state_B[i], 
+                         cum_probability_from_B[i]))
+fout.close()
+
+# Data autocorrelaction functions
+auto_flux_into_A         = f.autocorrelation_function(flux_into_A[b:e])
+auto_probability_state_A = f.autocorrelation_function(probability_state_A[b:e])
+auto_probability_from_A  = f.autocorrelation_function(probability_from_A[b:e])
+auto_flux_into_B         = f.autocorrelation_function(flux_into_B[b:e])
+auto_probability_state_B = f.autocorrelation_function(probability_state_B[b:e])
+auto_probability_from_B  = f.autocorrelation_function(probability_from_B[b:e])
+
+fout = open(args.output_file + '.auto', 'w')
+for i in range(len(auto_flux_into_A)):
+    fout.write("{:8.7e}   {:8.7e}   {:8.7e}   {:8.7e}   {:8.7e}   {:8.7e}\n".format(
+                         auto_flux_into_A[i], 
+                         auto_probability_state_A[i], 
+                         auto_probability_from_A[i], 
+                         auto_flux_into_B[i], 
+                         auto_probability_state_B[i], 
+                         auto_probability_from_B[i]))
+fout.close()
+
+block_size = 10
+
 print "A --> B"
-print   np.mean(flux_into_B[analysis_start:analysis_end])    
-print   np.mean(probability_state_A[analysis_start:analysis_end])
-print   np.mean(probability_from_A[analysis_start:analysis_end])  
+print   f.block_bootstrap(flux_into_B[b:e], np.mean, block_size)    
+print   f.block_bootstrap(probability_state_A[b:e], np.mean, block_size)
+print   f.block_bootstrap(probability_from_A[b:e], np.mean, block_size)  
 print 'rate:'
-print   np.mean(flux_into_B[analysis_start:analysis_end])  / np.mean(probability_state_A[analysis_start:analysis_end])
+print   np.mean(flux_into_B[b:e])  / np.mean(probability_state_A[b:e])
 print '1/mfpt:'
-print   np.mean(flux_into_B[analysis_start:analysis_end])  / np.mean(probability_from_A[analysis_start:analysis_end])   
+print   np.mean(flux_into_B[b:e])  / np.mean(probability_from_A[b:e])
 
 print "B --> A"
-print   np.mean(flux_into_A[analysis_start:analysis_end])    
-print   np.mean(probability_state_B[analysis_start:analysis_end])
-print   np.mean(probability_from_B[analysis_start:analysis_end])  
+print   f.block_bootstrap(flux_into_A[b:e], np.mean, block_size)    
+print   f.block_bootstrap(probability_state_B[b:e], np.mean, block_size)
+print   f.block_bootstrap(probability_from_B[b:e], np.mean, block_size)  
 print 'rate:'
-print   np.mean(flux_into_A[analysis_start:analysis_end])  / np.mean(probability_state_B[analysis_start:analysis_end])
+print   np.mean(flux_into_A[b:e])  / np.mean(probability_state_B[b:e])
 print '1/mfpt:'
-print   np.mean(flux_into_A[analysis_start:analysis_end])  / np.mean(probability_from_B[analysis_start:analysis_end])    
+print   np.mean(flux_into_A[b:e])  / np.mean(probability_from_B[b:e])    

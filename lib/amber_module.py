@@ -95,11 +95,18 @@ class MD_module():
             amber_info_path         = '/tmp/{seg}_{id}.inf'.format(seg=segment.getNameString(), id=uuid.uuid1())
             amber_outfile_path      = '/tmp/{seg}_{id}.out'.format(seg=segment.getNameString(), id=uuid.uuid1()) 
             amber_trajectory_path   = '/tmp/{seg}_{id}.nc'.format( seg=segment.getNameString(), id=uuid.uuid1()) 
-        
-        # Overwrite the previous settings
-        if self.keep_trajectory_files:
-            amber_trajectory_path   = "{jn}-run/{seg}.nc".format(jn=self.jobname, seg=segment.getNameString())
-        
+
+        #TODO dou ble gpu usage on one node, can maybe by done more elegantly?
+        if self.amber_binary == 'pmemd.cuda':
+            if self.keep_trajectory_files:
+                amber_trajectory_path   = "{jn}-run/{seg}.nc".format(jn=self.jobname, seg=segment.getNameString())
+            
+            if segment.getId() % 2 ==0:
+                os.system('export CUDA_VISIBLE_DEVICES=0')
+            else:
+                os.system('export CUDA_VISIBLE_DEVICES=1')
+ 
+        # Overwrite the previous settings                       
         command_line = self.amber_binary + ' -O' + \
                                   ' -p '   + self.amber_topology_file + \
                                   ' -i '   + self.amber_infile + \

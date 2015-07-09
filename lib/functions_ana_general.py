@@ -49,7 +49,7 @@ def block_bootstrap(data, function, block_size, number_of_samples = 10000, alpha
     """ 
     from random import randint
     
-    
+    # generate a resampled dataset based on non-overlapping blocks
     def resample(data, block_size):
         number_of_blocks = int (len(data) / block_size )
         data_resampled = []
@@ -59,15 +59,40 @@ def block_bootstrap(data, function, block_size, number_of_samples = 10000, alpha
             data_resampled = numpy.append(data_resampled, data_block_tmp)
   
         return data_resampled
+
+    # calculate the alpha percentiles for lower and upper boundaries
+    def percentile(data, alpha):
+        data     = numpy.sort(data)
+        for i in range(len(data)):
+            if i >= len(data) * alpha:
+                p_l = data[i]
+                break       
+        for i in range(len(data)-1 ,0-1,-1):
+            if i >= len(data) * alpha:
+                p_u = data[i]      
+                break
+        return p_l, p_u
             
-    # Resample data and evaluate function 
+    # Evaluate function on the resampled datasets
     function_values = []
     for i in range(0, number_of_samples):
         data_resampled = resample(data, block_size)
         function_values.append( function(data_resampled) )
+    
+    return ( numpy.mean(data), percentile(function_values, alpha) )
+    
         
     print numpy.mean(function_values), numpy.std(function_values)
     
+def cumulative_mean(data):
+    """
+    @return cumulative mean of data
+    """
+    cumulative_mean = []
+    for i in range(len(data)):
+        cumulative_mean.append(numpy.mean(data[0:i+1]))
+    return cumulative_mean
+        
     
     
     
