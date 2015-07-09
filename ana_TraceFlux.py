@@ -124,6 +124,7 @@ probability_from_B  = []
 reweighter = reweighting.Reweighting(reweighting_range=args.reweighting_range)
 reweighter.storeRateMatrix(current_iteration)
 
+bin_prob_out = open('ana_trace_flux.binprobs.dat', 'w')
 # Iteration Loop
 for i in range(first_iteration + 1, last_iteration + 1):
     sys.stdout.write('Iteration {:05d}\r'.format(i))
@@ -225,7 +226,16 @@ for i in range(first_iteration + 1, last_iteration + 1):
         reweighter.storeRateMatrix(current_iteration)
         if current_iteration.getNumberOfBins() > 1:
             reweighter.reweightBinProbabilities(current_iteration)
+    
+    for this_bin in current_iteration:
+        prob = this_bin.getProbability()
+        if type(prob) != float:
+            prob = sum(prob)
+        bin_prob_out.write("{: 8.7e}".format(prob))
+    bin_prob_out.write('\n')
+    bin_prob_out.flush()
 
+bin_prob_out.close()
 
 ##########################
 ######### OUTPUT #########
