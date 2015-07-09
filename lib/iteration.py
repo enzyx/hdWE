@@ -24,8 +24,7 @@ class Iteration(object):
 
     def generateBin(self, reference_iteration_id, 
                     reference_bin_id, reference_segment_id,
-                    target_number_of_segments, coordinate_ids, 
-                    start_states, end_states):
+                    target_number_of_segments, coordinate_ids):
         """
         Initialize a new instance of class Bin and append to bins
         @return  bin_id returns the id of the created bin
@@ -36,9 +35,7 @@ class Iteration(object):
                     reference_bin_id           = reference_bin_id, 
                     reference_segment_id       = reference_segment_id, 
                     target_number_of_segments  = target_number_of_segments, 
-                    coordinate_ids             = coordinate_ids,
-                    start_states               = start_states,
-                    end_states                 = end_states)
+                    coordinate_ids             = coordinate_ids)
         return self.__addBin(__bin)
 
     def __addBin(self, _bin):
