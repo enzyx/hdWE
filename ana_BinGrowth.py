@@ -4,29 +4,15 @@ Calculates the PMF along an arbitrary coordinate from
 the data of a hdWE run.
 """
 from __future__ import print_function
-from logger import Logger
+from lib.logger import Logger
 import sys
 import numpy as np                      ## numeric library
 from scipy.optimize import curve_fit    ## fitting library
-import matplotlib.pyplot as plt         ## plot library
+#import matplotlib.pyplot as plt         ## plot library
+import argparse
 
-# Compatibility mode for python2.6
-has_argparse = False
-try:
-    import argparse  
-    has_argparse = True  
-except ImportError:
-    import optparse  #Python 2.6
-
-
-###### Parse command line ###### 
-if has_argparse:
-    parser =argparse.ArgumentParser(description=__doc__,
-                            formatter_class=argparse.RawDescriptionHelpFormatter)
-else:
-    parser = optparse.OptionParser()
-    parser.add_argument = parser.add_option
-
+parser = argparse.ArgumentParser(description=
+    'Bin Growth Analysis. ')
 parser.add_argument('-b', '--first_it', dest="first_iteration",
                     required=False, type=int, default=0,
                     help="First iteration to use for PMF calculation.")                    

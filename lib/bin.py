@@ -162,18 +162,6 @@ class Bin(object):
         for index in range(len(self.segments)):
             self.segments[index].setSegmentId(index)
     
-    def isStartStateBin(self):
-        """
-        @return Is this bin a start state bin
-        """
-        return self.is_start_bin
-    
-    def isEndStateBin(self):
-        """
-        @return Is this bin a end state bin
-        """
-        return self.is_end_bin
-    
     def getCoordinateIds(self):
         """
         @return list of coordinate ids
@@ -276,21 +264,7 @@ class Bin(object):
         @return Target number of segments
         """
         return self.target_number_of_segments
-    
-    def testBinState(self, STATES):
-        """
-        tests if coordinate ids of bin are in STATES (e.g. start or end state)
-        @return boolean
-        """
-        if type(STATES) == bool:
-            return STATES
-        
-        for state in STATES:
-            # compare element wise
-            if self.getCoordinateIds() == state:
-                return True
-        return False
-    
+
     def __iter__(self):
         """
         Defines the class as iterable.

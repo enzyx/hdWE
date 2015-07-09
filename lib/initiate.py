@@ -76,7 +76,7 @@ def parseState(config_string):
     
     return end_state
 
-def create_initial_iteration(target_number_of_segments, initial_boundaries, md_module):
+def createInitialIteration(target_number_of_segments, initial_boundaries, md_module):
     """
     Creates the first bin, with the starting structure as refcoords
     and n_segs_per_bin trajectories with probability 1/n_segs_per_bin.
@@ -88,7 +88,8 @@ def create_initial_iteration(target_number_of_segments, initial_boundaries, md_m
                               iteration_id = 0, 
                               bin_id = 0, 
                               segment_id = 0)
-    initial_coordinate_ids = md_module.calcSegmentCoordinateIds(initial_segment, initial_boundaries)
+    initial_coordinates = md_module.calcSegmentCoordinates(initial_segment)
+    initial_coordinate_ids = initial_segment.getCoordinateIds(initial_boundaries)
     iteration0 = Iteration(iteration_id = 0, boundaries = initial_boundaries)
     iteration0.generateBin(reference_iteration_id    = iteration0.getId(),
                            reference_bin_id          = 0,
@@ -99,5 +100,6 @@ def create_initial_iteration(target_number_of_segments, initial_boundaries, md_m
                                        parent_iteration_id = 0,
                                        parent_bin_id       = 0, 
                                        parent_segment_id   = 0)
+    iteration0.bins[0].segments[0].setCoordinates(initial_coordinates)
     iteration0.bins[0].backupInitialSegments()
     return iteration0
