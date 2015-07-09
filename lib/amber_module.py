@@ -97,14 +97,15 @@ class MD_module():
             amber_trajectory_path   = '/tmp/{seg}_{id}.nc'.format( seg=segment.getNameString(), id=uuid.uuid1()) 
 
         #TODO dou ble gpu usage on one node, can maybe by done more elegantly?
+
+        if self.keep_trajectory_files:
+            amber_trajectory_path   = "{jn}-run/{seg}.nc".format(jn=self.jobname, seg=segment.getNameString())
+        
         if self.amber_binary == 'pmemd.cuda':
-            if self.keep_trajectory_files:
-                amber_trajectory_path   = "{jn}-run/{seg}.nc".format(jn=self.jobname, seg=segment.getNameString())
-            
             if segment.getId() % 2 ==0:
-                os.system('export CUDA_VISIBLE_DEVICES=0')
+                os.environ['CUDA_VISIBLE_DEVICES']='0'
             else:
-                os.system('export CUDA_VISIBLE_DEVICES=1')
+                os.environ['CUDA_VISIBLE_DEVICES']='1'
  
         # Overwrite the previous settings                       
         command_line = self.amber_binary + ' -O' + \
@@ -232,7 +233,7 @@ class MD_module():
                                                                 args=(segment_loop, )))
                     if thread_container.getNumberOfJobs() >= self.number_of_threads:
                         thread_container.runJobs()
-                    self.printMdStatus(segment_loop, MD_run_count, MD_skip_count)
+                        self.printMdStatus(segment_loop, MD_run_count, MD_skip_count)
                 #else:
                 #    for segment_loop in bin_loop:
                 #        MD_skip_count += 1
