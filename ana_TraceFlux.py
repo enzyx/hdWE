@@ -5,6 +5,8 @@ import numpy as np
 from lib.logger import Logger
 import lib.functions_ana_general as f
 import lib.reweighting as reweighting
+import lib.constants as constants
+from math import log
 
 #####################
 ###### classes ######
@@ -14,39 +16,26 @@ import lib.reweighting as reweighting
 ##### functions #####
 #####################
 
-def assignBinsToStates(iteration, state_A, state_B):
+def getStateFromCoordinate(segment, state_A, state_B):
     """
-    @return a list of state assignments, sorted according to bin ids. e.g. [A, B, A, '0', A]
+    Returns the state of a segment
+    @return string state
     """
-    state_list = ['0'] * iteration.getNumberOfBins()
-    boundaries = iteration.getBoundaries()
-    for this_bin in iteration:
-        state_per_dimension = ['0'] * len(boundaries)
-        for dimension, coordinate_id in enumerate(this_bin.getCoordinateIds()):
-            this_bin_boundaries = []
-            if coordinate_id == 0:
-                this_bin_boundaries = [0.0, boundaries[dimension][0]]
-            elif coordinate_id == len(boundaries[dimension]):
-                this_bin_boundaries = [boundaries[dimension][-1], 'inf']
-            else:
-                this_bin_boundaries = boundaries[dimension][coordinate_id-1:coordinate_id+1]
-
-            if this_bin_boundaries[0] < state_A[dimension][1] and \
-               this_bin_boundaries[1] >=  state_A[dimension][0]:
-                state_per_dimension[dimension] = 'A'
-            elif this_bin_boundaries[0] < state_B[dimension][1] and \
-                 this_bin_boundaries[1] >=  state_B[dimension][0]:
-                state_per_dimension[dimension] = 'B'                
-            
-        # collect all state assignments
-        this_state = state_per_dimension[0]
-        for state in state_per_dimension[1:]:
+    state_per_dimension = []
+    for coordinate in segment.getCoordinates():
+        if coordinate > state_A[0] and coordinate <= state_A[1]:
+            state_per_dimension.append('A')
+        elif coordinate > state_B[0] and coordinate <= state_B[1]:
+            state_per_dimension.append('B')
+        else:
+            state_per_dimension.append('0')
+    
+    this_state = state_per_dimension[0]
+    for state in state_per_dimension[1:]:
             if state != this_state:
                 this_state = '0'
-                break        
-        state_list[this_bin.getId()] = this_state
-            
-    return state_list
+                break 
+    return this_state         
 
 ###### Parse command line ###### 
 parser = argparse.ArgumentParser(description=
@@ -77,13 +66,16 @@ parser.add_argument('-r', '--reweighting-range', dest="reweighting_range",
 parser.add_argument('-w', '--reweighting-iterations', dest="reweighting_iterations",
                     type=int, default=-1,
                     help="Apply reweighting to first N iterations.")
+parser.add_argument('-N', '--pmf-bins', dest="pmf_bins",
+                    type=int, default=100,
+                    help="Number of bins for the PMF..")
 
 # Initialize
 args = parser.parse_args()
 first_iteration = args.trace_flux_start
 last_iteration  = args.last_iteration
-state_A         = [np.sort(args.state_A)] 
-state_B         = [np.sort(args.state_B)]
+state_A         = np.sort(args.state_A) 
+state_B         = np.sort(args.state_B)
 
 ################################
 
@@ -93,26 +85,26 @@ if last_iteration < 0:
     last_iteration = logger.getLastIterationId()
 
 current_iteration = logger.loadIteration(first_iteration)
-state_list = assignBinsToStates(current_iteration, state_A, state_B)
 N = current_iteration.getNumberOfSegments()
 
 # assign initial probabilities
 for this_bin in current_iteration:
     for this_segment in this_bin:
-        if state_list[this_bin.getId()] == 'A':
+        this_state = getStateFromCoordinate(this_segment, state_A, state_B)
+        if this_state == 'A':
             this_segment.setProbability(np.array([1.0/N,0.0]))
-        elif state_list[this_bin.getId()] == 'B':
+        elif this_state == 'B':
             this_segment.setProbability(np.array([0.0,1.0/N]))
         else:
             this_segment.setProbability(np.array([0.5/N,0.5/N]))
     for this_segment in this_bin.initial_segments:
-        if state_list[this_bin.getId()] == 'A':
+        if this_state == 'A':
             this_segment.setProbability(np.array([1.0/N,0.0]))
-        elif state_list[this_bin.getId()] == 'B':
+        elif this_state == 'B':
             this_segment.setProbability(np.array([0.0,1.0/N]))
         else:
             this_segment.setProbability(np.array([0.5/N,0.5/N]))
-            
+                     
 
 flux_into_A         = []
 flux_into_B         = []
@@ -120,6 +112,7 @@ probability_state_A = []
 probability_state_B = []
 probability_from_A  = []
 probability_from_B  = []
+pmf_segment_data    = []
 
 reweighter = reweighting.Reweighting(reweighting_range=args.reweighting_range)
 reweighter.storeRateMatrix(current_iteration)
@@ -130,7 +123,6 @@ for i in range(first_iteration + 1, last_iteration + 1):
     sys.stdout.flush()
     previous_iteration = current_iteration
     current_iteration = logger.loadIteration(i)
-    state_list = assignBinsToStates(current_iteration, state_A, state_B)
     
     # Initialize data
     flux_into_A_iter         = 0.0 
@@ -194,19 +186,25 @@ for i in range(first_iteration + 1, last_iteration + 1):
                 this_segment.setProbability( this_segment.getProbability() + merged_probability )
                 
         # STATES
-        if this_bin.getNumberOfSegments() > 0:
-            if state_list[this_bin.getId()] == 'A':
-                probability_state_A_iter += sum(this_bin.getProbability())
-                for this_segment in this_bin:
-                    probability = this_segment.getProbability()
-                    flux_into_A_iter  += probability[1]
-                    this_segment.setProbability(np.array([sum(probability), 0.0])) 
-            elif state_list[this_bin.getId()] == 'B':
-                probability_state_B_iter += sum(this_bin.getProbability())
-                for this_segment in this_bin:
-                    probability = this_segment.getProbability()
-                    flux_into_B_iter  += probability[0]
-                    this_segment.setProbability(np.array([0.0, sum(probability)]))  
+        for this_segment in this_bin:
+            this_state = getStateFromCoordinate(this_segment, state_A, state_B)
+            probability = this_segment.getProbability()
+            if this_state == 'A':
+                probability_state_A_iter += sum(probability)
+                flux_into_A_iter  += probability[1]
+                this_segment.setProbability(np.array([sum(probability), 0.0])) 
+            elif this_state == 'B':
+                probability_state_B_iter += sum(probability)
+                flux_into_B_iter  += probability[0]
+                this_segment.setProbability(np.array([0.0, sum(probability)]))   
+                
+    # keep track of PMF-relevant segment data
+    if i > first_iteration:
+        for this_bin in current_iteration:
+            for this_segment in this_bin:
+                #TODO: lazy 1d implementation
+                pmf_segment_data.append([ this_segment.getCoordinates()[0], 
+                                          np.sum(this_segment.getProbability()) ])
                      
     probability_from_A_iter = current_iteration.getProbability()[0]
     probability_from_B_iter = current_iteration.getProbability()[1]
@@ -230,7 +228,7 @@ for i in range(first_iteration + 1, last_iteration + 1):
 ##########################
 ######### OUTPUT #########
 ##########################
-b = args.first_iteration
+b = args.first_iteration - args.trace_flux_start
 e = args.last_iteration
 
 # Data time series
@@ -284,6 +282,21 @@ for i in range(len(auto_flux_into_A)):
                          auto_probability_from_B[i]))
 fout.close()
 
+# calculate PMF
+histogram = f.weightedHistogram(pmf_segment_data, args.pmf_bins)
+pmf = np.zeros(len(histogram), dtype=float)
+for i in range(len(histogram)):
+    if histogram[i,1] > 0.0:
+        pmf[i] = -constants.kT *  log(histogram[i,1])
+pmf -= np.min(pmf)
+
+fout = open(args.output_file + '.pmf', 'w')
+fout.write('# coord   free energy   probability')
+for i in range(len(pmf)):
+    fout.write('{:8.7e} {:8.7e} {:8.7e}\n'.format(histogram[i,0], pmf[i], histogram[i,1]))
+fout.close()
+
+# Output
 block_size = 10
 
 print "A --> B"

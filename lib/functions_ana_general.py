@@ -22,6 +22,33 @@ def histogram(data, N_bins):
         hist[i,1] /= len(hist)
    
     return hist
+
+def weightedHistogram(data, N_bins):
+    """
+    Returns the normalized histogram of weighted data.
+    The data range min(data) to max(data) is divided into N_bins. 
+    Takes a data 2d numpy array [[value1, weight1], [value2,weight2], ...] 
+    @returns 2d-float [x-values, y-values]
+    """
+    data = numpy.asarray(data)
+    data_min = min(data[:,0])
+    data_max = max(data[:,0])
+    d         =  float(data_max - data_min ) / N_bins
+    hist      =  numpy.zeros([N_bins,2], float)
+    # sort data into histogram bins:
+    for i in range(0,len(data)):
+        index       = int( (data[i,0] - data_min) / d )
+        # max(data) entry shall be included in the last bin with index N_bins-1:
+        if index==N_bins:
+            index = N_bins - 1
+        hist[index,1] += data[i,1]
+    #Assign the bin positions and normalize:
+    total_weight = numpy.sum(data[:,1])
+    for i in range(0, N_bins):
+        hist[i,0]  = data_min + i * d
+        hist[i,1] /= total_weight
+   
+    return hist
     
 def autocorrelation_function(x):
     """
