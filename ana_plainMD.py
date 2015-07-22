@@ -38,7 +38,10 @@ parser.add_argument('--state-A', dest="state_A",
                     help="Boundaries of the start state for rate calculation.")  
 parser.add_argument('--state-B', dest="state_B",
                     required=False, type=float, nargs=2, 
-                    help="Boundaries of the end state for rate calculation.")  
+                    help="Boundaries of the end state for rate calculation.") 
+parser.add_argument('--N-tau-per-WE-iteration', dest="N_tau_per_it",
+                    required=False, type=int, default = 0,
+                    help="Number of calculated taus per WE iteration for cumulative plot comparable to WE run.") 
 
 ######## Initialize ###########################################################
 
@@ -71,6 +74,33 @@ if not(args.state_A==None and args.state_B==None):
     state_B = args.state_B
     state_A = numpy.sort(state_A)
     state_B = numpy.sort(state_B)
+
+    ####### Cumulative plot
+    if args.N_tau_per_it > 0:
+        fout = open('cumulative_flux.dat', 'w')
+        fout.write("# F->A           P_A       F->B            P_B           \n")
+        fout.close() 
+        for i in range(1, int(len(coordinates) / args.N_tau_per_it) ):  
+            print(i)  
+            coordinates_tmp = coordinates[:i*args.N_tau_per_it]
+            first_passage_times_into_B, transition_times_into_B =  functions_ana_plainMD.transitions_from_coordinates(coordinates_tmp, state_A, state_B)
+            first_passage_times_into_A, transition_times_into_A =  functions_ana_plainMD.transitions_from_coordinates(coordinates_tmp, state_B, state_A)
+            N_transitions_into_B = len(transition_times_into_B)    
+            N_transitions_into_A = len(transition_times_into_A)
+            residence_times_in_A = functions_ana_plainMD.residence_times_from_coordinates(coordinates_tmp, state_A)    
+            residence_times_in_B = functions_ana_plainMD.residence_times_from_coordinates(coordinates_tmp, state_B) 
+            flux_into_B          = 1.0*N_transitions_into_B / len(coordinates_tmp)
+            flux_into_A          = 1.0*N_transitions_into_A / len(coordinates_tmp)
+            probability_in_A     = 1.0*numpy.sum(residence_times_in_A) / len(coordinates_tmp)
+            probability_in_B     = 1.0*numpy.sum(residence_times_in_B) / len(coordinates_tmp)
+            # Data time series
+            fout = open('cumulative_flux.dat', 'a')
+            fout.write("{:8.7e}   {:8.7e}    {:8.7e}   {:8.7e}\n".format(
+                                 flux_into_A, 
+                                 probability_in_A,  
+                                 flux_into_B, 
+                                 probability_in_B) )
+            fout.close()    
 
     ####### times
     first_passage_times_into_B, transition_times_into_B =  functions_ana_plainMD.transitions_from_coordinates(coordinates, state_A, state_B)

@@ -69,7 +69,7 @@ def binIdToCoordinateId(iteration):
         sort_indices.append(this_bin.getCoordinateIds())
     return sort_indices
 
-def block_bootstrap(data, function, block_size, number_of_samples = 10000, alpha = 0.05):
+def block_bootstrap(data, function, block_size, number_of_samples = 1000, alpha = 0.05):
     """
     @return Performs a block bootstrap analysis on a time series of sampling data.
     The mean value of a given function of the sampling data and the corresponding confidence intervals are returned.

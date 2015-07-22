@@ -36,7 +36,7 @@ class Segment(object):
         return self.__getNameString(iteration_id=self.iteration_id,
                                     bin_id=self.bin_id,
                                     segment_id=self.segment_id)
-    
+        
     def getParentNameString(self):
         """
         @return the indices in a string following the scheme iteration_bin_segment

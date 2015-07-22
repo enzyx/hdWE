@@ -165,26 +165,26 @@ for i in range(first_iteration + 1, last_iteration + 1):
         
         # Merge
         elif this_bin.getNumberOfSegments() < this_bin.getNumberOfInitialSegments():
-            merge_dict = {}
-            kept_prob = 0.0
-            merged_probability = 0.0
-            # Collect all initial probabilities in a dictionary
+            # setup initial probabilities
+            probabilities = []
             for this_initial_segment in this_bin.initial_segments:
-                merge_dict[this_initial_segment.getParentNameString()] = this_initial_segment.getProbability()
-            # Assign initial probs to kept segments and set to 0.0 if consumed
-            for this_segment in this_bin:
-                this_segment.setProbability(merge_dict[this_segment.getParentNameString()])
-                kept_prob += this_segment.getProbability()
-                merge_dict[this_segment.getParentNameString()] = 0.0
-            # Collect the remaining probability
-            for parent_string_id in merge_dict:
-                merged_probability += merge_dict[parent_string_id]
-
-            merged_probability =  merged_probability/ this_bin.getNumberOfSegments()
-            # assign merge probability
-
-            for this_segment in this_bin:
-                this_segment.setProbability( this_segment.getProbability() + merged_probability )
+                probabilities.append(this_initial_segment.getProbability())
+            #reconstruct probabilities from merge list
+            for merge_entry in this_bin.merge_list:
+                print merge_entry
+                # get merged probability
+                merged_probability = probabilities[merge_entry[0]]
+                merged_probability  = 1.0 * merged_probability / (len(merge_entry) - 1 ) 
+                print merged_probability
+                # add probability equally to all target segments
+                for i in range(1, len(merge_entry)):
+                    probabilities[merge_entry[i]] += merged_probability
+                # delete merged index from probablities
+                del probabilities[merge_entry[0]]
+            
+            # set merged probabilities of the segments 
+            for i in range(0,len(this_bin.segments)):
+                this_bin.segments[i].setProbability(probabilities[i])        
                 
         # STATES
         for this_segment in this_bin:

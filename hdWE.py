@@ -56,6 +56,8 @@ INITIAL_BOUNDARIES                = initiate.parseInitialBoundaries(config)
 STARTING_STRUCTURE                = config.get('hdWE','starting-structure')
 NUMBER_OF_THREADS                 = int(config.get('hdWE','number-of-threads'))
 KEEP_COORDS_FREQUENCY             = int(config.get('hdWE', 'keep-coords-frequency'))
+MERGE_MODE                        = str(config.get('hdWE', 'merge-mode'))
+MERGE_THRESHOLD                   = float(config.get('hdWE', 'merge-threshold'))
 
 if "amber" in config.sections():
     MD_PACKAGE = "amber"
@@ -150,7 +152,9 @@ for iteration_counter in range(iterations[-1].getId() + 1, MAX_ITERATIONS + 1):
     if NUMBER_OF_THREADS > 1:
         thread_container = ThreadContainer()
         for this_bin in iterations[-1]:
-            thread_container.appendJob(threading.Thread(target=this_bin.resampleSegments() ))
+            thread_container.appendJob(threading.Thread(target=this_bin.resampleSegments(MERGE_MODE, 
+                                                                                         MERGE_THRESHOLD, 
+                                                                                         md_module) ))
             if thread_container.getNumberOfJobs() >= NUMBER_OF_THREADS:
                 thread_container.runJobs()
         # Run remaining jobs
@@ -158,7 +162,9 @@ for iteration_counter in range(iterations[-1].getId() + 1, MAX_ITERATIONS + 1):
     # Serial
     else:
         for this_bin in iterations[-1]:
-            this_bin.resampleSegments()
+            this_bin.resampleSegments(MERGE_MODE, 
+                                      MERGE_THRESHOLD, 
+                                      md_module)
 
 
     # 4. Run MDs

@@ -3,6 +3,8 @@ from __future__ import print_function
 from lib.segment import Segment
 import random as rnd
 import copy
+import numpy
+
 
 class Bin(object):
     """
@@ -34,6 +36,10 @@ class Bin(object):
         # to be able to correctly recalculate the bin to bin rates 
         # after resampling.
         self.initial_segments          = []
+        # List in which the single steps of merging are stored
+        # First entry is the extinction index
+        # The following entries are the destination indices before index fixing
+        self.merge_list                = []
 
     def generateSegment(self, probability, parent_iteration_id, parent_bin_id, parent_segment_id):
         """
@@ -57,7 +63,7 @@ class Bin(object):
         self.setConverged(False)
         return __segment
         
-    def resampleSegments(self):
+    def resampleSegments(self, MERGE_MODE, MERGE_THRESHOLD, md_module):
         """
         Split or Merge segments to generate the target number of segments
         """
@@ -66,36 +72,83 @@ class Bin(object):
         # Too many bins -> merge
         prob_tot = self.getProbability()
         if self.getNumberOfSegments() > self.target_number_of_segments:
-            extinction_probability = 0.0
-            #Merge according to segment probabilities            
-            for c in range(len(self.segments) - self.target_number_of_segments):
-                # Get the extinction index
-                ext_index = 0
-                inv_weights = []
-                inv_weights_tot = 0.0
-                for segment in self.segments:
-                    inv_weights_tot += prob_tot/segment.getProbability()
-                    inv_weights.append(prob_tot/segment.getProbability())
-                extinction_probabilities = []
-                for inv_weight in inv_weights:
-                    extinction_probabilities.append(inv_weight/inv_weights_tot)
-                rand = rnd.random()
-                cumulated_probability = 0.0
-                for index in range(len(extinction_probabilities)):
-                    cumulated_probability += extinction_probabilities[index]
-                    if cumulated_probability >= rand:
-                        ext_index = index
+            
+             ###############################################################################
+            # Merge Mode 1: Choose a segment randomly according to probability
+            #               Distribute the probability of the deleted segments
+            #               equally amongst the remaining segments
+            if MERGE_MODE == 'all':             
+                extinction_probability = 0.0
+                for c in range(len(self.segments) - self.target_number_of_segments):
+                    # Get the extinction index
+                    ext_index = 0
+                    inv_weights = []
+                    inv_weights_tot = 0.0
+                    for segment in self.segments:
+                        inv_weights_tot += prob_tot/segment.getProbability()
+                        inv_weights.append(prob_tot/segment.getProbability())
+                    extinction_probabilities = []
+                    for inv_weight in inv_weights:
+                        extinction_probabilities.append(inv_weight/inv_weights_tot)
+                    rand = rnd.random()
+                    cumulated_probability = 0.0
+                    for index in range(len(extinction_probabilities)):
+                        cumulated_probability += extinction_probabilities[index]
+                        if cumulated_probability >= rand:
+                            ext_index = index
+                            break
+                    self.merge_list.append([ext_index])
+                    del self.segments[ext_index]
+                    for this_segment in self.segments:
+                        self.merge_list[-1].append(this_segment.getId())
+                    # Reassign the extinction probability / N_segments to the remaining segments
+                    extinction_probability = self.segments[ext_index].getProbability()
+                    for this_segment in self:
+                        this_segment.addProbability(extinction_probability / self.getNumberOfSegments())  
+                    # Reorder segment ids after deletion 
+                    self.__fixSegmentIds()
+
+            ###############################################################################                  
+            # Merge Mode 2: Determine the rmsd matrix and merge segments closest in rmsd
+            elif MERGE_MODE == 'smallestRMSD':
+                rmsds = md_module.getRmsdsToSegment(self.segments)
+                # deal with the rmsds to the segment itself which is always zero
+                for i in range(0, len(rmsds)):
+                    for j in range(0, len(rmsds)):
+                        if rmsds[i,j] == 0.0:
+                            rmsds[i,j] = 'Inf'
+                            
+                for c in range(len(self.segments) - self.target_number_of_segments):
+                    # do not merge segments if the lowest rmsd is above threshold
+                    if (MERGE_THRESHOLD > 0.0) and (numpy.min(rmsds) > MERGE_THRESHOLD):
+                        print('     Number of segments in bin {bin:05d} is {n_segs} after merge.'
+                              .format(bin = self.getId(), n_segs = self.getNumberOfSegments()) )
                         break
-                # Pew, now we have an extinction index
-                # Save the Probability and delete the segment.
-                extinction_probability += self.segments[ext_index].getProbability()
-                del self.segments[ext_index]
-                # Reorder segment ids after deletion 
-                self.__fixSegmentIds()
-            # Reassign the extinction probability to the remaining segments
-            extinction_probability /= self.getNumberOfSegments()
-            for this_segment in self:
-                this_segment.addProbability(extinction_probability) 
+                    # get indices of the two segments with the lowest RMSD with respect to each other
+                    # randomly choose one segment of these two that will be merged into the other
+                    lowest_rmsd_indices  = numpy.unravel_index(numpy.argmin(rmsds), rmsds.shape)
+                    target_random_int = rnd.randint(0,1)
+                    if target_random_int == 0:
+                        ext_random_int = 1
+                    else:
+                        ext_random_int = 0 
+                    target_index = lowest_rmsd_indices[target_random_int]                      
+                    ext_index    = lowest_rmsd_indices[ext_random_int]
+                    # save indices in merge_list
+                    self.merge_list.append([ext_index, target_index])
+                    # shift the probability of deleted segment to the target segment
+                    self.segments[target_index].addProbability(self.segments[ext_index].getProbability())
+                    # delete segments and fix segment ids
+                    del self.segments[ext_index]
+                    self.__fixSegmentIds()                                        
+                    # delete corresponding entries from the rmsd matrix
+                    rmsds = numpy.delete(rmsds, ext_index, 0)
+                    rmsds = numpy.delete(rmsds, ext_index, 1)
+                    
+            else:
+                print('Merge mode not found')
+          
+            
             return
         
         # Not enough bins -> split

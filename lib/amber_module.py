@@ -46,6 +46,8 @@ class MD_module():
         self.amber_infile          = config.get('amber','infile-path')
         self.amber_binary          = config.get('amber','binary')
         self.coordinate_masks_file = config.get('amber', 'coordinate-masks')
+        self.rmsd_mask             = config.get('amber', 'rmsd-mask')
+        self.rmsd_fit_mask         = config.get('amber', 'rmsd-fit-mask')
         self.parallelization_mode  = config.get('amber','parallelization-mode')
         # Only search mpirun binary in config file if MPI switched on
         if self.parallelization_mode == 'mpi':
@@ -313,6 +315,71 @@ class MD_module():
         # set coordinates in segment    
         segment.setCoordinates(coordinates)
         return coordinates
+    
+    def getRmsdsToSegment(self, segments):
+        """
+        Calculates the rmsd of all segements with respect to each other.
+        @return matrix of rmsds
+        """
+        # Use ParentNameString because this routine runs before the MD
+        
+        # Write the cpptraj infile
+        segment_name_string = segments[0].getParentNameString() 
+        UUID = uuid.uuid1()
+        
+        if self.debug:
+            cpptraj_infile_path  = "{jn}-run/{segment}.cpptraj_rmsds_in".format(jn=self.jobname, segment=segment_name_string)
+            cpptraj_outfile_path = "{jn}-run/{segment}.cpptraj_rmsds_out".format(jn=self.jobname,segment=segment_name_string)
+            cpptraj_logfile_path = "{jn}-log/cpptraj_rmsds.log".format(jn=self.jobname)
+
+        else:
+            cpptraj_infile_path = "/tmp/{0}_{1}.cpptraj_rmds_in".format(segment_name_string, UUID)
+            cpptraj_outfile_path = "/tmp/{0}_{1}.cpptraj_rmds_out".format(segment_name_string, UUID)
+            cpptraj_logfile_path = "/dev/null"
+
+        
+        # cpptraj input
+        cpptraj_infile = open(cpptraj_infile_path, 'w')
+        for this_segment in segments:
+            cpptraj_infile.write('trajin {jn}-run/{segment}.rst7\n'.format(jn      = self.jobname, 
+                                                                           segment = this_segment.getParentNameString()))       
+        for this_segment in segments:
+            cpptraj_infile.write('reference {jn}-run/{ref}.rst7 [{refname}]\n'.format(jn=self.jobname,
+                                                                    ref     = this_segment.getParentNameString(),
+                                                                    refname = this_segment.getParentNameString() ))
+            # Aligning
+            cpptraj_infile.write('rmsd {refname}.fit {fit_mask} ref [{refname}]\n'.format(fit_mask = self.rmsd_fit_mask,
+                                                                                 out      = cpptraj_outfile_path,
+                                                                                 refname  = this_segment.getParentNameString()))
+            # Actual RMSD calculation
+            cpptraj_infile.write('rmsd {refname} {mask} nofit out {out} ref [{refname}]\n'.format(mask = self.rmsd_mask,
+                                                                                 out      = cpptraj_outfile_path,
+                                                                                 refname  = this_segment.getParentNameString()))
+        
+        cpptraj_infile.close()
+        
+        # Run cpptraj
+        cpptraj_execute_string = ' -p {top} -i {inpath} > {log}'.format(
+                                                            top    = self.amber_topology_file, 
+                                                            inpath = cpptraj_infile_path,
+                                                            log     = cpptraj_logfile_path)
+        os.system('cpptraj {execute}'.format(execute=cpptraj_execute_string))
+                
+        # Load cpptraj output as numpy array
+        try:
+            rmsds = numpy.loadtxt(cpptraj_outfile_path) 
+            # Delete the first entry which refers to the frame index
+            rmsds = rmsds[:,1:]
+        except:
+            #TODO What should happen then?
+            sys.stderr.write('amber_module error: cpptraj output {0} can not '\
+                  'be found or loaded.\n'.format(cpptraj_outfile_path))
+        
+        if not self.debug:
+            os.remove(cpptraj_outfile_path)
+            os.remove(cpptraj_infile_path)
+
+        return rmsds
 
     def loadIterationFromDumpFile(self):
         """
