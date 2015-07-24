@@ -114,10 +114,12 @@ class Bin(object):
                 rmsds = md_module.getRmsdsToSegment(self.segments)
                 # deal with the rmsds to the segment itself which is always zero
                 for i in range(0, len(rmsds)):
+                    rmsds[i,i] = 'Inf'
+                #check for remaining 0 entries (which are most probably due to RMSD calculation error)
+                for i in range(0, len(rmsds)):
                     for j in range(0, len(rmsds)):
                         if rmsds[i,j] == 0.0:
-                            rmsds[i,j] = 'Inf'
-                            
+                            print('RMSD is zero, this is probably  due to an RMSD calculation error')   
                 for c in range(len(self.segments) - self.target_number_of_segments):
                     # do not merge segments if the lowest rmsd is above threshold
                     if (MERGE_THRESHOLD > 0.0) and (numpy.min(rmsds) > MERGE_THRESHOLD):

@@ -67,7 +67,7 @@ parser.add_argument('-w', '--reweighting-iterations', dest="reweighting_iteratio
                     type=int, default=-1,
                     help="Apply reweighting to first N iterations.")
 parser.add_argument('-N', '--pmf-bins', dest="pmf_bins",
-                    type=int, default=100,
+                    type=int, default=200,
                     help="Number of bins for the PMF..")
 
 # Initialize
@@ -238,7 +238,6 @@ for i in range(first_iteration + 1, last_iteration + 1):
     bin_prob_out.write('\n')
     bin_prob_out.flush()
     
-    print sum(current_iteration.getProbability())
 
 bin_prob_out.close()
 
