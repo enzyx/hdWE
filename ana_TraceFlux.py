@@ -237,6 +237,8 @@ for i in range(first_iteration + 1, last_iteration + 1):
         bin_prob_out.write("{: 8.7e}".format(prob))
     bin_prob_out.write('\n')
     bin_prob_out.flush()
+    
+    print sum(current_iteration.getProbability())
 
 bin_prob_out.close()
 

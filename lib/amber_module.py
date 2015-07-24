@@ -443,8 +443,8 @@ class MD_module():
                     # write to coordinates matrix 
                     # (not necessary because calcSegmentCoordinates sets them in the segment)
                     for j in range(self.N_DIMENSIONS):
-                        coordinates[i,j] = this_segment.getCoordinates()
-                        i += 1
+                        coordinates[i,j] = this_segment.getCoordinates()[j]
+                    i += 1
         
         if self.parallelization_mode == "mpi":                   
             # dump the iteration object to a file

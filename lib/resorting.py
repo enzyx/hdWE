@@ -36,7 +36,7 @@ def resort(iterations, md_module, INITIAL_TARGET_NUMBER_OF_SEGMENTS):
             #    the previous iteration
             if not is_segment_handled:
                 for this_bin in current_iteration.bins:
-                    if these_coordinate_ids == this_bin.getCoordinateIds():
+                    if all(these_coordinate_ids == this_bin.getCoordinateIds()):
                         this_bin.generateSegment(probability         = parent_segment.getProbability(),
                                                  parent_iteration_id = parent_segment.getIterationId(),
                                                  parent_bin_id       = parent_segment.getBinId(),
