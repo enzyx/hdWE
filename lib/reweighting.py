@@ -79,8 +79,8 @@ class Reweighting(object):
         
         # 0. Check if all bins are occupied
         for this_bin in iteration:
-            if this_bin.getNumberOfSegments() == 0:
-                print("\x1b[31m     Found empty bin {}, skipping reweighting\x1b[0m".format(this_bin.getId()))
+            if this_bin.getNumberOfSegments() == 0 and this_bin.outer_region == False:
+                print("\x1b[31m     Found empty active bin {}, skipping reweighting\x1b[0m".format(this_bin.getId()))
                 return
        
         # 1. get the Rate Matrix, averaged over the last iteration_range iterations
@@ -89,10 +89,11 @@ class Reweighting(object):
         # 2. check for bins with no outrates or only outrate of 1 to itself and add their
         #    indices to delete_bin_index. Add the indices of bins that will be reweighted
         #    to keep_bin_index
+        #    also delete bins if they belong to the outer region
         keep_bin_index   = numpy.zeros([0], int)
         delete_bin_index = numpy.zeros([0], int)
         for i in range(0,len(mean_rate_matrix)):
-            if max(mean_rate_matrix[i,:]) > 0.0 and max(mean_rate_matrix[i,:]) < 1.0:
+            if max(mean_rate_matrix[i,:]) > 0.0 and max(mean_rate_matrix[i,:]) < 1.0 and iteration.bins[i].outer_region == False:
                 keep_bin_index = numpy.append(keep_bin_index, i)
             else: 
                 delete_bin_index = numpy.append(delete_bin_index, i)  
@@ -100,6 +101,7 @@ class Reweighting(object):
         # 3. Reduce mean_rate_matrix by deleting all entries at indices contained in delete_bin_index
         reduced_mean_rate_matrix = numpy.delete(mean_rate_matrix, delete_bin_index, 0)
         reduced_mean_rate_matrix = numpy.delete(reduced_mean_rate_matrix, delete_bin_index, 1)
+        
         
         # 4. Calculate the total Probability of the bins that will be reweighted
         prob_of_reweighted_bins = 0.0

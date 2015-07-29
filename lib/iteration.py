@@ -9,22 +9,24 @@ class Iteration(object):
     """
     Defines one iteration of the hdWE algorithm
     """
-    def __init__(self, iteration_id, boundaries):
+    def __init__(self, iteration_id, boundaries, outer_region_boundaries):
         """ 
         @param ref_coords the path to reference coordinates defining the bin
         @param trajectories single or list of trajectories to 
                init the bin
         """
         # points to the reference structure of this bin
-        self.iteration_id = iteration_id    # int
-        self.boundaries   = boundaries 
+        self.iteration_id            = iteration_id    # int
+        self.boundaries              = boundaries 
+        self.outer_region_boundaries = outer_region_boundaries
         # the array of segments
-        self.bins = []
-        self.probability_flow = 0.0                      
+        self.bins                    = []
+        self.probability_flow        = 0.0                      
 
     def generateBin(self, reference_iteration_id, 
                     reference_bin_id, reference_segment_id,
-                    target_number_of_segments, coordinate_ids):
+                    target_number_of_segments, coordinate_ids,
+                    outer_region):
         """
         Initialize a new instance of class Bin and append to bins
         @return  bin_id returns the id of the created bin
@@ -35,7 +37,8 @@ class Iteration(object):
                     reference_bin_id           = reference_bin_id, 
                     reference_segment_id       = reference_segment_id, 
                     target_number_of_segments  = target_number_of_segments, 
-                    coordinate_ids             = coordinate_ids)
+                    coordinate_ids             = coordinate_ids,
+                    outer_region               = outer_region)
         return self.__addBin(__bin)
 
     def __addBin(self, _bin):
@@ -51,6 +54,9 @@ class Iteration(object):
         
     def getBoundaries(self):
         return self.boundaries
+    
+    def getOuterRegionBoundaries(self):
+        return self.outer_region_boundaries
         
     def getNameString(self):
         """Returns iteration index as a string
@@ -81,6 +87,17 @@ class Iteration(object):
         """
         return len(self.bins)
     
+    def getNumberOfActiveBins(self):
+        """
+        Number of bins
+        """
+        n = 0
+        for this_bin in self.bins:
+            if this_bin.outer_region == False:
+                n += 1
+        return n
+
+    
     def getNumberOfSegments(self):
         """
         Returns the current number of segments
@@ -88,6 +105,16 @@ class Iteration(object):
         __number_of_segments = 0
         for __bin in self.bins:
             __number_of_segments += __bin.getNumberOfSegments()
+        return __number_of_segments
+    
+    def getNumberOfActiveSegments(self):
+        """
+        Returns the current number of segments
+        """
+        __number_of_segments = 0
+        for __bin in self.bins:
+            if __bin.outer_region == False:
+                __number_of_segments += __bin.getNumberOfSegments()
         return __number_of_segments
 
     def getNumberOfPropagatedSegments(self):
@@ -243,3 +270,37 @@ class Iteration(object):
 
     def getProbabilityFlow(self):
         return self.probability_flow
+    
+    def resetOuterRegion(self):
+        """
+        Remove the segments (not the initial_segments) from outer-region bins 
+        and add the corresponding probability equally to the segments (no the initial_segments) of
+        the parent bin
+        """
+        for this_bin in self:
+            if this_bin.outer_region == True:
+                for this_initial_segment in this_bin.initial_segments:
+                    parent_bin_id = this_initial_segment.getParentBinId()
+                    probability   = this_initial_segment.getProbability()
+                    probability   = 1.0 * probability / self.bins[parent_bin_id].getNumberOfSegments()
+                    for this_parent_segment in self.bins[parent_bin_id]:
+                        #this_parent_segment.addProbability(probability)
+                        # For some reason addProbability function does not work correctly here
+                        this_parent_segment.probability = this_parent_segment.getProbability() + probability
+                this_bin.deleteAllSegments()
+
+        return
+        
+    def getOuterRegionFlag(self, coordinate_ids):
+        """
+        determines whether the bin lies in the outer region from information in the conf.file
+        """
+
+        for dimension in range(len(self.outer_region_boundaries)):
+            if coordinate_ids[dimension] in self.outer_region_boundaries[dimension]:
+                return True
+   
+        return False
+            
+            
+        

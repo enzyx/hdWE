@@ -13,7 +13,7 @@ class Bin(object):
     """
     def __init__(self, iteration_id, bin_id, reference_iteration_id, 
                  reference_bin_id, reference_segment_id, 
-                 target_number_of_segments, coordinate_ids):
+                 target_number_of_segments, coordinate_ids, outer_region):
         """
         @param ref_coords the path to reference coordinates defining the bin
         @param trajectories single or list of trajectories to 
@@ -31,6 +31,9 @@ class Bin(object):
         self.coordinate_ids            = coordinate_ids
         # The array of segments
         self.segments                  = []
+        # Flag that determines whether the bin is to be simulated or if it belongs
+        # to the outer region
+        self.outer_region              = outer_region
         # In this array the segments are copied before resampling happens.
         # We need to store the old segments information
         # to be able to correctly recalculate the bin to bin rates 
@@ -67,7 +70,7 @@ class Bin(object):
         """
         Split or Merge segments to generate the target number of segments
         """
-        if len(self.segments) == 0:
+        if len(self.segments) == 0 or self.outer_region == True:
             return 
         # Too many bins -> merge
         prob_tot = self.getProbability()
@@ -97,14 +100,16 @@ class Bin(object):
                         if cumulated_probability >= rand:
                             ext_index = index
                             break
-                    self.merge_list.append([ext_index])
-                    del self.segments[ext_index]
-                    for this_segment in self.segments:
-                        self.merge_list[-1].append(this_segment.getId())
+                        
                     # Reassign the extinction probability / N_segments to the remaining segments
                     extinction_probability = self.segments[ext_index].getProbability()
+                    
+                    self.merge_list.append([ext_index])
+                    del self.segments[ext_index]
                     for this_segment in self:
                         this_segment.addProbability(extinction_probability / self.getNumberOfSegments())  
+                    for this_segment in self.segments:
+                        self.merge_list[-1].append(this_segment.getId())
                     # Reorder segment ids after deletion 
                     self.__fixSegmentIds()
 
@@ -112,9 +117,11 @@ class Bin(object):
             # Merge Mode 2: Determine the rmsd matrix and merge segments closest in rmsd
             elif MERGE_MODE == 'smallestRMSD':
                 rmsds = md_module.getRmsdsToSegment(self.segments)
+
                 # deal with the rmsds to the segment itself which is always zero
                 for i in range(0, len(rmsds)):
                     rmsds[i,i] = 'Inf'
+                print(rmsds)
                 #check for remaining 0 entries (which are most probably due to RMSD calculation error)
                 for i in range(0, len(rmsds)):
                     for j in range(0, len(rmsds)):
@@ -136,6 +143,7 @@ class Bin(object):
                         ext_random_int = 0 
                     target_index = lowest_rmsd_indices[target_random_int]                      
                     ext_index    = lowest_rmsd_indices[ext_random_int]
+                    #print(self.segments[ext_index].getCoordinates(), self.segments[target_index].getCoordinates() )
                     # save indices in merge_list
                     self.merge_list.append([ext_index, target_index])
                     # shift the probability of deleted segment to the target segment
@@ -243,6 +251,12 @@ class Bin(object):
         """
         name_string = str(self.bin_id).zfill(5)
         return name_string
+    
+    def getOuterRegion(self):
+        """
+        @return outer_region flag
+        """
+        return self.outer_region
 
     def getId(self):
         """
@@ -354,4 +368,12 @@ class Bin(object):
         segments to all bins after MD.
         """
         self.initial_segments = copy.deepcopy(self.segments)
+        
+    def deleteAllSegments(self):
+        """
+        empties the segment list of the bin. 
+        intended for outer-region bin treatment.
+        """
+        self.segments = []
+
         

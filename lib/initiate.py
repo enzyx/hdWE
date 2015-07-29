@@ -67,6 +67,15 @@ def parseInitialBoundaries(config):
             initial_boundaries[-1].append(float(value))
     return initial_boundaries
 
+def parseInitialOuterRegionBoundaries(config):
+    initial_boundaries = []
+    config_string = config.get('hdWE', 'outer-region-boundaries')
+    for boundary_string in config_string.split(','):
+        initial_boundaries.append([])
+        for value in boundary_string.split():
+            initial_boundaries[-1].append(float(value))
+    return initial_boundaries
+
 def parseState(config_string):
     end_state = []
     for coordinate_string in config_string.split('|'):
@@ -76,7 +85,7 @@ def parseState(config_string):
     
     return end_state
 
-def createInitialIteration(target_number_of_segments, initial_boundaries, md_module):
+def createInitialIteration(target_number_of_segments, initial_boundaries, initial_outer_region_boundaries, md_module):
     """
     Creates the first bin, with the starting structure as refcoords
     and n_segs_per_bin trajectories with probability 1/n_segs_per_bin.
@@ -88,14 +97,17 @@ def createInitialIteration(target_number_of_segments, initial_boundaries, md_mod
                               iteration_id = 0, 
                               bin_id = 0, 
                               segment_id = 0)
-    initial_coordinates = md_module.calcSegmentCoordinates(initial_segment)
-    initial_coordinate_ids = initial_segment.getCoordinateIds(initial_boundaries)
-    iteration0 = Iteration(iteration_id = 0, boundaries = initial_boundaries)
+    initial_coordinates    = md_module.calcSegmentCoordinates(initial_segment)
+    initial_coordinate_ids = initial_segment.getCoordinateIds(initial_boundaries)#
+    iteration0 = Iteration(iteration_id = 0, boundaries = initial_boundaries,
+                           outer_region_boundaries = initial_outer_region_boundaries)
+    outer_region = iteration0.getOuterRegionFlag(initial_coordinate_ids)
     iteration0.generateBin(reference_iteration_id    = iteration0.getId(),
                            reference_bin_id          = 0,
                            reference_segment_id      = 0,
                            target_number_of_segments = target_number_of_segments,
-                           coordinate_ids            = initial_coordinate_ids)
+                           coordinate_ids            = initial_coordinate_ids,
+                           outer_region              = outer_region)
     iteration0.bins[0].generateSegment(probability         = 1.0,
                                        parent_iteration_id = 0,
                                        parent_bin_id       = 0, 

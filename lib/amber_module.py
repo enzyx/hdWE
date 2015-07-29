@@ -189,7 +189,7 @@ class MD_module():
     def writeMdStatus(self, segment, MD_run_count, MD_skip_count):
         """Writes the actual WE run status in a string."""
         
-        number_MD_runs = self.iteration.getNumberOfSegments()
+        number_MD_runs = self.iteration.getNumberOfActiveSegments()
         string = '\r     Number of bins {nbins}; '\
                  'Segment {segment:05d}/{all_segments:05d}'.format(
                          nbins        = self.iteration.getNumberOfBins(),

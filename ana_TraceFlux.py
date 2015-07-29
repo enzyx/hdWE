@@ -92,18 +92,18 @@ for this_bin in current_iteration:
     for this_segment in this_bin:
         this_state = getStateFromCoordinate(this_segment, state_A, state_B)
         if this_state == 'A':
-            this_segment.setProbability(np.array([1.0/N,0.0]))
+            this_segment.setProbability(np.array([float(1.0/N),float(0.0)]))
         elif this_state == 'B':
-            this_segment.setProbability(np.array([0.0,1.0/N]))
+            this_segment.setProbability(np.array([float(0.0),float(1.0/N)]))
         else:
-            this_segment.setProbability(np.array([0.5/N,0.5/N]))
+            this_segment.setProbability(np.array([float(0.5/N),float(0.5/N)]))
     for this_segment in this_bin.initial_segments:
         if this_state == 'A':
-            this_segment.setProbability(np.array([1.0/N,0.0]))
+            this_segment.setProbability(np.array([float(1.0/N),float(0.0)]))
         elif this_state == 'B':
-            this_segment.setProbability(np.array([0.0,1.0/N]))
+            this_segment.setProbability(np.array([float(0.0),float(1.0/N)]))
         else:
-            this_segment.setProbability(np.array([0.5/N,0.5/N]))
+            this_segment.setProbability(np.array([float(0.5)/N,float(0.5/N)]))
                      
 
 flux_into_A         = []
@@ -132,7 +132,12 @@ for i in range(first_iteration + 1, last_iteration + 1):
     probability_state_B_iter = 0.0 
     probability_from_A_iter  = 0.0 
     probability_from_B_iter  = 0.0  
-       
+    
+    segment_probs = []
+    segment_probs_after = []
+    
+    #print (current_iteration.getProbability())
+           
     for this_bin in current_iteration:
                     
         # assign new probability to initial segments
@@ -142,56 +147,63 @@ for i in range(first_iteration + 1, last_iteration + 1):
                                 .segments[this_initial_segment.getParentSegmentId()].getProbability()
             this_initial_segment.setProbability(new_probability)
 
-        #print 'newbin'
-        #print 'bin_prob', this_bin.getProbability()
-        
-        # No split and merge
-        if this_bin.getNumberOfSegments() == this_bin.getNumberOfInitialSegments():
-            for this_segment in this_bin:
-                this_segment.setProbability(this_bin.initial_segments[this_segment.getId()].getProbability())
-        
-        # Split
-        elif this_bin.getNumberOfSegments() > this_bin.getNumberOfInitialSegments():
-            split_dict = {}
-            for this_segment in this_bin:
-                try:
-                    split_dict[this_segment.getParentNameString()] += 1
-                except KeyError:
-                    split_dict[this_segment.getParentNameString()] = 1
-            
-            for this_initial_segment in this_bin.initial_segments:
-                split_dict[this_initial_segment.getParentNameString()] = this_initial_segment.getProbability() / \
-                                                split_dict[this_initial_segment.getParentNameString()]
-        
-            for this_segment in this_bin:
-                this_segment.setProbability(split_dict[this_segment.getParentNameString()])
-        
-        # Merge
-        elif this_bin.getNumberOfSegments() < this_bin.getNumberOfInitialSegments():
+        #debug
+        for this_segment in this_bin:
+            segment_probs.append( this_segment.getProbability() )
 
-            probabilities = []
-            for this_initial_segment in this_bin.initial_segments:
-                probabilities.append(this_initial_segment.getProbability())
+        if this_bin.outer_region == False:
+            # No split and merge
+            if this_bin.getNumberOfSegments() == this_bin.getNumberOfInitialSegments():
+                for this_segment in this_bin:
+                    this_segment.setProbability(this_bin.initial_segments[this_segment.getId()].getProbability())
             
-            # strange behavior with list?  
-            probabilities = np.array(probabilities)
-
-            #reconstruct probabilities from merge list
-            for merge_entry in this_bin.merge_list:
-                # get merged probability
-                merged_probability = probabilities[merge_entry[0]]
-                merged_probability  = 1.0 * merged_probability / (len(merge_entry) - 1 )
-                for target_segment in merge_entry[1:]:
-                    probabilities[target_segment] += np.array(merged_probability)                 
-                probabilities = np.delete(probabilities, merge_entry[0],0)
+            # Split
+            elif this_bin.getNumberOfSegments() > this_bin.getNumberOfInitialSegments():
+                split_dict = {}
+                for this_segment in this_bin:
+                    try:
+                        split_dict[this_segment.getParentNameString()] += 1
+                    except KeyError:
+                        split_dict[this_segment.getParentNameString()] = 1
+                
+                for this_initial_segment in this_bin.initial_segments:
+                    split_dict[this_initial_segment.getParentNameString()] = this_initial_segment.getProbability() / \
+                                                    split_dict[this_initial_segment.getParentNameString()]
             
+                for this_segment in this_bin:
+                    this_segment.setProbability(split_dict[this_segment.getParentNameString()])
+        
 
-            # set merged probabilities of the segments 
-            for segment_index in range(0,len(this_bin.segments)):
-                this_bin.segments[segment_index].setProbability(probabilities[segment_index])
-       
-              
-        # STATES
+            # Merge
+            elif this_bin.getNumberOfSegments() < this_bin.getNumberOfInitialSegments():
+    
+                probabilities = []
+                for this_initial_segment in this_bin.initial_segments:
+                    probabilities.append(this_initial_segment.getProbability())
+                
+                # strange behavior with list?  
+                probabilities = np.array(probabilities)
+    
+                #reconstruct probabilities from merge list
+                for merge_entry in this_bin.merge_list:
+                    # get merged probability
+                    merged_probability = probabilities[merge_entry[0]]
+                    merged_probability  = 1.0 * merged_probability / (len(merge_entry) - 1 )
+                    for target_segment in merge_entry[1:]:
+                        probabilities[target_segment] += np.array(merged_probability)                 
+                    probabilities = np.delete(probabilities, merge_entry[0],0)
+                
+    
+                # set merged probabilities of the segments 
+                for segment_index in range(0,len(this_bin.segments)):
+                    this_bin.segments[segment_index].setProbability(probabilities[segment_index])
+
+          
+    # Reset Outer Region Bins
+    current_iteration.resetOuterRegion()
+    
+    # STATES
+    for this_bin in current_iteration:
         for this_segment in this_bin:
             this_state = getStateFromCoordinate(this_segment, state_A, state_B)
             probability = this_segment.getProbability()
@@ -203,15 +215,40 @@ for i in range(first_iteration + 1, last_iteration + 1):
                 probability_state_B_iter += sum(probability)
                 flux_into_B_iter  += probability[0]
                 this_segment.setProbability(np.array([0.0, sum(probability)]))   
-            
+        #debug
+        for this_segment in this_bin:
+            segment_probs_after.append( sum(this_segment.getProbability())  )
+                                        
+    #for x in range(len(segment_probs)):
+    #    if segment_probs[x] - segment_probs_after[x] != 0:
+    #        print x, segment_probs[x] - segment_probs_after[x]
+    
+    #debug
+    #print current_iteration.getProbability()
+    #print sum(current_iteration.getProbability())
+
+    # Reweighting of bin probabilities
+    #    The order of the following steps should no longer matter.  
+    if i < args.reweighting_iterations:
+        # Keep track of the rate matrix
+        reweighter.storeRateMatrix(current_iteration)
+        if current_iteration.getNumberOfBins() > 1:
+            reweighter.reweightBinProbabilities(current_iteration)
+
+    
     # keep track of PMF-relevant segment data
-    if i > first_iteration:
+    if i > args.first_iteration:
         for this_bin in current_iteration:
             for this_segment in this_bin:
                 #TODO: lazy 1d implementation
-                pmf_segment_data.append([ this_segment.getCoordinates()[0], 
+                #pmf_segment_data.append([ this_segment.getCoordinates()[0], 
+                #                          np.sum(this_segment.getProbability()) ])
+                # the before implementation took probabilities that corresponded to wrong coordinate values
+                parent_bin_id = this_segment.getParentBinId()
+                parent_seg_id = this_segment.getParentSegmentId()  
+                pmf_segment_data.append([ previous_iteration.bins[parent_bin_id].segments[parent_seg_id].getCoordinates()[0], 
                                           np.sum(this_segment.getProbability()) ])
-                     
+    
     probability_from_A_iter = current_iteration.getProbability()[0]
     probability_from_B_iter = current_iteration.getProbability()[1]
                     
@@ -222,13 +259,6 @@ for i in range(first_iteration + 1, last_iteration + 1):
     probability_from_A.append(probability_from_A_iter)         
     probability_from_B.append(probability_from_B_iter)
     
-    # Reweighting of bin probabilities
-    #    The order of the following steps should no longer matter.  
-    if i < args.reweighting_iterations:
-        # Keep track of the rate matrix
-        reweighter.storeRateMatrix(current_iteration)
-        if current_iteration.getNumberOfBins() > 1:
-            reweighter.reweightBinProbabilities(current_iteration)
     
     for this_bin in current_iteration:
         prob = this_bin.getProbability()
@@ -238,6 +268,7 @@ for i in range(first_iteration + 1, last_iteration + 1):
     bin_prob_out.write('\n')
     bin_prob_out.flush()
     
+
 
 bin_prob_out.close()
 
@@ -304,6 +335,8 @@ pmf = np.zeros(len(histogram), dtype=float)
 for i in range(len(histogram)):
     if histogram[i,1] > 0.0:
         pmf[i] = -constants.kT *  log(histogram[i,1])
+    else:
+        pmf[i] = 'Inf'
 pmf -= np.min(pmf)
 
 fout = open(args.output_file + '.pmf', 'w')

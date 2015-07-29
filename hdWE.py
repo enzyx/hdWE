@@ -53,6 +53,7 @@ DEBUG                             = args.debug
 MAX_ITERATIONS                    = int(config.get('hdWE','max-iterations'))
 INITIAL_TARGET_NUMBER_OF_SEGMENTS = int(config.get('hdWE','segments-per-bin'))
 INITIAL_BOUNDARIES                = initiate.parseInitialBoundaries(config)
+INITIAL_OUTER_REGION_BOUNDARIES   = initiate.parseInitialOuterRegionBoundaries(config)
 STARTING_STRUCTURE                = config.get('hdWE','starting-structure')
 NUMBER_OF_THREADS                 = int(config.get('hdWE','number-of-threads'))
 KEEP_COORDS_FREQUENCY             = int(config.get('hdWE', 'keep-coords-frequency'))
@@ -105,11 +106,12 @@ if(MD_PACKAGE == "gromacs"):
 
 # Initiate iterations
 if APPEND:
-    iterations = logger.loadIterations()
+    iterations = logger.loadLastIterations()
     #TODO: check if all files are present  
 else:
     iterations.append(initiate.createInitialIteration(INITIAL_TARGET_NUMBER_OF_SEGMENTS, 
                                                         INITIAL_BOUNDARIES, 
+                                                        INITIAL_OUTER_REGION_BOUNDARIES,
                                                         md_module))
     logger.log(iterations[0], CONFIGFILE)
 
@@ -130,7 +132,9 @@ for iteration_counter in range(iterations[-1].getId() + 1, MAX_ITERATIONS + 1):
     sys.stdout.write(' - Setting up new Iteration and sorting Segments into Bins\n')
     sys.stdout.flush()  
     
-    iterations.append(Iteration(iteration_counter, iterations[-1].getBoundaries())) 
+    iterations.append(Iteration(iteration_counter, 
+                                iterations[-1].getBoundaries(), 
+                                iterations[-1].getOuterRegionBoundaries()) ) 
     resorting.copyBinStructureToLastIteration(iterations)
     resorting.resort(iterations, 
                      md_module,
@@ -144,6 +148,8 @@ for iteration_counter in range(iterations[-1].getId() + 1, MAX_ITERATIONS + 1):
     #    - This list should be immutable 
     for this_bin in iterations[-1]:
         this_bin.backupInitialSegments()
+        
+
 
     # 3. Resampling
     sys.stdout.write(' - Resampling\n')
@@ -165,24 +171,28 @@ for iteration_counter in range(iterations[-1].getId() + 1, MAX_ITERATIONS + 1):
             this_bin.resampleSegments(MERGE_MODE, 
                                       MERGE_THRESHOLD, 
                                       md_module)
+  
+    # 4. Treatment of outer-region bins.
+    #    Has to be after resampling for consistency with ana_TraceFlux  
+    iterations[-1].resetOuterRegion()          
+            
 
-
-    # 4. Run MDs
+    # 5. Run MDs
     sys.stdout.write(' - Run MDs\n')
     sys.stdout.flush() 
     md_module.runMDs(iterations[-1])
     sys.stdout.write('\n')
     sys.stdout.flush() 
     
-    # 5. Calculate Segment Coordinates
+    # 6. Calculate Segment Coordinates
     sys.stdout.write(' - Calculate Coordinates\n')
     sys.stdout.flush() 
     md_module.calcCoordinates(iterations[-1])    
     
-    # 6. log everything
+    # 7. log everything
     logger.log(iterations[-1], CONFIGFILE)
 
-    # 7. delete unwanted files
+    # 8. delete unwanted files
     print(" - Deleting md files")
     if iterations[-2].getId() % KEEP_COORDS_FREQUENCY != 0:
         md_module.removeCoordinateFiles(iterations[-2])

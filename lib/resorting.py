@@ -1,6 +1,3 @@
-#import numpy
-#import lib.bin_classifier as bin_classifier      
-
 def copyBinStructureToLastIteration(iterations):
     """
     generates new empty bins in the newest iteration for all bins of previous iteration 
@@ -13,7 +10,8 @@ def copyBinStructureToLastIteration(iterations):
                                       reference_bin_id          = parent_bin.getReferenceBinId(),
                                       reference_segment_id      = parent_bin.getReferenceSegmentId(),
                                       target_number_of_segments = parent_bin.getTargetNumberOfSegments(),
-                                      coordinate_ids            = parent_bin.getCoordinateIds())
+                                      coordinate_ids            = parent_bin.getCoordinateIds(),
+                                      outer_region              = parent_bin.getOuterRegion()) 
 
 def resort(iterations, md_module, INITIAL_TARGET_NUMBER_OF_SEGMENTS):
     """
@@ -50,7 +48,8 @@ def resort(iterations, md_module, INITIAL_TARGET_NUMBER_OF_SEGMENTS):
                                                        reference_bin_id            = parent_segment.getBinId(),
                                                        reference_segment_id        = parent_segment.getId(),
                                                        target_number_of_segments   = INITIAL_TARGET_NUMBER_OF_SEGMENTS,
-                                                       coordinate_ids              = these_coordinate_ids)
+                                                       coordinate_ids              = these_coordinate_ids,
+                                                       outer_region                = current_iteration.getOuterRegionFlag(these_coordinate_ids))
                 current_iteration.bins[bin_id].generateSegment(probability         = parent_segment.getProbability(),
                                                                parent_iteration_id = parent_segment.getIterationId(),
                                                                parent_bin_id       = parent_segment.getBinId(),
