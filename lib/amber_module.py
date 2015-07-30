@@ -103,11 +103,8 @@ class MD_module():
         if self.keep_trajectory_files:
             amber_trajectory_path   = "{jn}-run/{seg}.nc".format(jn=self.jobname, seg=segment.getNameString())
         
-        if self.amber_binary == 'pmemd.cuda':
-            if segment.getId() % 2 ==0:
-                os.environ['CUDA_VISIBLE_DEVICES']='0'
-            else:
-                os.environ['CUDA_VISIBLE_DEVICES']='1'
+        if os.path.basename(self.amber_binary) == 'pmemd.cuda':
+            os.environ['CUDA_VISIBLE_DEVICES'] = str(segment.getId() % 2)
  
         # Overwrite the previous settings                       
         command_line = self.amber_binary + ' -O' + \
