@@ -57,7 +57,7 @@ class MD_module():
         # Check for GPU support
         self.has_cuda = (os.path.basename(self.amber_binary) == "pmemd.cuda")
         if self.has_cuda: 
-            self.nvidia_visible_devices= int(config.get('amber', 'ndivida_visible_devices'))
+            self.cuda_visible_devices= int(config.get('amber', 'cuda_visible_devices'))
         # local link to iteration
         self.iteration             = None
         self.ITERATION_DUMP_FNAME  = '{jn}-run/iteration.dump'.format(jn=self.jobname)
@@ -108,7 +108,7 @@ class MD_module():
             amber_trajectory_path   = "{jn}-run/{seg}.nc".format(jn=self.jobname, seg=segment.getNameString())
         
         if self.has_cuda:
-            os.environ['CUDA_VISIBLE_DEVICES'] = str(segment.getId() % self.nvidia_visible_devices)
+            os.environ['CUDA_VISIBLE_DEVICES'] = str(segment.getId() % self.cuda_visible_devices)
  
         # Overwrite the previous settings                       
         command_line = self.amber_binary + ' -O' + \
