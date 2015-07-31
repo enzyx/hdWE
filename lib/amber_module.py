@@ -342,8 +342,7 @@ class MD_module():
         cpptraj_infile = open(cpptraj_infile_path, 'w')
         for this_segment in segments:
             cpptraj_infile.write('trajin {jn}-run/{segment}.rst7\n'.format(jn      = self.jobname, 
-                                                                           segment = this_segment.getParentNameString()))       
-        for this_segment in segments:
+                                                                           segment = this_segment.getParentNameString()))                   
             cpptraj_infile.write('reference {jn}-run/{ref}.rst7 [{refname}]\n'.format(jn=self.jobname,
                                                                     ref     = this_segment.getParentNameString(),
                                                                     refname = this_segment.getParentNameString() ))
