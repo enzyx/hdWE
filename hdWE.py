@@ -110,9 +110,9 @@ if APPEND:
     #TODO: check if all files are present  
 else:
     iterations.append(initiate.createInitialIteration(INITIAL_TARGET_NUMBER_OF_SEGMENTS, 
-                                                        INITIAL_BOUNDARIES, 
-                                                        INITIAL_OUTER_REGION_BOUNDARIES,
-                                                        md_module))
+                                                      INITIAL_BOUNDARIES, 
+                                                      INITIAL_OUTER_REGION_BOUNDARIES,
+                                                      md_module))
     logger.log(iterations[0], CONFIGFILE)
 
 
