@@ -77,23 +77,20 @@ class Reweighting(object):
         The bin probablities of skipped bins are not changed.
         '''
         
-        # 0. Check if all bins are occupied
-        for this_bin in iteration:
-            if this_bin.getNumberOfSegments() == 0 and this_bin.outer_region == False:
-                print("\x1b[31m     Found empty active bin {}, skipping reweighting\x1b[0m".format(this_bin.getId()))
-                return
-       
+      
         # 1. get the Rate Matrix, averaged over the last iteration_range iterations
         mean_rate_matrix  = self.meanRateMatrix()
               
-        # 2. check for bins with no outrates or only outrate of 1 to itself and add their
-        #    indices to delete_bin_index. Add the indices of bins that will be reweighted
-        #    to keep_bin_index
-        #    also delete bins if they belong to the outer region
+        # 2. exclude bins from reweighting, add their indices to delete_bin_index if
+        #    - bin has no outrates or only outrate of 1 to itself
+        #    - bin has no segments
+        #    - bins belongs to outer region
         keep_bin_index   = numpy.zeros([0], int)
         delete_bin_index = numpy.zeros([0], int)
         for i in range(0,len(mean_rate_matrix)):
-            if max(mean_rate_matrix[i,:]) > 0.0 and max(mean_rate_matrix[i,:]) < 1.0 and iteration.bins[i].outer_region == False:
+            if max(mean_rate_matrix[i,:]) > 0.0 and max(mean_rate_matrix[i,:]) < 1.0 \
+                and iteration.bins[i].sample_region == True \
+                and iteration.bins[i].getNumberOfSegments() > 0:
                 keep_bin_index = numpy.append(keep_bin_index, i)
             else: 
                 delete_bin_index = numpy.append(delete_bin_index, i)  

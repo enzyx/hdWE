@@ -11,7 +11,7 @@ def copyBinStructureToLastIteration(iterations):
                                       reference_segment_id      = parent_bin.getReferenceSegmentId(),
                                       target_number_of_segments = parent_bin.getTargetNumberOfSegments(),
                                       coordinate_ids            = parent_bin.getCoordinateIds(),
-                                      outer_region              = parent_bin.getOuterRegion()) 
+                                      sample_region             = parent_bin.getSampleRegion()) 
 
 def resort(iterations, md_module, INITIAL_TARGET_NUMBER_OF_SEGMENTS):
     """
@@ -49,7 +49,7 @@ def resort(iterations, md_module, INITIAL_TARGET_NUMBER_OF_SEGMENTS):
                                                        reference_segment_id        = parent_segment.getId(),
                                                        target_number_of_segments   = INITIAL_TARGET_NUMBER_OF_SEGMENTS,
                                                        coordinate_ids              = these_coordinate_ids,
-                                                       outer_region                = current_iteration.getOuterRegionFlag(these_coordinate_ids))
+                                                       sample_region               = current_iteration.sampleRegionFlag(these_coordinate_ids))
                 current_iteration.bins[bin_id].generateSegment(probability         = parent_segment.getProbability(),
                                                                parent_iteration_id = parent_segment.getIterationId(),
                                                                parent_bin_id       = parent_segment.getBinId(),
