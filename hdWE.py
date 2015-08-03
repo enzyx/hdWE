@@ -121,8 +121,8 @@ if(MD_PACKAGE == "gromacs"):
 if APPEND:
     iterations = logger.loadLastIterations(N=1)
     if APPEND_NEW_CONFIG:
-        iterations[-1].boundaries = INITIAL_BOUNDARIES
-        iterations[-1].outer_region_boundaries = INITIAL_OUTER_REGION_BOUNDARIES
+        iterations[-1].boundaries    = INITIAL_BOUNDARIES
+        iterations[-1].sample_region = INITIAL_SAMPLE_REGION
     #TODO: check if all files are present
 else:
     iterations.append(initiate.createInitialIteration(INITIAL_TARGET_NUMBER_OF_SEGMENTS, 
