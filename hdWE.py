@@ -1,6 +1,13 @@
 #!/usr/bin/python2
 """
-hdWE is a hyperdimensional weighted ensemble simulation implementation.
+  _         ___          ________ 
+ | |       | \ \        / /  ____|
+ | |__   __| |\ \  /\  / /| |__   
+ | '_ \ / _` | \ \/  \/ / |  __|  
+ | | | | (_| |  \  /\  /  | |____ 
+ |_| |_|\__,_|   \/  \/   |______|
+                                  
+A hyperdimensional weighted ensemble simulation implementation.
 """
 from __future__ import print_function
 import sys
@@ -29,12 +36,17 @@ parser.add_argument('-d', '--debug', dest="debug", action="store_true",
 prev_data = parser.add_mutually_exclusive_group()
 prev_data.add_argument('-a', '--append', dest="append", action='store_true', 
                        default=False,
-                       help='continue previous iterations with parameters from conf file')  
+                       help='continue previous iterations (use parameters from conf file when --read is given)')
 prev_data.add_argument('-o', '--overwrite', dest="overwrite", action='store_true', 
                        default=False,
                        help='overwrite previous simulation data')
-                    
-args = parser.parse_args()                
+parser.add_argument('--new-conf', dest="append_new_config", action='store_true', 
+                       default=False,
+                       help='Read new boundaries from config file when --append is used')
+
+args = parser.parse_args()
+if args.append_new_config and not args.append:
+    parser.error('--new-conf can only be set together with --append.')
 
 #############################
 #        Variables          #
@@ -48,12 +60,13 @@ JOBNAME                           = config.get('hdWE','JOBNAME')
 LOGDIR                            = constants.getLogDirPath(WORKDIR, JOBNAME)
 RUNDIR                            = constants.getRunDirPath(WORKDIR, JOBNAME)
 APPEND                            = args.append
+APPEND_NEW_CONFIG                 = args.append_new_config
 OVERWRITE                         = args.overwrite
 DEBUG                             = args.debug
 MAX_ITERATIONS                    = int(config.get('hdWE','max-iterations'))
 INITIAL_TARGET_NUMBER_OF_SEGMENTS = int(config.get('hdWE','segments-per-bin'))
 INITIAL_BOUNDARIES                = initiate.parseInitialBoundaries(config)
-INITIAL_OUTER_REGION_BOUNDARIES   = initiate.parseInitialOuterRegionBoundaries(config)
+INITIAL_SAMPLE_REGION            = initiate.parseSampleRegion(config)
 STARTING_STRUCTURE                = config.get('hdWE','starting-structure')
 NUMBER_OF_THREADS                 = int(config.get('hdWE','number-of-threads'))
 KEEP_COORDS_FREQUENCY             = int(config.get('hdWE', 'keep-coords-frequency'))
@@ -106,12 +119,15 @@ if(MD_PACKAGE == "gromacs"):
 
 # Initiate iterations
 if APPEND:
-    iterations = logger.loadLastIterations()
-    #TODO: check if all files are present  
+    iterations = logger.loadLastIterations(N=1)
+    if APPEND_NEW_CONFIG:
+        iterations[-1].boundaries = INITIAL_BOUNDARIES
+        iterations[-1].outer_region_boundaries = INITIAL_OUTER_REGION_BOUNDARIES
+    #TODO: check if all files are present
 else:
     iterations.append(initiate.createInitialIteration(INITIAL_TARGET_NUMBER_OF_SEGMENTS, 
                                                       INITIAL_BOUNDARIES, 
-                                                      INITIAL_OUTER_REGION_BOUNDARIES,
+                                                      INITIAL_SAMPLE_REGION,
                                                       md_module))
     logger.log(iterations[0], CONFIGFILE)
 
@@ -134,7 +150,7 @@ for iteration_counter in range(iterations[-1].getId() + 1, MAX_ITERATIONS + 1):
     
     iterations.append(Iteration(iteration_counter, 
                                 iterations[-1].getBoundaries(), 
-                                iterations[-1].getOuterRegionBoundaries()) ) 
+                                iterations[-1].getSampleRegion()) ) 
     resorting.copyBinStructureToLastIteration(iterations)
     resorting.resort(iterations, 
                      md_module,

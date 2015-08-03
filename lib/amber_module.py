@@ -6,7 +6,6 @@ from __future__ import print_function
 import os
 import ConfigParser
 import numpy
-import threading
 import sys
 from datetime import datetime
 import pickle
@@ -18,7 +17,6 @@ if __name__ == "__main__":
     dirname   = os.path.dirname(filepath)
     parentdir = os.path.dirname(dirname)
     sys.path.append(parentdir)
-from lib.thread_container import ThreadContainer
 
 class MD_module():
     # WORKDIR                     = ''
@@ -29,8 +27,7 @@ class MD_module():
     # amber_infile                = ''   the amber in file
     # amber_coordinate_mask       = ''   for example for RMSD calculation. Example ':1-3@CA'
     # amber_binary                = ''   sander, pmemd, pmemd.cuda
-    # parallelization_mode        = ''   serial, parallel, custom_cow
-    # number of threads           = ''   number of threads in parallel mode
+    # parallelization_mode        = ''   serial, mpi
     
     def __init__(self, CONFIGFILE, debug):
         """Initializes the MD module and Reads the amber configuration file.
@@ -51,19 +48,18 @@ class MD_module():
         # Only search mpirun binary in config file if MPI switched on
         if self.parallelization_mode == 'mpi':
             self.mpirun                = config.get('amber', 'mpirun')
-        self.number_of_threads     = int(config.get('amber','number-of-threads'))
         self.debug                 = debug
         # Check for GPU support
         self.has_cuda = (os.path.basename(self.amber_binary) == "pmemd.cuda")
         if self.has_cuda: 
-            self.cuda_visible_devices= int(config.get('amber', 'cuda_visible_devices'))
+            self.cuda_visible_devices = int(config.get('amber', 'cuda_visible_devices'))
         # local link to iteration
         self.iteration             = None
         self.ITERATION_DUMP_FNAME  = '{jn}-run/iteration.dump'.format(jn=self.jobname)
         self.COORDINATES_DUMP_FNAME = '{jn}-run/coordinates.dump'.format(jn=self.jobname)
         
         self.keep_trajectory_files = bool(config.get('hdWE', 'keep-trajectory-files').lower() == "true")
-                       
+        
         # check topology and infile:
         if not os.path.isfile(self.amber_topology_file):
             raise Exception("No topology found at given path:\n{}".format(self.amber_topology_file))
@@ -77,7 +73,6 @@ class MD_module():
             self.COORDINATE_MASKS.append(line.strip())
         self.N_DIMENSIONS = len(self.COORDINATE_MASKS)
         
-    
     def setIteration(self, iteration):
         self.iteration = iteration
     
@@ -215,24 +210,7 @@ class MD_module():
                     MD_run_count  += 1
                     self.runSegmentMD(segment_loop)
                     self.printMdStatus(segment_loop, MD_run_count, MD_skip_count)
-                          
-        #Thread Parallel Run   
-        if self.parallelization_mode=='thread':
-            MD_run_count  = 0
-            MD_skip_count = 0
-            thread_container = ThreadContainer()
-            for bin_loop in self.iteration:
-                for segment_loop in bin_loop:
-                    MD_run_count  += 1
-                    thread_container.appendJob(threading.Thread(target=self.runSegmentMD,
-                                                                args=(segment_loop, )))
-                    if thread_container.getNumberOfJobs() >= self.number_of_threads:
-                        thread_container.runJobs()
-                        self.printMdStatus(segment_loop, MD_run_count, MD_skip_count)
-            # Finish jobs in queue
-            thread_container.runJobs()
-            self.printMdStatus(segment_loop, MD_run_count, MD_skip_count)
-            
+                                      
         #MPI parallel run
         if self.parallelization_mode == 'mpi':
             # dump the iteration object to a file
@@ -423,7 +401,7 @@ class MD_module():
         @return matrix of coordinates [N_segments x N_dimensions]
         """
         self.setIteration(iteration)
-        if self.parallelization_mode in ["serial", "thread"]:
+        if self.parallelization_mode == "serial":
             # calculate and set coordinates
             coordinates = numpy.zeros([iteration.getNumberOfSegments(), self.N_DIMENSIONS])
             i = 0
@@ -436,7 +414,7 @@ class MD_module():
                         coordinates[i,j] = this_segment.getCoordinates()[j]
                     i += 1
         
-        if self.parallelization_mode == "mpi":                   
+        if self.parallelization_mode == "mpi":
             # dump the iteration object to a file
             self.dumpIterationToFile()
             # Call myself with MPI...

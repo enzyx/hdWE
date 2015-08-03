@@ -9,7 +9,7 @@ class Iteration(object):
     """
     Defines one iteration of the hdWE algorithm
     """
-    def __init__(self, iteration_id, boundaries, outer_region_boundaries):
+    def __init__(self, iteration_id, boundaries, sample_region):
         """ 
         @param ref_coords the path to reference coordinates defining the bin
         @param trajectories single or list of trajectories to 
@@ -18,7 +18,7 @@ class Iteration(object):
         # points to the reference structure of this bin
         self.iteration_id            = iteration_id    # int
         self.boundaries              = boundaries 
-        self.outer_region_boundaries = outer_region_boundaries
+        self.sample_region           = sample_region
         # the array of segments
         self.bins                    = []
         self.probability_flow        = 0.0                      
@@ -26,7 +26,7 @@ class Iteration(object):
     def generateBin(self, reference_iteration_id, 
                     reference_bin_id, reference_segment_id,
                     target_number_of_segments, coordinate_ids,
-                    outer_region):
+                    sample_region):
         """
         Initialize a new instance of class Bin and append to bins
         @return  bin_id returns the id of the created bin
@@ -38,7 +38,7 @@ class Iteration(object):
                     reference_segment_id       = reference_segment_id, 
                     target_number_of_segments  = target_number_of_segments, 
                     coordinate_ids             = coordinate_ids,
-                    outer_region               = outer_region)
+                    sample_region              = sample_region)
         return self.__addBin(__bin)
 
     def __addBin(self, _bin):
@@ -55,8 +55,8 @@ class Iteration(object):
     def getBoundaries(self):
         return self.boundaries
     
-    def getOuterRegionBoundaries(self):
-        return self.outer_region_boundaries
+    def getSampleRegion(self):
+        return self.sample_region
         
     def getNameString(self):
         """Returns iteration index as a string
@@ -93,7 +93,7 @@ class Iteration(object):
         """
         n = 0
         for this_bin in self.bins:
-            if this_bin.outer_region == False:
+            if this_bin.sample_region == True:
                 n += 1
         return n
 
@@ -113,7 +113,7 @@ class Iteration(object):
         """
         __number_of_segments = 0
         for __bin in self.bins:
-            if __bin.outer_region == False:
+            if __bin.sample_region == True:
                 __number_of_segments += __bin.getNumberOfSegments()
         return __number_of_segments
 
@@ -278,7 +278,7 @@ class Iteration(object):
         the parent bin
         """
         for this_bin in self:
-            if this_bin.outer_region == True:
+            if this_bin.sample_region == False:
                 for this_initial_segment in this_bin.initial_segments:
                     parent_bin_id = this_initial_segment.getParentBinId()
                     probability   = this_initial_segment.getProbability()
@@ -291,13 +291,25 @@ class Iteration(object):
 
         return
         
-    def getOuterRegionFlag(self, coordinate_ids):
+    def sampleRegionFlag(self, coordinate_ids):
         """
         determines whether the bin lies in the outer region from information in the conf.file
+        the region given in the conf.file masks the inner region bins,
+        boundary 0 including
+        boundary 1 excluding
         """
-
-        for dimension in range(len(self.outer_region_boundaries)):
-            if coordinate_ids[dimension] in self.outer_region_boundaries[dimension]:
+        for dimension in range(len(self.sample_region)):
+            if coordinate_ids[dimension] == 0:
+                bin_boundary_0 = - 1e99
+                bin_boundary_1 = self.boundaries[dimension][coordinate_ids[0]]
+            elif coordinate_ids[dimension] == len(self.boundaries[dimension]):
+                bin_boundary_0 = self.boundaries[dimension][-1]            
+                bin_boundary_1 =  1e99
+            else:
+                bin_boundary_0 = self.boundaries[dimension][coordinate_ids[dimension] - 1 ]
+                bin_boundary_1 = self.boundaries[dimension][coordinate_ids[dimension]]   
+            if self.sample_region[dimension][0] <= bin_boundary_1 and \
+               self.sample_region[dimension][1] > bin_boundary_0:
                 return True
    
         return False
