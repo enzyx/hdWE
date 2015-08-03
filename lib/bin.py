@@ -13,7 +13,7 @@ class Bin(object):
     """
     def __init__(self, iteration_id, bin_id, reference_iteration_id, 
                  reference_bin_id, reference_segment_id, 
-                 target_number_of_segments, coordinate_ids, outer_region):
+                 target_number_of_segments, coordinate_ids, sample_region):
         """
         @param ref_coords the path to reference coordinates defining the bin
         @param trajectories single or list of trajectories to 
@@ -33,7 +33,7 @@ class Bin(object):
         self.segments                  = []
         # Flag that determines whether the bin is to be simulated or if it belongs
         # to the outer region
-        self.outer_region              = outer_region
+        self.sample_region             = sample_region
         # In this array the segments are copied before resampling happens.
         # We need to store the old segments information
         # to be able to correctly recalculate the bin to bin rates 
@@ -57,26 +57,18 @@ class Bin(object):
                             segment_id          = len(self.segments))
         return self.__addSegment(__segment)
 
-    def respawnSegmentFromReference(self, probability):
-        __segment = self.generateSegment(
-                             probability          = probability,
-                             parent_iteration_id  = self.getReferenceIterationId(),
-                             parent_bin_id        = self.getReferenceBinId(),
-                             parent_segment_id    = self.getReferenceSegmentId())
-        self.setConverged(False)
-        return __segment
         
     def resampleSegments(self, MERGE_MODE, MERGE_THRESHOLD, md_module):
         """
         Split or Merge segments to generate the target number of segments
         """
-        if len(self.segments) == 0 or self.outer_region == True:
+        if len(self.segments) == 0 or self.sample_region == False:
             return 
         # Too many bins -> merge
         prob_tot = self.getProbability()
         if self.getNumberOfSegments() > self.target_number_of_segments:
             
-             ###############################################################################
+            ################################################################################
             # Merge Mode 1: Choose a segment randomly according to probability
             #               Distribute the probability of the deleted segments
             #               equally amongst the remaining segments
@@ -121,7 +113,6 @@ class Bin(object):
                 # deal with the rmsds to the segment itself which is always zero
                 for i in range(0, len(rmsds)):
                     rmsds[i,i] = 'Inf'
-                print(rmsds)
                 #check for remaining 0 entries (which are most probably due to RMSD calculation error)
                 for i in range(0, len(rmsds)):
                     for j in range(0, len(rmsds)):
@@ -252,11 +243,11 @@ class Bin(object):
         name_string = str(self.bin_id).zfill(5)
         return name_string
     
-    def getOuterRegion(self):
+    def getSampleRegion(self):
         """
         @return outer_region flag
         """
-        return self.outer_region
+        return self.sample_region
 
     def getId(self):
         """

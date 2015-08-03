@@ -22,7 +22,8 @@ def getStateFromCoordinate(segment, state_A, state_B):
     @return string state
     """
     state_per_dimension = []
-    for coordinate in segment.getCoordinates():
+    # lazy 1d implementation
+    for coordinate in [segment.getCoordinates()[0]]:
         if coordinate > state_A[0] and coordinate <= state_A[1]:
             state_per_dimension.append('A')
         elif coordinate > state_B[0] and coordinate <= state_B[1]:
@@ -349,18 +350,18 @@ fout.close()
 block_size = 10
 
 print "A --> B"
-print   f.block_bootstrap(flux_into_B[b:e], np.mean, block_size)    
-print   f.block_bootstrap(probability_state_A[b:e], np.mean, block_size)
-print   f.block_bootstrap(probability_from_A[b:e], np.mean, block_size)  
+print  'Flux: ',  f.block_bootstrap(flux_into_B[b:e], np.mean, block_size)    
+print  'Prob: ', f.block_bootstrap(probability_state_A[b:e], np.mean, block_size)
+print  'Prob from A:', f.block_bootstrap(probability_from_A[b:e], np.mean, block_size)  
 print 'rate:'
 print   np.mean(flux_into_B[b:e])  / np.mean(probability_state_A[b:e])
 print '1/mfpt:'
 print   np.mean(flux_into_B[b:e])  / np.mean(probability_from_A[b:e])
 
 print "B --> A"
-print   f.block_bootstrap(flux_into_A[b:e], np.mean, block_size)    
-print   f.block_bootstrap(probability_state_B[b:e], np.mean, block_size)
-print   f.block_bootstrap(probability_from_B[b:e], np.mean, block_size)  
+print   'Flux: ',  f.block_bootstrap(flux_into_A[b:e], np.mean, block_size)    
+print   'Prob: ', f.block_bootstrap(probability_state_B[b:e], np.mean, block_size)
+print   'Prob from A:', f.block_bootstrap(probability_from_B[b:e], np.mean, block_size)  
 print 'rate:'
 print   np.mean(flux_into_A[b:e])  / np.mean(probability_state_B[b:e])
 print '1/mfpt:'

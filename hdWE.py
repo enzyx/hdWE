@@ -53,7 +53,7 @@ DEBUG                             = args.debug
 MAX_ITERATIONS                    = int(config.get('hdWE','max-iterations'))
 INITIAL_TARGET_NUMBER_OF_SEGMENTS = int(config.get('hdWE','segments-per-bin'))
 INITIAL_BOUNDARIES                = initiate.parseInitialBoundaries(config)
-INITIAL_OUTER_REGION_BOUNDARIES   = initiate.parseInitialOuterRegionBoundaries(config)
+INITIAL_SAMPLE_REGION            = initiate.parseSampleRegion(config)
 STARTING_STRUCTURE                = config.get('hdWE','starting-structure')
 NUMBER_OF_THREADS                 = int(config.get('hdWE','number-of-threads'))
 KEEP_COORDS_FREQUENCY             = int(config.get('hdWE', 'keep-coords-frequency'))
@@ -111,7 +111,7 @@ if APPEND:
 else:
     iterations.append(initiate.createInitialIteration(INITIAL_TARGET_NUMBER_OF_SEGMENTS, 
                                                       INITIAL_BOUNDARIES, 
-                                                      INITIAL_OUTER_REGION_BOUNDARIES,
+                                                      INITIAL_SAMPLE_REGION,
                                                       md_module))
     logger.log(iterations[0], CONFIGFILE)
 
@@ -134,7 +134,7 @@ for iteration_counter in range(iterations[-1].getId() + 1, MAX_ITERATIONS + 1):
     
     iterations.append(Iteration(iteration_counter, 
                                 iterations[-1].getBoundaries(), 
-                                iterations[-1].getOuterRegionBoundaries()) ) 
+                                iterations[-1].getSampleRegion()) ) 
     resorting.copyBinStructureToLastIteration(iterations)
     resorting.resort(iterations, 
                      md_module,
