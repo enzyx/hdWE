@@ -13,7 +13,7 @@ import sys
 def printMatrix(matrix):
     digits = str(len(str(matrix.max())) + 1)
     for i in range(len(matrix)):
-        for j in range(len(matrix)):
+        for j in range(len(matrix[0])):
             if i==j:
                 sformat = "\033[0;31m{: "+digits+"d}\033[0m"
             elif i==j+1 or i==j-1:
@@ -41,12 +41,16 @@ parser.add_argument('-t', '--bin-to-bin-transitions', action="store_true",
                     help="Print a matrix with bin to bin transition events")
 parser.add_argument('-o', '--output', dest="outfile", metavar="OUTPUT",
                     help="Write the matrix to this file")
+parser.add_argument('-s', '--sort', dest='sort_dimension', 
+                    metavar='INT', default=0, type=int, 
+                    help='Dimension index along which to sort bins.')
 
 args = parser.parse_args()
 logger = Logger(args.logdir)
 iterations = logger.loadIterations(args.first_iteration, args.last_iteration)
 
 N = iterations[-1].getNumberOfBins()
+DIMENSION = args.sort_dimension
 transition_matrix = numpy.zeros((N,N), int)
 
 if args.bin_to_bin_transitions:
@@ -55,7 +59,42 @@ if args.bin_to_bin_transitions:
             for segment in this_bin.initial_segments:
                 transition_matrix[iteration.bins[segment.getParentBinId()].getId(), 
                                   iteration.bins[segment.getBinId()].getId()]      += 1
+
+    if args.sort_dimension != -1:                       
+        # sort along dimension
+        sort_matrix = []
+        largest_coordinate_id = 0
+        for this_bin in iterations[-1]:
+            if this_bin.getCoordinateIds()[DIMENSION] > largest_coordinate_id:
+                largest_coordinate_id = this_bin.getCoordinateIds()[DIMENSION]
+        sort_dimensions = numpy.max([(largest_coordinate_id+1), N])
+        large_sort_matrix = numpy.zeros((sort_dimensions, N), int)
+        for this_bin in iterations[-1]:
+            this_coord = this_bin.getCoordinateIds()[DIMENSION]
+            large_sort_matrix[this_coord, this_bin.getId()] = 1
+        b_got_values = False
+        # cut all empty bins before first sampled one, 
+        for line in large_sort_matrix:
+            if numpy.sum(line) != 0:
+                b_got_values = True
+            if not b_got_values:
+                continue    
+            sort_matrix.append(line)
+        sort_matrix = numpy.asarray(sort_matrix, dtype=int)
+        # find lines full of zeros and remember their index
+        unfound_coord_ids = []
+        for line_index, line in enumerate(sort_matrix):
+            if numpy.sum(line) == 0:
+                unfound_coord_ids.append(line_index)
     
+         
+        transition_matrix = numpy.dot(sort_matrix, transition_matrix)
+        transition_matrix = numpy.dot(transition_matrix, numpy.transpose(sort_matrix))
+    
+        # set values of unfound bins to -1
+        for coord_id in unfound_coord_ids:
+            transition_matrix[coord_id, :] = -1
+
     if not args.outfile: 
         printMatrix( transition_matrix )
     else:
