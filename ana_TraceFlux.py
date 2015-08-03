@@ -44,36 +44,38 @@ parser = argparse.ArgumentParser(description=
 parser.add_argument('-l', '--log', type=str, dest="logdir",
                     required=True, default="hdWE-log", metavar="DIR",
                     help="The logdir to load.")
-parser.add_argument('-B', '--trace-flux-start', dest="trace_flux_start",
-                    type=int, default=0, metavar='INT')
 parser.add_argument('-b', '--first_it', dest="first_iteration",
                     type=int, default=0, metavar='INT',
-                    help="First iteration to use.")
+                    help="First iteration to read.")
 parser.add_argument('-e', '--last_it', dest="last_iteration",
                     type=int, default=-1, metavar='INT',
-                    help="Last iteration to to use.")
-parser.add_argument('--state-A', dest="state_A",
+                    help="Last iteration to to read.")
+parser.add_argument('-B', '--trace-flux-start', dest="first_ana_iteration",
+                    type=int, default=0, metavar='INT', 
+                    help='Iteration to start actual trace_flux analysis from.')
+parser.add_argument('--state-A', dest="state_A", metavar="FLOAT",
                     required=False, type=float, nargs=2, 
                     help="Boundaries of the start state for rate calculation.")  
-parser.add_argument('--state-B', dest="state_B",
+parser.add_argument('--state-B', dest="state_B", metavar="FLOAT",
                     required=False, type=float, nargs=2, 
                     help="Boundaries of the end state for rate calculation.")
 parser.add_argument('-o', '--output', dest="output_file", 
                     required=False, type=str, default='ana_trace_flux',
+                    metavar = "FILE", 
                     help="output filename for A and B flux properties")
 parser.add_argument('-r', '--reweighting-range', dest="reweighting_range",
-                    type=float, default=0.5,
-                    help="Reweighting range.")  
+                    type=float, default=0.5, metavar="FLOAT",
+                    help="Fraction of previous iterations used for reweighting rate calculation.")  
 parser.add_argument('-w', '--reweighting-iterations', dest="reweighting_iterations",
-                    type=int, default=-1,
-                    help="Apply reweighting to first N iterations.")
+                    type=int, default=-1, metavar="INT",
+                    help="Apply reweighting to first N of the read iterations.")
 parser.add_argument('-N', '--pmf-bins', dest="pmf_bins",
-                    type=int, default=200,
-                    help="Number of bins for the PMF..")
+                    type=int, default=200, metavar="INT",
+                    help="Number of bins for the PMF.")
 
 # Initialize
 args = parser.parse_args()
-first_iteration = args.trace_flux_start
+first_iteration = args.first_iteration
 last_iteration  = args.last_iteration
 state_A         = np.sort(args.state_A) 
 state_B         = np.sort(args.state_B)
@@ -238,7 +240,7 @@ for i in range(first_iteration + 1, last_iteration + 1):
 
     
     # keep track of PMF-relevant segment data
-    if i > args.first_iteration:
+    if i > args.first_ana_iteration:
         for this_bin in current_iteration:
             for this_segment in this_bin:
                 #TODO: lazy 1d implementation
@@ -276,7 +278,7 @@ bin_prob_out.close()
 ##########################
 ######### OUTPUT #########
 ##########################
-b = args.first_iteration - args.trace_flux_start
+b = args.first_ana_iteration - args.first_iteration
 e = args.last_iteration
 
 # Data time series
