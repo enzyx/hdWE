@@ -19,7 +19,6 @@ if __name__ == "__main__":
     parentdir = os.path.dirname(dirname)
     sys.path.append(parentdir)
 from lib.thread_container import ThreadContainer
-import lib.bin_classifier as bin_classifier
 
 class MD_module():
     # WORKDIR                     = ''
@@ -86,6 +85,7 @@ class MD_module():
         """
         Function that runs one single segment MD.
         """
+
         amber_start_coords_path = "{jn}-run/{seg}.rst7".format(jn=self.jobname, seg=segment.getParentNameString()) 
         amber_end_coords_path   = "{jn}-run/{seg}.rst7".format(jn=self.jobname, seg=segment.getNameString()) 
         
@@ -146,7 +146,7 @@ class MD_module():
             except OSError: pass
             if not self.keep_trajectory_files:
                 try: os.remove(amber_trajectory_path)
-                except OSError: pass            
+                except OSError: pass
     
     def SkipSegmentMD(self, segment, MD_run_count, MD_skip_count):
         """Function that runs one single segment MD."""
@@ -211,38 +211,24 @@ class MD_module():
             MD_run_count  = 0
             MD_skip_count = 0
             for bin_loop in self.iteration:
-                #if bin_loop.isConverged() == False:
                 for segment_loop in bin_loop:
                     MD_run_count  += 1
                     self.runSegmentMD(segment_loop)
                     self.printMdStatus(segment_loop, MD_run_count, MD_skip_count)
-                #else:
-                #    for segment_loop in bin_loop:
-                #        MD_skip_count += 1  
-                #        MD_run_count  += 1
-                #        self.SkipSegmentMD(segment_loop, MD_run_count, MD_skip_count)
-                #        self.printMdStatus(segment_loop, MD_run_count, MD_skip_count)                 
-                  
+                          
         #Thread Parallel Run   
         if self.parallelization_mode=='thread':
             MD_run_count  = 0
             MD_skip_count = 0
             thread_container = ThreadContainer()
             for bin_loop in self.iteration:
-                #if bin_loop.isConverged() == False:
                 for segment_loop in bin_loop:
                     MD_run_count  += 1
-                    thread_container.appendJob(threading.Thread(target=self.runSegmentMD, 
+                    thread_container.appendJob(threading.Thread(target=self.runSegmentMD,
                                                                 args=(segment_loop, )))
                     if thread_container.getNumberOfJobs() >= self.number_of_threads:
                         thread_container.runJobs()
                         self.printMdStatus(segment_loop, MD_run_count, MD_skip_count)
-                #else:
-                #    for segment_loop in bin_loop:
-                #        MD_skip_count += 1
-                #        MD_run_count  += 1
-                #        self.SkipSegmentMD(segment_loop, MD_run_count, MD_skip_count)     
-                #        self.printMdStatus(segment_loop, MD_run_count, MD_skip_count)
             # Finish jobs in queue
             thread_container.runJobs()
             self.printMdStatus(segment_loop, MD_run_count, MD_skip_count)
@@ -254,12 +240,16 @@ class MD_module():
             # Call myself with MPI...
             if self.debug:
                 print("Switching to MPI for MD now...")
-            os.system("{0} {1} {2} {3} {4} {5} ".format(self.mpirun, 
+            error_code = os.system("{0} {1} {2} {3} {4} {5} ".format(self.mpirun, 
                                   sys.executable,
                                   os.path.realpath(__file__),
                                   "MPIMD",
                                   self.configfile,
                                   str(self.debug)))
+            if error_code != 0:
+                sys.stderr.flush()
+                sys.stderr.write("Received error code during runMDs: {0}\n".format(error_code))
+                sys.exit()
 
     def calcSegmentCoordinates(self, segment):
         """
@@ -452,12 +442,16 @@ class MD_module():
             # Call myself with MPI...
             if self.debug:
                 print("Switching to MPI for coordinate calculation.")
-            os.system("{0} {1} {2} {3} {4} {5} ".format(self.mpirun, 
+            error_code = os.system("{0} {1} {2} {3} {4} {5} ".format(self.mpirun, 
                                                         sys.executable,
                                                         os.path.realpath(__file__),
                                                         "MPICOORD",
                                                         self.configfile, 
                                                         str(self.debug)))
+            if error_code != 0:
+                sys.stderr.flush()
+                sys.stderr.write("Received error code during calcCoordinates: {0}\n".format(error_code))
+                sys.exit()
             coordinates = self.loadCoordinatesFromDumpFile()
             if not self.debug:
                 self.removeCoordinatesDumpFile()
