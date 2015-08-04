@@ -236,23 +236,38 @@ class MD_module():
         @return list of float coordinates 
         """
         # Write the cpptraj infile
-        segment_name_string = segment.getNameString() 
+        segment_name_string = segment.getNameString()
         UUID = uuid.uuid1()
         
+        coordinates = self.calcCoordinatesOfFile("{jn}-run/{namestring}.rst7".format(jn=self.jobname, 
+                                                                                     namestring = segment_name_string))
+        # set coordinates in segment
+        segment.setCoordinates(coordinates)
+        return coordinates
+
+    def calcCoordinatesOfFile(self, filename):
+        """
+        Takes a file with optional relative path (like the run directory).
+        Calculates the coordinates of a file with respect to defined dimensions.
+        Sets segment.coordinates to calculated ones.
+        @return list of float coordinates 
+        """
+        # Write the cpptraj infile
+        UUID = uuid.uuid1()
         if self.debug:
-            cpptraj_infile_path  = "{jn}-run/{segment}.cpptraj_in".format(jn=self.jobname, segment=segment_name_string)
-            cpptraj_outfile_path = "{jn}-run/{segment}.cpptraj_out".format(jn=self.jobname,segment=segment_name_string)
+            cpptraj_infile_path  = "{filename}.cpptraj_in".format(jn=self.jobname, filename = filename)
+            cpptraj_outfile_path = "{filename}.cpptraj_out".format(jn=self.jobname, filename = filename)
             cpptraj_logfile_path = "{jn}-log/cpptraj.log".format(jn=self.jobname)
 
         else:
-            cpptraj_infile_path = "/tmp/{0}_{1}.cpptraj_in".format(segment_name_string, UUID)
-            cpptraj_outfile_path = "/tmp/{0}_{1}.cpptraj_out".format(segment_name_string, UUID)
+            basename = filename.split('/')[-1]
+            cpptraj_infile_path = "/tmp/{0}_{1}.cpptraj_in".format(basename, UUID)
+            cpptraj_outfile_path = "/tmp/{0}_{1}.cpptraj_out".format(basename, UUID)
             cpptraj_logfile_path = "/dev/null"
 
         
         cpptraj_infile      = open(cpptraj_infile_path, 'w')
-        cpptraj_infile.write('trajin {jn}-run/{segment}.rst7\n'.format(jn=self.jobname, 
-                                                                       segment=segment_name_string))       
+        cpptraj_infile.write('trajin {filename}\n'.format(filename = filename))       
         for coordinate_mask in self.COORDINATE_MASKS:
                 cpptraj_infile.write('{mask} out {out}\n'.format(mask = coordinate_mask,
                                                                  out  = cpptraj_outfile_path))
@@ -281,8 +296,6 @@ class MD_module():
             os.remove(cpptraj_outfile_path)
             os.remove(cpptraj_infile_path)
         
-        # set coordinates in segment    
-        segment.setCoordinates(coordinates)
         return coordinates
     
     def getRmsdsToSegment(self, segments):

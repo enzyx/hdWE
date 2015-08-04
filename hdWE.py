@@ -66,8 +66,8 @@ DEBUG                             = args.debug
 MAX_ITERATIONS                    = int(config.get('hdWE','max-iterations'))
 INITIAL_TARGET_NUMBER_OF_SEGMENTS = int(config.get('hdWE','segments-per-bin'))
 INITIAL_BOUNDARIES                = initiate.parseInitialBoundaries(config)
-INITIAL_SAMPLE_REGION            = initiate.parseSampleRegion(config)
-STARTING_STRUCTURE                = config.get('hdWE','starting-structure')
+INITIAL_SAMPLE_REGION             = initiate.parseSampleRegion(config)
+STARTING_STRUCTURES               = initiate.parseStartingStructures(config)
 NUMBER_OF_THREADS                 = int(config.get('hdWE','number-of-threads'))
 KEEP_COORDS_FREQUENCY             = int(config.get('hdWE', 'keep-coords-frequency'))
 MERGE_MODE                        = str(config.get('hdWE', 'merge-mode'))
@@ -101,7 +101,6 @@ if APPEND and not (os.path.exists(LOGDIR) and
 # Setup the WORKDIR
 initiate.prepare(WORKDIR,
                  JOBNAME, 
-                 STARTING_STRUCTURE, 
                  OVERWRITE, 
                  APPEND, 
                  DEBUG)
@@ -128,7 +127,10 @@ if APPEND:
             this_bin.target_number_of_segments = iterations[-1].target_number_of_segments
     #TODO: check if all files are present
 else:
-    iterations.append(initiate.createInitialIteration(INITIAL_TARGET_NUMBER_OF_SEGMENTS, 
+    iterations.append(initiate.createInitialIteration(STARTING_STRUCTURES,
+                                                      WORKDIR, 
+                                                      JOBNAME,
+                                                      INITIAL_TARGET_NUMBER_OF_SEGMENTS, 
                                                       INITIAL_BOUNDARIES, 
                                                       INITIAL_SAMPLE_REGION,
                                                       md_module))

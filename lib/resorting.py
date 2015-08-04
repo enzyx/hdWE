@@ -49,7 +49,7 @@ def resort(iterations, md_module, INITIAL_TARGET_NUMBER_OF_SEGMENTS):
                                                        reference_segment_id        = parent_segment.getId(),
                                                        target_number_of_segments   = INITIAL_TARGET_NUMBER_OF_SEGMENTS,
                                                        coordinate_ids              = these_coordinate_ids,
-                                                       sample_region               = current_iteration.sampleRegionFlag(these_coordinate_ids))
+                                                       sample_region               = current_iteration.isInSampleRegion(these_coordinate_ids))
                 current_iteration.bins[bin_id].generateSegment(probability         = parent_segment.getProbability(),
                                                                parent_iteration_id = parent_segment.getIterationId(),
                                                                parent_bin_id       = parent_segment.getBinId(),

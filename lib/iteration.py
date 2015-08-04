@@ -291,7 +291,7 @@ class Iteration(object):
 
         return
         
-    def sampleRegionFlag(self, coordinate_ids):
+    def isInSampleRegion(self, coordinate_ids):
         """
         determines whether the bin lies in the outer region from information in the conf.file
         the region given in the conf.file masks the inner region bins,
@@ -307,7 +307,7 @@ class Iteration(object):
                 bin_boundary_1 =  1e99
             else:
                 bin_boundary_0 = self.boundaries[dimension][coordinate_ids[dimension] - 1 ]
-                bin_boundary_1 = self.boundaries[dimension][coordinate_ids[dimension]]   
+                bin_boundary_1 = self.boundaries[dimension][coordinate_ids[dimension]]
             if self.sample_region[dimension][0] <= bin_boundary_1 and \
                self.sample_region[dimension][1] > bin_boundary_0:
                 return True
