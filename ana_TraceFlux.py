@@ -154,7 +154,7 @@ for i in range(first_iteration + 1, last_iteration + 1):
         for this_segment in this_bin:
             segment_probs.append( this_segment.getProbability() )
 
-        if this_bin.outer_region == False:
+        if this_bin.sample_region == True:
             # No split and merge
             if this_bin.getNumberOfSegments() == this_bin.getNumberOfInitialSegments():
                 for this_segment in this_bin:
