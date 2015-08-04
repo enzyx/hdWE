@@ -40,7 +40,7 @@ prev_data.add_argument('-a', '--append', dest="append", action='store_true',
 prev_data.add_argument('-o', '--overwrite', dest="overwrite", action='store_true', 
                        default=False,
                        help='overwrite previous simulation data')
-parser.add_argument('--new-conf', dest="append_new_config", action='store_true', 
+parser.add_argument('--new-conf','-n', dest="append_new_config", action='store_true', 
                        default=False,
                        help='Read new boundaries from config file when --append is used')
 
@@ -123,6 +123,9 @@ if APPEND:
     if APPEND_NEW_CONFIG:
         iterations[-1].boundaries    = INITIAL_BOUNDARIES
         iterations[-1].sample_region = INITIAL_SAMPLE_REGION
+        iterations[-1].target_number_of_segments  = INITIAL_TARGET_NUMBER_OF_SEGMENTS
+        for this_bin in iterations[-1]:
+            this_bin.target_number_of_segments = iterations[-1].target_number_of_segments
     #TODO: check if all files are present
 else:
     iterations.append(initiate.createInitialIteration(INITIAL_TARGET_NUMBER_OF_SEGMENTS, 
