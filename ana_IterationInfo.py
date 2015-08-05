@@ -26,7 +26,7 @@ except IOError:
     sys.exit(-1)
 
 for this_bin in iteration:
-    print(" Bin: {: 4d} Segments: {: 4d} p: {: 5.4e}\tCoord ids: {}".format(this_bin.getId(),
+    print(" Bin: {:<4d} Segments: {:<4d} p: {:<5.4e}  Coord ids: {}".format(this_bin.getId(),
                                                this_bin.getNumberOfSegments(),
                                                this_bin.getProbability(), 
                                                this_bin.getCoordinateIds()))
