@@ -23,9 +23,7 @@ class Iteration(object):
         self.bins                    = []
         self.probability_flow        = 0.0                      
 
-    def generateBin(self, reference_iteration_id, 
-                    reference_bin_id, reference_segment_id,
-                    target_number_of_segments, coordinate_ids,
+    def generateBin(self, target_number_of_segments, coordinate_ids,
                     sample_region):
         """
         Initialize a new instance of class Bin and append to bins
@@ -33,9 +31,6 @@ class Iteration(object):
         """
         __bin = Bin(iteration_id               = self.getId(), 
                     bin_id                     = len(self.bins),  
-                    reference_iteration_id     = reference_iteration_id, 
-                    reference_bin_id           = reference_bin_id, 
-                    reference_segment_id       = reference_segment_id, 
                     target_number_of_segments  = target_number_of_segments, 
                     coordinate_ids             = coordinate_ids,
                     sample_region              = sample_region)
@@ -309,11 +304,13 @@ class Iteration(object):
             else:
                 bin_boundary_0 = self.boundaries[dimension][coordinate_ids[dimension] - 1 ]
                 bin_boundary_1 = self.boundaries[dimension][coordinate_ids[dimension]]
+                
             if self.sample_region[dimension][0] <= bin_boundary_1 and \
                self.sample_region[dimension][1] > bin_boundary_0:
                 dimension_flag.append(True)
             else:
                 dimension_flag.append(False)
+        
         
         for dimension in dimension_flag:
             if dimension == False:

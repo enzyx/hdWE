@@ -6,10 +6,7 @@ def copyBinStructureToLastIteration(iterations):
     parent_iteration  = iterations[-2]
     
     for parent_bin in parent_iteration:
-        current_iteration.generateBin(reference_iteration_id    = parent_bin.getReferenceIterationId(),
-                                      reference_bin_id          = parent_bin.getReferenceBinId(),
-                                      reference_segment_id      = parent_bin.getReferenceSegmentId(),
-                                      target_number_of_segments = parent_bin.getTargetNumberOfSegments(),
+        current_iteration.generateBin(target_number_of_segments = parent_bin.getTargetNumberOfSegments(),
                                       coordinate_ids            = parent_bin.getCoordinateIds(),
                                       sample_region             = parent_bin.getSampleRegion()) 
 
@@ -44,10 +41,7 @@ def resort(iterations, md_module, INITIAL_TARGET_NUMBER_OF_SEGMENTS):
                                    
             # 2. If it fits nowhere create new bin
             if not is_segment_handled: 
-                bin_id = current_iteration.generateBin(reference_iteration_id      = parent_segment.getIterationId(),
-                                                       reference_bin_id            = parent_segment.getBinId(),
-                                                       reference_segment_id        = parent_segment.getId(),
-                                                       target_number_of_segments   = INITIAL_TARGET_NUMBER_OF_SEGMENTS,
+                bin_id = current_iteration.generateBin(target_number_of_segments   = INITIAL_TARGET_NUMBER_OF_SEGMENTS,
                                                        coordinate_ids              = these_coordinate_ids,
                                                        sample_region               = current_iteration.isInSampleRegion(these_coordinate_ids))
                 current_iteration.bins[bin_id].generateSegment(probability         = parent_segment.getProbability(),

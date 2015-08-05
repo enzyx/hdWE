@@ -11,9 +11,7 @@ class Bin(object):
     The bin class contains an array of segments (trajectories) and has a
     overall probability which is the sum of all segments probabilities
     """
-    def __init__(self, iteration_id, bin_id, reference_iteration_id, 
-                 reference_bin_id, reference_segment_id, 
-                 target_number_of_segments, coordinate_ids, sample_region):
+    def __init__(self, iteration_id, bin_id, target_number_of_segments, coordinate_ids, sample_region):
         """
         @param ref_coords the path to reference coordinates defining the bin
         @param trajectories single or list of trajectories to 
@@ -22,9 +20,6 @@ class Bin(object):
         # points to the reference structure of this bin
         self.iteration_id              = iteration_id               # int
         self.bin_id                    = bin_id                     # int
-        self.reference_iteration_id    = reference_iteration_id     # int
-        self.reference_bin_id          = reference_bin_id           # int
-        self.reference_segment_id      = reference_segment_id       # int
         # How many segments we want in this bin
         self.target_number_of_segments = target_number_of_segments  # int
         # coordinate bin ids for considered binning dimensions

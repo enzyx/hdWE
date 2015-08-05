@@ -131,10 +131,7 @@ def createInitialIteration(STARTING_STRUCTURES,
             if scan_bin.getCoordinateIds() == coordinate_ids:
                 this_bin = scan_bin
         if this_bin == None:
-            bin_id = iteration0.generateBin(reference_iteration_id    = iteration0.getId(),
-                                            reference_bin_id          = iteration0.getNumberOfBins(),
-                                            reference_segment_id      = 0,
-                                            target_number_of_segments = target_number_of_segments,
+            bin_id = iteration0.generateBin(target_number_of_segments = target_number_of_segments,
                                             coordinate_ids            = coordinate_ids,
                                             sample_region             = sample_region)
             this_bin = iteration0.bins[bin_id]
