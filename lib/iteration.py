@@ -298,6 +298,7 @@ class Iteration(object):
         boundary 0 including
         boundary 1 excluding
         """
+        dimension_flag = []
         for dimension in range(len(self.sample_region)):
             if coordinate_ids[dimension] == 0:
                 bin_boundary_0 = - 1e99
@@ -310,9 +311,15 @@ class Iteration(object):
                 bin_boundary_1 = self.boundaries[dimension][coordinate_ids[dimension]]
             if self.sample_region[dimension][0] <= bin_boundary_1 and \
                self.sample_region[dimension][1] > bin_boundary_0:
-                return True
+                dimension_flag.append(True)
+            else:
+                dimension_flag.append(False)
+        
+        for dimension in dimension_flag:
+            if dimension == False:
+                return False
    
-        return False
+        return True
             
             
         

@@ -123,11 +123,12 @@ reweighter.storeRateMatrix(current_iteration)
 bin_prob_out = open('ana_trace_flux.binprobs.dat', 'w')
 # Iteration Loop
 for i in range(first_iteration + 1, last_iteration + 1):
-    sys.stdout.write('Iteration {:05d}\r'.format(i))
-    sys.stdout.flush()
     previous_iteration = current_iteration
     current_iteration = logger.loadIteration(i)
-    
+    sys.stdout.write('Iteration: {:05d}, Active bins: {:05d}\r'.
+                     format(i, current_iteration.getNumberOfActiveBins()))
+    sys.stdout.flush()
+        
     # Initialize data
     flux_into_A_iter         = 0.0 
     flux_into_B_iter         = 0.0

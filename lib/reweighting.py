@@ -121,7 +121,10 @@ class Reweighting(object):
             # Skip reweighting if a bin probability would become 0
             # (this could lead to trajectories with 0 probability assigned)
             if numpy.min(bin_probs_from_rates) <= constants.num_boundary:
-                print('At least one Bin probability would be zero.')
+                print('Skipping reweighting. At least one Bin probability would be zero.')
+                for tmp_bin_index in range(len(bin_probs_from_rates)):
+                    if bin_probs_from_rates[tmp_bin_index] < constants.num_boundary:
+                        print('Bin index: ', keep_bin_index[tmp_bin_index], 'Probability: ', bin_probs_from_rates[tmp_bin_index] )
             else:
                 # Assign the new probabilities to the bins. 
                 # Keep relative segment probabilities within bins.
