@@ -301,7 +301,7 @@ class Iteration(object):
         for dimension in range(len(self.sample_region)):
             if coordinate_ids[dimension] == 0:
                 bin_boundary_0 = - 1e99
-                bin_boundary_1 = self.boundaries[dimension][coordinate_ids[0]]
+                bin_boundary_1 = self.boundaries[dimension][0]
             elif coordinate_ids[dimension] == len(self.boundaries[dimension]):
                 bin_boundary_0 = self.boundaries[dimension][-1]            
                 bin_boundary_1 =  1e99
