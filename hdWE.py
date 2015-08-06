@@ -224,7 +224,7 @@ for iteration_counter in range(iterations[-1].getId() + 1, MAX_ITERATIONS + 1):
     #check for empty bins #TODO: make this a function of iterations
     empty_bins = 0
     for bin_loop in iterations[-1]:
-        if bin_loop.getNumberOfSegments() == 0:
+        if bin_loop.getNumberOfSegments() == 0 and bin_loop.getSampleRegion == True:
             empty_bins += 1
     print('    Empty bins: ' + str(empty_bins))
     

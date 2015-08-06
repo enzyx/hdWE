@@ -310,8 +310,7 @@ class Iteration(object):
                 dimension_flag.append(True)
             else:
                 dimension_flag.append(False)
-        
-        
+
         for dimension in dimension_flag:
             if dimension == False:
                 return False
