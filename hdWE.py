@@ -125,6 +125,8 @@ if APPEND:
         iterations[-1].target_number_of_segments  = INITIAL_TARGET_NUMBER_OF_SEGMENTS
         for this_bin in iterations[-1]:
             this_bin.target_number_of_segments = iterations[-1].target_number_of_segments
+            this_bin.sample_region = iterations[-1].isInSampleRegion(this_bin.getCoordinateIds()) 
+
     #TODO: check if all files are present
 else:
     iterations.append(initiate.createInitialIteration(STARTING_STRUCTURES,
