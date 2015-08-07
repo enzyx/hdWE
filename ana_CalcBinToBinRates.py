@@ -57,6 +57,7 @@ if args.bin_to_bin_transitions:
     for iteration in iterations:
         for this_bin in iteration:
             for segment in this_bin.initial_segments:
+                print(segment.getParentBinId(), iteration.getNumberOfBins())
                 transition_matrix[iteration.bins[segment.getParentBinId()].getId(), 
                                   iteration.bins[segment.getBinId()].getId()]      += 1
 

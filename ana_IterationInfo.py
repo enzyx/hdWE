@@ -16,6 +16,11 @@ parser.add_argument('-l', '--log', type=str, dest="logdir",
 parser.add_argument('-i', '--iteration', dest="iteration_index",
                     type=int, default=-1,
                     help="Iteration which is modified")
+prev_data = parser.add_mutually_exclusive_group()
+prev_data.add_argument('-s', '--segments', dest="print_segments", default=False, action="store_true",
+                    help="Print segment info")
+prev_data.add_argument('-p', '--parent-segments', dest="parent_segments", default=False, action="store_true",
+                    help="Print segment parent info")
 
 args = parser.parse_args()
 logger = Logger(args.logdir)
@@ -31,3 +36,13 @@ for this_bin in iteration:
                                                this_bin.getProbability(), 
                                                this_bin.getCoordinateIds(),
                                                this_bin.getSampleRegion()))
+    if args.print_segments and not args.parent_segments:
+        for segment in this_bin:
+            print("    Segment: {:<4d} p: {:<5.4e} Coords: {}".format(segment.getId(),
+                                                                      segment.getProbability(),
+                                                                      segment.getCoordinates()))
+    elif args.parent_segments:
+        for segment in this_bin:
+            print("    Segment: {:<4d} Parent bin id: {:<4d} Parent segment id: {:<4d}".format(segment.getId(),
+                                                                                 segment.getParentBinId(),
+                                                                                 segment.getParentSegmentId()))

@@ -128,7 +128,8 @@ def createInitialIteration(STARTING_STRUCTURES,
         # find or create appropriate bin
         this_bin = None
         for scan_bin in iteration0:
-            if scan_bin.getCoordinateIds() == coordinate_ids:
+            # Note that coordinate Ids are numpy arrays
+            if (scan_bin.getCoordinateIds() == coordinate_ids).all():
                 this_bin = scan_bin
         if this_bin == None:
             bin_id = iteration0.generateBin(target_number_of_segments = target_number_of_segments,
