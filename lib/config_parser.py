@@ -4,7 +4,6 @@ It is not a data structure containing config values.
 """
 
 import glob
-from deprecated.ana_CalculatePMF import keep_coords_frequency
 
 def parseInitialBoundaries(config):
     initial_boundaries = []
