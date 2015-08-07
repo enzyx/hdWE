@@ -116,9 +116,9 @@ def createInitialIteration(STARTING_STRUCTURES,
 
     # create bins and segments for starting structures
     for starting_structure in STARTING_STRUCTURES:
-        coordinates = md_module.calcCoordinatesOfFile(starting_structure)
+        coordinates    = md_module.calcCoordinatesOfFile(starting_structure)
         coordinate_ids = bin_classifier.getCoordinateIds(coordinates, initial_boundaries)
-        sample_region = iteration0.isInSampleRegion(coordinate_ids)
+        sample_region  = iteration0.isInSampleRegion(coordinate_ids)
         if not sample_region:
             n_segments -= 1
             sys.stderr.write("\033[0;31m Warning: \033[0m Given structure is not "\
@@ -140,8 +140,8 @@ def createInitialIteration(STARTING_STRUCTURES,
         # create segment
         segment_id = this_bin.generateSegment(probability     = 0.0,
                                             parent_iteration_id = 0,
-                                            parent_bin_id       = iteration0.getNumberOfBins(), 
-                                            parent_segment_id   = 0)
+                                            parent_bin_id       = this_bin.getId(), 
+                                            parent_segment_id   = this_bin.getNumberOfSegments() )
         this_segment = this_bin.segments[segment_id]
         this_segment.setCoordinates(coordinates)
         namestring = this_segment.getNameString()
