@@ -52,7 +52,8 @@ class MD_module():
         # Check for GPU support
         self.has_cuda = (os.path.basename(self.amber_binary) == "pmemd.cuda")
         if self.has_cuda: 
-            self.cuda_visible_devices = int(config.get('amber', 'cuda_visible_devices'))
+            # A list of cuda visible devices indices [0,1,...]
+            self.cuda_visible_devices = map(int, config.get('amber', 'cuda_visible_devices').strip().split(','))
         # local link to iteration
         self.iteration             = None
         self.ITERATION_DUMP_FNAME  = '{jn}-run/iteration.dump'.format(jn=self.jobname)
@@ -103,7 +104,8 @@ class MD_module():
             amber_trajectory_path   = "{jn}-run/{seg}.nc".format(jn=self.jobname, seg=segment.getNameString())
         
         if self.has_cuda:
-            os.environ['CUDA_VISIBLE_DEVICES'] = str(segment.getId() % self.cuda_visible_devices)
+            # Assign one cuda visible device per job
+            os.environ['CUDA_VISIBLE_DEVICES'] = str(self.cuda_visible_devices[segment.getId() % len(self.cuda_visible_devices)])
  
         # Overwrite the previous settings                       
         command_line = self.amber_binary + ' -O' + \
@@ -241,8 +243,7 @@ class MD_module():
         """
         # Write the cpptraj infile
         segment_name_string = segment.getNameString()
-        UUID = uuid.uuid1()
-        
+       
         coordinates = self.calcCoordinatesOfFile("{jn}-run/{namestring}.rst7".format(jn=self.jobname, 
                                                                                      namestring = segment_name_string))
         # set coordinates in segment
