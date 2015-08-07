@@ -58,34 +58,6 @@ def prepare(WORKDIR, JOBNAME, OVERWRITE, APPEND, DEBUG):
                 continue
             os.mkdir(WORKDIR + sub_dir)
 
-        
-def parseInitialBoundaries(config):
-    initial_boundaries = []
-    config_string = config.get('hdWE', 'boundaries')
-    for boundary_string in config_string.split(','):
-        initial_boundaries.append([])
-        for value in boundary_string.split():
-            initial_boundaries[-1].append(float(value))
-    return initial_boundaries
-
-def parseSampleRegion(config):
-    initial_boundaries = []
-    config_string = config.get('hdWE', 'sample-region')
-    for boundary_string in config_string.split(','):
-        initial_boundaries.append([])
-        for value in boundary_string.split():
-            initial_boundaries[-1].append(float(value))
-    return initial_boundaries
-
-def parseStartingStructures(config):
-    """
-        can a list of filenames or a wildcard with *
-    """
-    starting_structures = []
-    config_string = config.get('hdWE','starting-structures')
-    for start_word in config_string.split():
-        starting_structures.extend(glob.glob(start_word))           
-    return starting_structures
 
 def parseState(config_string):
     end_state = []

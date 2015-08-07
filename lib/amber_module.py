@@ -501,9 +501,12 @@ class MD_module():
         else:
             return coordinates[:,1]
     
-    def removeCoordinateFiles(self, iteration):
+    def removeCoordinateFiles(self, iteration, keep=0):
+        """
+        @param keep: do not delete the first #keep segment coordinate files per bin
+        """
         for this_bin in iteration:
-            for this_segment in this_bin:
+            for this_segment in this_bin.segments[keep:]:
                 try:
                     os.remove("{jn}-run/{seg}.rst7".format(jn=self.jobname, seg=this_segment.getNameString()))
                 except OSError:

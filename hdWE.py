@@ -20,6 +20,7 @@ from   lib.thread_container import ThreadContainer
 from   lib.iteration import Iteration
 from   lib.logger import Logger 
 import lib.initiate as initiate
+import lib.config_parser as config_parser
 import lib.constants as constants
 import lib.resorting as resorting
 
@@ -65,11 +66,12 @@ OVERWRITE                         = args.overwrite
 DEBUG                             = args.debug
 MAX_ITERATIONS                    = int(config.get('hdWE','max-iterations'))
 INITIAL_TARGET_NUMBER_OF_SEGMENTS = int(config.get('hdWE','segments-per-bin'))
-INITIAL_BOUNDARIES                = initiate.parseInitialBoundaries(config)
-INITIAL_SAMPLE_REGION             = initiate.parseSampleRegion(config)
-STARTING_STRUCTURES               = initiate.parseStartingStructures(config)
+INITIAL_BOUNDARIES                = config_parser.parseInitialBoundaries(config)
+INITIAL_SAMPLE_REGION             = config_parser.parseSampleRegion(config)
+STARTING_STRUCTURES               = config_parser.parseStartingStructures(config)
 NUMBER_OF_THREADS                 = int(config.get('hdWE','number-of-threads'))
-KEEP_COORDS_FREQUENCY             = int(config.get('hdWE', 'keep-coords-frequency'))
+KEEP_COORDS_FREQUENCY             = config_parser.parseKeepCoordsFrequency(config)
+KEEP_COORDS_SEGMENTS              = config_parser.parseKeepCoordsSegments(config)
 MERGE_MODE                        = str(config.get('hdWE', 'merge-mode'))
 MERGE_THRESHOLD                   = float(config.get('hdWE', 'merge-threshold'))
 
@@ -219,7 +221,10 @@ for iteration_counter in range(iterations[-1].getId() + 1, MAX_ITERATIONS + 1):
     print(" - Deleting md files")
     if iterations[-2].getId() % KEEP_COORDS_FREQUENCY != 0:
         md_module.removeCoordinateFiles(iterations[-2])
-
+    else:
+        if KEEP_COORDS_SEGMENTS > 0:
+            md_module.removeCoordinateFiles(iterations[-2], KEEP_COORDS_SEGMENTS)
+    
     if DEBUG: 
         print("\n    The overall probability is {0:05f}".format(iterations[-1].getProbability()))
     
