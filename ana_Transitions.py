@@ -98,7 +98,6 @@ if args.bin_to_bin_transitions:
                 transition_matrix[iteration.bins[segment.getParentBinId()].getId(), 
                                   iteration.bins[segment.getBinId()].getId()]      += 1
                             
-    printMatrix(transition_matrix)
 
     # to preserve non-sorting functionality  
     coordinate_ids_for_plot = []
