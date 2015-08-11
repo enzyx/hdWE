@@ -8,8 +8,19 @@ from lib.logger import Logger
 import argparse
 import lib.analysis_operations as analysis_operations
 import sys
+import copy
 
 ###### Function ######
+
+def sortList(list, order):
+    """
+    sorts a list according to given order
+    order is interpreted as order[source_index] = target_index
+    """
+    new_list = [0] * len(list)
+    for old_index, new_index in enumerate(order):
+        new_list[new_index] = list[old_index] 
+    return new_list
 
 def sortMatrix(matrix, order):
     """
@@ -26,8 +37,7 @@ def sortMatrix(matrix, order):
     sort_matrix = np.zeros((len(order),len(order)), dtype=int)
     for source_index, target_index in enumerate(order):
         sort_matrix[target_index, source_index] = 1
-
-         
+                 
     new_matrix = np.dot(sort_matrix, matrix)
     new_matrix = np.dot(new_matrix, np.transpose(sort_matrix))        
     return new_matrix
@@ -69,18 +79,17 @@ parser.add_argument('-t', '--bin-to-bin-transitions', action="store_true",
                     help="Print a matrix with bin to bin transition events")
 parser.add_argument('-o', '--output', dest="outfile", metavar="OUTPUT",
                     help="Write the matrix to this file")
-parser.add_argument('-s', '--sort', dest='sort_dimension', 
-                    metavar='INT', default=0, type=int, 
-                    help='Dimension index along which to sort bins. -1 does not sort.')
+parser.add_argument('-s', '--sort', nargs='?', type=int,
+                    metavar='INT', default=False, const=0, 
+                    help='Dimension index along which to sort bins.')
 
 args = parser.parse_args()
 logger = Logger(args.logdir)
 iterations = logger.loadIterations(args.first_iteration, args.last_iteration)
 
-N = iterations[-1].getNumberOfBins()
+N_BINS = iterations[-1].getNumberOfBins()
 DIMENSIONS = len(iterations[-1].bins[0].getCoordinateIds())
-SORT_DIMENSION = args.sort_dimension
-transition_matrix = np.zeros((N,N), int)
+transition_matrix = np.zeros((N_BINS,N_BINS), int)
 
 if args.bin_to_bin_transitions:
     for iteration in iterations:
@@ -88,8 +97,16 @@ if args.bin_to_bin_transitions:
             for segment in this_bin.initial_segments:
                 transition_matrix[iteration.bins[segment.getParentBinId()].getId(), 
                                   iteration.bins[segment.getBinId()].getId()]      += 1
+                            
+    printMatrix(transition_matrix)
 
-    if args.sort_dimension != -1:    
+    # to preserve non-sorting functionality  
+    coordinate_ids_for_plot = []
+
+    # if must be so clumsy because python evaulates 0 as false
+    if type(args.sort) == int:
+        SORT_DIMENSION = int(args.sort)
+
         # collect coordinate ids of bins        
         bin_list = []
         for this_bin in iteration:
@@ -104,13 +121,14 @@ if args.bin_to_bin_transitions:
                                + np.arange(SORT_DIMENSION+1, DIMENSIONS).tolist()
         sorted_bin_list = np.asarray(sorted(bin_list, 
                                             key=lambda element: tuple([element[i] for i in sort_dimension_order])))
-        sorting_order = sorted_bin_list[:,-1]
+        sort_order = sorted_bin_list[:,-1]
         
-        transition_matrix = sortMatrix(transition_matrix, sorting_order)
-        coordinate_ids_for_plot = sorted_bin_list[:,SORT_DIMENSION]
-    else:
-        # to preserve non-sorting functionality          
-        coordinate_ids_for_plot = []
+        transition_matrix = sortMatrix(transition_matrix, sort_order)
+        coordinate_ids_for_plot = sorted_bin_list[:,SORT_DIMENSION]        
+        
+                
+        
+    # output
     if not args.outfile: 
         printMatrix( transition_matrix, coordinate_ids_for_plot)
     else:
