@@ -25,7 +25,7 @@ def sortList(list, order):
 def sortMatrix(matrix, order):
     """
     sorts rows and columns of a matrix according
-    to given order. order is interpreted as order[source_index] = target_index
+    to given order. order is interpreted as order[target_index] = source_index
     """
     # if order has wrong dimension or 
     if len(order) != len(matrix):
@@ -35,9 +35,9 @@ def sortMatrix(matrix, order):
         raise Exception('can\'t sort non-square matrix')
     
     sort_matrix = np.zeros((len(order),len(order)), dtype=int)
-    for source_index, target_index in enumerate(order):
+    for target_index, source_index in enumerate(order):
         sort_matrix[target_index, source_index] = 1
-                 
+                        
     new_matrix = np.dot(sort_matrix, matrix)
     new_matrix = np.dot(new_matrix, np.transpose(sort_matrix))        
     return new_matrix
@@ -45,11 +45,13 @@ def sortMatrix(matrix, order):
 
 def printMatrix(matrix, coord_ids = []):
     digits = str(len(str(matrix.max())) + 1)
+    # coord id header
     if len(coord_ids) != 0:
-        sys.stdout.write("coordinate id of |   transition\nsort dimension   |     matrix\n")
+        sys.stdout.write("coordinate ids | transition matrix\n")
     for i in range(len(matrix)):
+        # coordinate ids:
         if len(coord_ids) != 0:
-            sys.stdout.write("{:2d} ".format(int(coord_ids[i])))
+            sys.stdout.write("{:14s} ".format(str(coord_ids[i])))
             sys.stdout.write("|")
         for j in range(len(matrix[0])):
             if i==j:
@@ -97,10 +99,12 @@ if args.bin_to_bin_transitions:
             for segment in this_bin.initial_segments:
                 transition_matrix[iteration.bins[segment.getParentBinId()].getId(), 
                                   iteration.bins[segment.getBinId()].getId()]      += 1
-                            
 
     # to preserve non-sorting functionality  
     coordinate_ids_for_plot = []
+    
+    for this_bin in iterations[-1]:
+        coordinate_ids_for_plot.append(this_bin.getCoordinateIds())
 
     # if must be so clumsy because python evaulates 0 as false
     if type(args.sort) == int:
@@ -119,12 +123,11 @@ if args.bin_to_bin_transitions:
                                + np.arange(SORT_DIMENSION).tolist() \
                                + np.arange(SORT_DIMENSION+1, DIMENSIONS).tolist()
         sorted_bin_list = np.asarray(sorted(bin_list, 
-                                            key=lambda element: tuple([element[i] for i in sort_dimension_order])))
+                                            key=lambda element: tuple([element[i] for i in sort_dimension_order])))      
         sort_order = sorted_bin_list[:,-1]
         
         transition_matrix = sortMatrix(transition_matrix, sort_order)
-        coordinate_ids_for_plot = sorted_bin_list[:,SORT_DIMENSION]        
-        
+        coordinate_ids_for_plot = sorted_bin_list[:,:-1]        
                 
         
     # output
