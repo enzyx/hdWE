@@ -1,26 +1,53 @@
-#!/usr/bin/python2
+#!/usr/bin/env python2
+"""
+Return the bin to bin transition matrix or the the rate matrix
+"""
 from __future__ import print_function
-from logger import Logger
-import argparse 
+import numpy as np
+from lib.logger import Logger
+import argparse
 
+###### Parse command line ###### 
 parser =argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+
 parser.add_argument('-l', '--log', type=str, dest="logdir", 
-                    default="dhWE-log", metavar="DIR",
-                    help="The logfile for reading and writing")
+                    metavar="FILE", required=True,
+                    help="The log directory for reading")                  
+parser.add_argument('-b', '--first_it', dest="first_iteration",
+                    type=int, default=0,
+                    help="First iteration to use.")                    
 parser.add_argument('-e', '--last_it', dest="last_iteration",
                     type=int, default=-1,
-                    help="Last iteration to use.") 
-                    
-# Initialize
-print('\033[1mSumming up all propagated segments (without closed bins).\033[0m')      
+                    help="Last iteration to use.")  
+parser.add_argument('-v', '--verbose', action="store_true",
+                    dest="verbose", 
+                    help="Print information for every iteration")
+
 args = parser.parse_args()
-
-
-#get the actual Iteration from logger module
 logger = Logger(args.logdir)
-iterations = logger.loadIterations(0, args.last_iteration)
+iterations = logger.loadIterations(args.first_iteration, args.last_iteration, verbose=True)
 
-n_segments = 0
-for iteration_loop in iterations:
-    n_segments += iteration_loop.getNumberOfPropagatedSegments()
-print('Total number of propagated segments: ' + str(n_segments-1))
+VERBOSE         = args.verbose  
+
+total_count = 0
+for iteration in iterations:
+    total_iteration_segments = 0
+    active_bins = 0
+    inactive_bins = 0
+    for this_bin in iteration:
+        this_number_of_segments = this_bin.getNumberOfSegments()
+        if this_bin.getSampleRegion():
+            active_bins += 1
+            total_count += this_number_of_segments
+            total_iteration_segments += this_number_of_segments
+        else:
+            inactive_bins += 1
+    if VERBOSE:
+        print("Iteration: {:> 5d} active (inactive) #bins: {:> 5d} ({:> 5d}) #segments: {:> 5d}".format(iteration.getId(), 
+                                                                         active_bins,
+                                                                         inactive_bins,
+                                                                         total_iteration_segments))
+
+print("""---------------------------------------
+Total propagated #segments: {:> 8d}
+---------------------------------------""".format(total_count))

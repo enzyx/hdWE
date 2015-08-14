@@ -119,7 +119,7 @@ class Logger():
         last_iteration_id = self.getLastIterationId()
         return self.loadIterations(last_iteration_id - N + 1, last_iteration_id)
     
-    def loadIterations(self, begin=0, end=-1):
+    def loadIterations(self, begin=0, end=-1, verbose=False):
         """
         @return list of iterations
         """
@@ -139,7 +139,11 @@ class Logger():
                 iteration = self.loadIteration(iteration_id)
                 iterations.append(iteration)
                 iteration_id += 1
-            
+                if verbose:
+                    sys.stderr.write("\rReading iteration: {:05d}".format(iteration_id))
+            if verbose:
+                    sys.stderr.write("\r                               \r")
+                    sys.stderr.flush()
         # We want to raise an error if... 
         # no iterations were read in
         if len(iterations) == 0:
