@@ -56,3 +56,31 @@ def parseKeepCoordsFrequency(config):
     except:
         pass
     return keep_coords_frequency
+
+###################
+#      AMBER      #
+###################
+
+def parseCpptrajBinary(config):
+    """
+    @return  path to cpptraj binary
+    @default cpptraj (Which is expected to be in $PATH
+    """
+    cpptraj = "cpptraj"
+    try:
+        cpptraj = config.get('amber','cpptraj-binary')
+    except:
+        pass
+    return cpptraj
+
+def parseAmberBinary(config):
+    """
+    @return  path to amber binary (sander, pmemd, pmemd.cuda)
+    @default pmemd (Which is expected to be in $PATH
+    """
+    amber_binary = "pmemd"
+    try:
+        amber_binary = config.get('amber','amber-binary')
+    except:
+        pass
+    return amber_binary

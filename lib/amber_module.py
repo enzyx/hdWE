@@ -10,6 +10,8 @@ import sys
 from datetime import datetime
 import pickle
 import uuid
+import config_parser
+
 # We need the hdWE program path in the PYTHONPATH when
 # amber_module is started by mpirun
 if __name__ == "__main__":
@@ -40,7 +42,8 @@ class MD_module():
         self.jobname               = config.get('hdWE','JOBNAME')
         self.amber_topology_file   = config.get('amber','topology-path')
         self.amber_infile          = config.get('amber','infile-path')
-        self.amber_binary          = config.get('amber','binary')
+        self.amber_binary          = config_parser.parseAmberBinary(config)
+        self.cpptraj_binary        = config_parser.parseCpptrajBinary(config)
         self.coordinate_masks_file = config.get('amber', 'coordinate-masks')
         self.rmsd_mask             = config.get('amber', 'rmsd-mask')
         self.rmsd_fit_mask         = config.get('amber', 'rmsd-fit-mask')
@@ -285,7 +288,7 @@ class MD_module():
                                                             top    = self.amber_topology_file, 
                                                             inpath = cpptraj_infile_path,
                                                             log     = cpptraj_logfile_path)
-        os.system('cpptraj {execute}'.format(execute=cpptraj_execute_string))
+        os.system('{cpptraj} {execute}'.format(cpptraj=self.cpptraj_binary, execute=cpptraj_execute_string))
                 
         # Load cpptraj output as numpy array
         try:
@@ -349,7 +352,7 @@ class MD_module():
                                                             top    = self.amber_topology_file, 
                                                             inpath = cpptraj_infile_path,
                                                             log     = cpptraj_logfile_path)
-        os.system('cpptraj {execute}'.format(execute=cpptraj_execute_string))
+        os.system('{cpptraj} {execute}'.format(cpptraj=self.cpptraj_binary, execute=cpptraj_execute_string))
                 
         # Load cpptraj output as numpy array
         try:
@@ -480,10 +483,10 @@ class MD_module():
         
         #Execute cpptraj
         cpptraj_execute_string =' -p ' + self.amber_topology_file + \
-                                ' -i ' + cpptraj_infile_path
-        cpptraj_execute_string = cpptraj_execute_string + ' >> {jn}-log/ana_calculatePMF_cpptraj.log'.format(jn=self.jobname)
-        os.system('cpptraj ' + cpptraj_execute_string )        
-        
+                                ' -i ' + cpptraj_infile_path + \
+                                ' >> {jn}-log/ana_calculatePMF_cpptraj.log'.format(jn=self.jobname)
+              
+        os.system('{cpptraj} {execute}'.format(cpptraj=self.cpptraj_binary, execute=cpptraj_execute_string))
         #Load cpptraj output as numpy array
         try:
             coordinates = numpy.loadtxt(cpptraj_output_path) 
