@@ -87,7 +87,7 @@ parser.add_argument('-s', '--sort', nargs='?', type=int,
 
 args = parser.parse_args()
 logger = Logger(args.logdir)
-iterations = logger.loadIterations(args.first_iteration, args.last_iteration)
+iterations = logger.loadIterations(args.first_iteration, args.last_iteration, verbose=True)
 
 N_BINS = iterations[-1].getNumberOfBins()
 DIMENSIONS = len(iterations[-1].bins[0].getCoordinateIds())

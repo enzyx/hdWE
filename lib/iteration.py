@@ -192,8 +192,14 @@ class Iteration(object):
         # Sum all probability that enters a bin from the parent bins
         for this_bin in self:
             for this_segment in this_bin.initial_segments:
+                # Check for numpy arrays and sum if required
+                tot_segment_prob = 0.0
+                if type(this_segment.getProbability()) != float:
+                    tot_segment_prob = sum(this_segment.getProbability())
+                else:
+                    tot_segment_prob = this_segment.getProbability()
                 rate_matrix[this_segment.getParentBinId(), this_segment.getBinId()] += \
-                    sum(this_segment.getProbability())
+                    tot_segment_prob
         
         # Normalize all outrates with respect to a bin:
         for i in range(0,len(rate_matrix)):
