@@ -57,6 +57,17 @@ def parseKeepCoordsFrequency(config):
         pass
     return keep_coords_frequency
 
+def parseCompressIteration(config):
+    """
+    @return Compress Iteration flag
+    """
+    compress_iteration = False
+    try:
+        compress_iteration = bool(config.get('hdWE', 'compress-iteration').lower() == "true")
+    except:
+        pass
+    return compress_iteration
+
 ###################
 #      AMBER      #
 ###################

@@ -514,6 +514,49 @@ class MD_module():
                     os.remove("{jn}-run/{seg}.rst7".format(jn=self.jobname, seg=this_segment.getNameString()))
                 except OSError:
                     continue
+                
+
+    def compressIteration(self, iteration):
+        """
+        puts all .rst7 files from an iteration together into a .nc binary file, omitting velocities.
+        a segment_list is created from which the original rst7 files can be recreated.
+        """
+
+        # get all segment name strings in a list
+        segment_name_list = []
+        for this_bin in iteration:
+            for this_segment in this_bin:
+                segment_name_list.append(this_segment.getNameString())
+        
+        # write the segment names into an index file
+        segment_name_list_path = "{jn}-run/{iterationId}.segment_list".format(jn=self.jobname, 
+                                                                              iterationId=iteration.getNameString())
+        segment_name_list_file = open(segment_name_list_path, 'w')
+        for segment_name in segment_name_list:
+            segment_name_list_file.write(segment_name + '\n')
+        segment_name_list_file.close()
+        
+        # write cppraj in file
+        UUID                 = uuid.uuid1()
+        cpptraj_file_path    = "/tmp/{iterationId}_{uuid}.compress_cpptraj_in".format(iterationId=iteration.getNameString(), uuid=UUID)
+        cpptraj_logfile_path = "/dev/null"
+        cpptraj_file         = open(cpptraj_file_path, 'w')    
+        for segment_name in segment_name_list:
+            cpptraj_file.write('trajin {jn}-run/{segment_name}.rst7\n'.format(jn = self.jobname, segment_name = segment_name))
+        cpptraj_file.write('trajout {jn}-run/{iterationId}.nc netcdf novelocity'.format(jn = self.jobname, iterationId=iteration.getNameString()))
+        cpptraj_file.close()
+        
+        # execute cpptraj
+        cpptraj_execute_string = ' -p {top} -i {inpath} > {log}'.format(
+                                                            top    = self.amber_topology_file, 
+                                                            inpath = cpptraj_file_path,
+                                                            log     = cpptraj_logfile_path)
+        os.system('{cpptraj} {execute}'.format(cpptraj=self.cpptraj_binary, execute=cpptraj_execute_string))
+        
+        # remove cpptraj infile
+        os.remove(cpptraj_file_path)
+        
+    
     
 ###########################################
 def doMPIMD(CONFIGFILE, debug):
@@ -631,3 +674,8 @@ if __name__ == "__main__":
     if sys.argv[1] == "MPICOORD":
         doMPICalcCoordinates(CONFIGFILE=sys.argv[2],
                                debug=sys.argv[3])
+
+
+
+    
+    

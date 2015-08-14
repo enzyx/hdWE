@@ -316,6 +316,16 @@ class Iteration(object):
                 return False
    
         return True
+    
+    def countEmptyBins(self):
+        """
+        returns the number of current empty active bins
+        """
+        empty_bins = 0
+        for bin_loop in self:
+            if bin_loop.getNumberOfSegments() == 0 and bin_loop.getSampleRegion() == True:
+                empty_bins += 1
+        return empty_bins
             
             
         

@@ -364,7 +364,7 @@ print   np.mean(flux_into_B[b:e])  / np.mean(probability_from_A[b:e])
 print "B --> A"
 print   'Flux: ',  f.block_bootstrap(flux_into_A[b:e], np.mean, block_size)    
 print   'Prob: ', f.block_bootstrap(probability_state_B[b:e], np.mean, block_size)
-print   'Prob from A:', f.block_bootstrap(probability_from_B[b:e], np.mean, block_size)  
+print   'Prob from B:', f.block_bootstrap(probability_from_B[b:e], np.mean, block_size)  
 print 'rate:'
 print   np.mean(flux_into_A[b:e])  / np.mean(probability_state_B[b:e])
 print '1/mfpt:'

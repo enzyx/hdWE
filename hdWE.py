@@ -56,25 +56,35 @@ CONFIGFILE = args.configfile
 config = ConfigParser.ConfigParser()
 config.read(CONFIGFILE)
 
+# File Structure
 WORKDIR                           = config.get('hdWE','WORKDIR')
 JOBNAME                           = config.get('hdWE','JOBNAME')
 LOGDIR                            = constants.getLogDirPath(WORKDIR, JOBNAME)
 RUNDIR                            = constants.getRunDirPath(WORKDIR, JOBNAME)
+# General Options
 APPEND                            = args.append
 APPEND_NEW_CONFIG                 = args.append_new_config
 OVERWRITE                         = args.overwrite
 DEBUG                             = args.debug
+NUMBER_OF_THREADS                 = int(config.get('hdWE','number-of-threads'))
+KEEP_COORDS_FREQUENCY             = config_parser.parseKeepCoordsFrequency(config)
+KEEP_COORDS_SEGMENTS              = config_parser.parseKeepCoordsSegments(config)
+COMPRESS_ITERATION                = config_parser.parseCompressIteration(config)
+# hdWE Options
+STARTING_STRUCTURES               = config_parser.parseStartingStructures(config)
 MAX_ITERATIONS                    = int(config.get('hdWE','max-iterations'))
 INITIAL_TARGET_NUMBER_OF_SEGMENTS = int(config.get('hdWE','segments-per-bin'))
 INITIAL_BOUNDARIES                = config_parser.parseInitialBoundaries(config)
 INITIAL_SAMPLE_REGION             = config_parser.parseSampleRegion(config)
-STARTING_STRUCTURES               = config_parser.parseStartingStructures(config)
-NUMBER_OF_THREADS                 = int(config.get('hdWE','number-of-threads'))
-KEEP_COORDS_FREQUENCY             = config_parser.parseKeepCoordsFrequency(config)
-KEEP_COORDS_SEGMENTS              = config_parser.parseKeepCoordsSegments(config)
 MERGE_MODE                        = str(config.get('hdWE', 'merge-mode'))
-MERGE_THRESHOLD                   = float(config.get('hdWE', 'merge-threshold'))
+if MERGE_MODE == 'closest':
+    MERGE_THRESHOLD               = float(config.get('hdWE', 'merge-threshold'))
+elif MERGE_MODE == 'weighted' or MERGE_MODE == 'random':
+    MERGE_THRESHOLD               = 0 # needs to be defined
+else:
+    raise Exception("Merge mode not found")    
 
+# MD module
 if "amber" in config.sections():
     MD_PACKAGE = "amber"
 elif "gromacs" in config.sections():
@@ -94,7 +104,7 @@ if not os.path.isfile(CONFIGFILE):
 if APPEND and not (os.path.exists(LOGDIR) and
                    os.path.exists(RUNDIR) and 
                    glob.glob(LOGDIR + "*.iter")):
-    sys.stderr.write("WARNING: appending failed. turning it off.\n")
+    #sys.stderr.write("WARNING: appending failed. turning it off.\n")
     APPEND = False
 
 #############################
@@ -201,7 +211,6 @@ for iteration_counter in range(iterations[-1].getId() + 1, MAX_ITERATIONS + 1):
     #    Has to be after resampling for consistency with ana_TraceFlux  
     iterations[-1].resetOuterRegion()          
             
-
     # 5. Run MDs
     sys.stdout.write(' - Run MDs\n')
     sys.stdout.flush() 
@@ -217,9 +226,11 @@ for iteration_counter in range(iterations[-1].getId() + 1, MAX_ITERATIONS + 1):
     # 7. log everything
     logger.log(iterations[-1], CONFIGFILE)
 
-    # 8. delete unwanted files
-    print(" - Deleting md files")
-    if iterations[-2].getId() % KEEP_COORDS_FREQUENCY != 0:
+    # 8. compress files and delete unwanted files
+    print(" - Compressing/Deleting MD files")
+    if COMPRESS_ITERATION:
+        md_module.compressIteration(iterations[-2])
+    if  KEEP_COORDS_FREQUENCY == 0 or iterations[-2].getId() % KEEP_COORDS_FREQUENCY != 0:
         md_module.removeCoordinateFiles(iterations[-2])
     else:
         if KEEP_COORDS_SEGMENTS > 0:
@@ -228,12 +239,7 @@ for iteration_counter in range(iterations[-1].getId() + 1, MAX_ITERATIONS + 1):
     if DEBUG: 
         print("\n    The overall probability is {0:05f}".format(iterations[-1].getProbability()))
     
-    #check for empty bins #TODO: make this a function of iterations
-    empty_bins = 0
-    for bin_loop in iterations[-1]:
-        if bin_loop.getNumberOfSegments() == 0 and bin_loop.getSampleRegion() == True:
-            empty_bins += 1
-    print('    Empty bins: ' + str(empty_bins))
+    print('    Empty bins: ' + str(iterations[-1].countEmptyBins()))
     
     # Save some RAM
     iterations = iterations[-2:]
