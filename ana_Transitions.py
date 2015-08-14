@@ -8,16 +8,15 @@ from lib.logger import Logger
 import argparse
 import lib.analysis_operations as analysis_operations
 import sys
-import copy
 
 ###### Function ######
 
-def sortList(list, order):
+def sortList(this_list, order):
     """
     sorts a list according to given order
     order is interpreted as order[source_index] = target_index
     """
-    new_list = [0] * len(list)
+    new_list = [0] * len(this_list)
     for old_index, new_index in enumerate(order):
         new_list[new_index] = list[old_index] 
     return new_list
