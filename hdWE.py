@@ -23,6 +23,7 @@ import lib.initiate as initiate
 import lib.config_parser as config_parser
 import lib.constants as constants
 import lib.resorting as resorting
+import lib.reweighting as reweighting
 
 #### Parse command line #### 
 
@@ -76,6 +77,7 @@ MAX_ITERATIONS                    = int(config.get('hdWE','max-iterations'))
 INITIAL_TARGET_NUMBER_OF_SEGMENTS = int(config.get('hdWE','segments-per-bin'))
 INITIAL_BOUNDARIES                = config_parser.parseInitialBoundaries(config)
 INITIAL_SAMPLE_REGION             = config_parser.parseSampleRegion(config)
+# -merging
 MERGE_MODE                        = str(config.get('hdWE', 'merge-mode'))
 if MERGE_MODE == 'closest':
     MERGE_THRESHOLD               = float(config.get('hdWE', 'merge-threshold'))
@@ -83,7 +85,12 @@ elif MERGE_MODE == 'weighted' or MERGE_MODE == 'random':
     MERGE_THRESHOLD               = 0 # needs to be defined
 else:
     raise Exception("Merge mode not found")    
+# -reweighting
+REWEIGHTING_RANGE                 = config_parser.parseReweightingRange(config)
+if REWEIGHTING_RANGE > 0:
+    REWEIGHTING_MAX_ITERATION     = config_parser.parseReweightingMaxIteration(config)
 
+print(REWEIGHTING_RANGE)
 # MD module
 if "amber" in config.sections():
     MD_PACKAGE = "amber"
@@ -120,6 +127,7 @@ initiate.prepare(WORKDIR,
 # Initialize the logger
 logger = Logger(LOGDIR)
 
+
 # Check MD suite
 if(MD_PACKAGE == "amber"):
     from lib.amber_module import MD_module
@@ -150,12 +158,15 @@ else:
                                                       md_module))
     logger.log(iterations[0], CONFIGFILE)
 
+# Initiate the reweighter
+if REWEIGHTING_RANGE > 0:
+    reweighter = reweighting.Reweighting( reweighting_range = REWEIGHTING_RANGE )
 
 #############################
 #         Main Loop         #
 #############################
 for iteration_counter in range(iterations[-1].getId() + 1, MAX_ITERATIONS + 1):
-    sys.stdout.write('\033[1m\nhdWE Status:\033[0m Iteration {:05d}\n'.format(iteration_counter))
+    sys.stdout.write('\033[1m\nhdWE\033[0m Job: {jn} Status: Iteration {it:05d}\n'.format(jn = JOBNAME, it = iteration_counter))
     sys.stdout.flush()
 
 
@@ -210,23 +221,30 @@ for iteration_counter in range(iterations[-1].getId() + 1, MAX_ITERATIONS + 1):
     # 4. Treatment of outer-region bins.
     #    Has to be after resampling for consistency with ana_TraceFlux  
     iterations[-1].resetOuterRegion()          
-            
-    # 5. Run MDs
+
+    # 5. Reweighting
+    if REWEIGHTING_RANGE > 0.0 and iteration_counter <= REWEIGHTING_MAX_ITERATION:
+        sys.stdout.write(' - Reweighting\n')
+        reweighter.storeRateMatrix(iterations[-1])
+        if iterations[-1].getNumberOfBins() > 1:
+            reweighter.reweightBinProbabilities(iterations[-1])
+                
+    # 6. Run MDs
     sys.stdout.write(' - Run MDs\n')
     sys.stdout.flush() 
     md_module.runMDs(iterations[-1])
     sys.stdout.write('\n')
     sys.stdout.flush() 
     
-    # 6. Calculate Segment Coordinates
+    # 7. Calculate Segment Coordinates
     sys.stdout.write(' - Calculate Coordinates\n')
     sys.stdout.flush() 
     md_module.calcCoordinates(iterations[-1])    
     
-    # 7. log everything
+    # 8. log everything
     logger.log(iterations[-1], CONFIGFILE)
 
-    # 8. compress files and delete unwanted files
+    # 9. compress files and delete unwanted files
     print(" - Compressing/Deleting MD files")
     if COMPRESS_ITERATION:
         md_module.compressIteration(iterations[-2])

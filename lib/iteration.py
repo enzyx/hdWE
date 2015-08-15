@@ -194,7 +194,9 @@ class Iteration(object):
             for this_segment in this_bin.initial_segments:
                 # Check for numpy arrays and sum if required
                 tot_segment_prob = 0.0
-                if type(this_segment.getProbability()) != float:
+                # Some probability values are numpy.float64 type?
+                if type(this_segment.getProbability()) != float \
+                 and type(this_segment.getProbability()) != numpy.float64:
                     tot_segment_prob = sum(this_segment.getProbability())
                 else:
                     tot_segment_prob = this_segment.getProbability()

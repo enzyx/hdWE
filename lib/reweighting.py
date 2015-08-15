@@ -104,10 +104,12 @@ class Reweighting(object):
         prob_of_reweighted_bins = 0.0
         for i in range(0,len(keep_bin_index)):
             # Nasty fix to handle tuples as probabilities
-            if type(iteration.bins[keep_bin_index[i]].getProbability()) == float:
-                print('skip')
-                continue
-            prob_of_reweighted_bins += sum(iteration.bins[keep_bin_index[i]].getProbability())
+            if type(iteration.bins[keep_bin_index[i]].getProbability()) != float \
+             and type(iteration.bins[keep_bin_index[i]].getProbability()) != numpy.float64:
+                prob_of_reweighted_bins += sum(iteration.bins[keep_bin_index[i]].getProbability())
+            else:
+                prob_of_reweighted_bins += iteration.bins[keep_bin_index[i]].getProbability()
+        
         
         # 5. Try to solve the steady state equations:
         try:
@@ -129,8 +131,13 @@ class Reweighting(object):
                 # Assign the new probabilities to the bins. 
                 # Keep relative segment probabilities within bins.
                 for i in range(0,len(keep_bin_index)):
-                    reweight_factor = (1.0 * bin_probs_from_rates[i] / 
-                                       sum(iteration.bins[keep_bin_index[i]].getProbability()) )
+                    if type(iteration.bins[keep_bin_index[i]].getProbability()) != float \
+                     and type(iteration.bins[keep_bin_index[i]].getProbability()) != numpy.float64:
+                        reweight_factor = (1.0 * bin_probs_from_rates[i] / 
+                                           sum(iteration.bins[keep_bin_index[i]].getProbability()) )
+                    else:
+                        reweight_factor = (1.0 * bin_probs_from_rates[i] / 
+                                       (iteration.bins[keep_bin_index[i]].getProbability()) )
                     for this_segment in iteration.bins[keep_bin_index[i]]:
                         this_segment.setProbability(this_segment.getProbability() *
                                                     reweight_factor)

@@ -68,6 +68,28 @@ def parseCompressIteration(config):
         pass
     return compress_iteration
 
+def parseReweightingRange(config):
+    """
+    @return Reweighting range. Default is 0 (reweighting off)
+    """
+    reweighting_range = 0
+    try:
+        reweighting_range = float(config.get('hdWE', 'reweighting-range'))
+    except:
+        pass
+    return reweighting_range
+
+def parseReweightingMaxIteration(config):
+    """
+    @return The iteration until which reweighting is performed. Default is 'inf'
+    """    
+    reweigthing_max_iteration = 'inf'
+    try:
+        reweigthing_max_iteration = int(config.get('hdWE', 'reweigthing-max-iteration'))
+    except:
+        pass
+    return reweigthing_max_iteration   
+
 ###################
 #      AMBER      #
 ###################
