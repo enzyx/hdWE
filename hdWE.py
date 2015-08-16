@@ -90,7 +90,6 @@ REWEIGHTING_RANGE                 = config_parser.parseReweightingRange(config)
 if REWEIGHTING_RANGE > 0:
     REWEIGHTING_MAX_ITERATION     = config_parser.parseReweightingMaxIteration(config)
 
-print(REWEIGHTING_RANGE)
 # MD module
 if "amber" in config.sections():
     MD_PACKAGE = "amber"
@@ -136,9 +135,20 @@ if(MD_PACKAGE == "gromacs"):
     print("Sorry, support for gromacs is not implemented yet.")
     sys.exit(-1)
 
+# Initiate the reweighter
+if REWEIGHTING_RANGE > 0:
+    reweighter = reweighting.Reweighting( reweighting_range = REWEIGHTING_RANGE )
+
 # Initiate iterations
 if APPEND:
     iterations = logger.loadLastIterations(N=1)
+    # Load the previous iterations to restore the rate matrices for the reweighter module
+    if REWEIGHTING_RANGE > 0:
+        for iteration_counter_tmp in range(1,iterations[-1].getId()):
+            iteration_tmp = logger.loadIteration(iteration_counter_tmp)
+            reweighter.storeRateMatrix(iteration_tmp)
+        iteration_tmp = []
+        
     if APPEND_NEW_CONFIG:
         iterations[-1].boundaries    = INITIAL_BOUNDARIES
         iterations[-1].sample_region = INITIAL_SAMPLE_REGION
@@ -158,9 +168,6 @@ else:
                                                       md_module))
     logger.log(iterations[0], CONFIGFILE)
 
-# Initiate the reweighter
-if REWEIGHTING_RANGE > 0:
-    reweighter = reweighting.Reweighting( reweighting_range = REWEIGHTING_RANGE )
 
 #############################
 #         Main Loop         #
