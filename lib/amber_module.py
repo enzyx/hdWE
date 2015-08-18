@@ -544,9 +544,9 @@ class MD_module():
         for segment_name in segment_name_list:
             cpptraj_file.write('trajin {jn}-run/{segment_name}.rst7\n'.format(jn = self.jobname, segment_name = segment_name))
         if cpptraj_closest_mask != "":
-            cpptraj_file.write('closest {mask}'.format(mask=cpptraj_closest_mask))
-            cpptraj_file.write('autoimage')
-        cpptraj_file.write('trajout {jn}-run/{iterationId}.nc netcdf novelocity'.format(jn = self.jobname, iterationId=iteration.getNameString()))
+            cpptraj_file.write('closest {mask}\n'.format(mask=cpptraj_closest_mask))
+            cpptraj_file.write('autoimage\n')
+        cpptraj_file.write('trajout {jn}-run/{iterationId}.nc netcdf novelocity\n'.format(jn = self.jobname, iterationId=iteration.getNameString()))
         cpptraj_file.close()
         
         # execute cpptraj
