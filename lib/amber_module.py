@@ -35,8 +35,8 @@ class MD_module():
         """Initializes the MD module and Reads the amber configuration file.
         """
         #read in configuration file
-        self.configfile = CONFIGFILE
-        config = ConfigParser.ConfigParser()
+        self.configfile            = CONFIGFILE
+        config                     = ConfigParser.ConfigParser()
         config.read(CONFIGFILE)
         self.workdir               = config.get('hdWE','WORKDIR')
         self.jobname               = config.get('hdWE','JOBNAME')
@@ -516,7 +516,7 @@ class MD_module():
                     continue
                 
 
-    def compressIteration(self, iteration):
+    def compressIteration(self, iteration, cpptraj_closest_mask=""):
         """
         puts all .rst7 files from an iteration together into a .nc binary file, omitting velocities.
         a segment_list is created from which the original rst7 files can be recreated.
@@ -529,7 +529,7 @@ class MD_module():
                 segment_name_list.append(this_segment.getNameString())
         
         # write the segment names into an index file
-        segment_name_list_path = "{jn}-run/{iterationId}.segment_list".format(jn=self.jobname, 
+        segment_name_list_path = "{jn}-run/{iterationId}.segment_list".format(jn=self.jobname,
                                                                               iterationId=iteration.getNameString())
         segment_name_list_file = open(segment_name_list_path, 'w')
         for segment_name in segment_name_list:
@@ -543,6 +543,9 @@ class MD_module():
         cpptraj_file         = open(cpptraj_file_path, 'w')    
         for segment_name in segment_name_list:
             cpptraj_file.write('trajin {jn}-run/{segment_name}.rst7\n'.format(jn = self.jobname, segment_name = segment_name))
+        if cpptraj_closest_mask != "":
+            cpptraj_file.write('closest {mask}'.format(mask=cpptraj_closest_mask))
+            cpptraj_file.write('autoimage')
         cpptraj_file.write('trajout {jn}-run/{iterationId}.nc netcdf novelocity'.format(jn = self.jobname, iterationId=iteration.getNameString()))
         cpptraj_file.close()
         

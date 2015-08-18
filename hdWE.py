@@ -71,6 +71,7 @@ NUMBER_OF_THREADS                 = int(config.get('hdWE','number-of-threads'))
 KEEP_COORDS_FREQUENCY             = config_parser.parseKeepCoordsFrequency(config)
 KEEP_COORDS_SEGMENTS              = config_parser.parseKeepCoordsSegments(config)
 COMPRESS_ITERATION                = config_parser.parseCompressIteration(config)
+COMPRESS_CLOSEST_MASK             = config_parser.parseCompressClosestMask(config)
 # hdWE Options
 STARTING_STRUCTURES               = config_parser.parseStartingStructures(config)
 MAX_ITERATIONS                    = int(config.get('hdWE','max-iterations'))
@@ -254,12 +255,12 @@ for iteration_counter in range(iterations[-1].getId() + 1, MAX_ITERATIONS + 1):
     # 9. compress files and delete unwanted files
     print(" - Compressing/Deleting MD files")
     if COMPRESS_ITERATION:
-        md_module.compressIteration(iterations[-2])
+        md_module.compressIteration(iterations[-2], COMPRESS_CLOSEST_MASK)
     if  KEEP_COORDS_FREQUENCY == 0 or iterations[-2].getId() % KEEP_COORDS_FREQUENCY != 0:
-        md_module.removeCoordinateFiles(iterations[-2])
-    else:
         if KEEP_COORDS_SEGMENTS > 0:
             md_module.removeCoordinateFiles(iterations[-2], KEEP_COORDS_SEGMENTS)
+        else:
+            md_module.removeCoordinateFiles(iterations[-2])
     
     if DEBUG: 
         print("\n    The overall probability is {0:05f}".format(iterations[-1].getProbability()))

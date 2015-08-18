@@ -68,6 +68,22 @@ def parseCompressIteration(config):
         pass
     return compress_iteration
 
+def parseCompressClosestMask(config):
+    """
+    When CompressIteration is set, cpptraj can strip away all except 
+    those N waters closest to the given mask. See amber manual for additional
+    information under (cpptraj, closest)
+    @return   Compress closest mask
+    @default  Empty mask ""
+    """
+    compress_closest_mask = ""
+    try:
+        compress_closest_mask = config.get('hdWE', 'compress-closest-mask').strip()
+    except:
+        pass
+    return compress_closest_mask
+
+
 def parseReweightingRange(config):
     """
     @return Reweighting range. Default is 0 (reweighting off)
