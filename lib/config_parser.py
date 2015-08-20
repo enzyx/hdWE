@@ -12,16 +12,22 @@ def parseInitialBoundaries(config):
         initial_boundaries.append([])
         for value in boundary_string.split():
             initial_boundaries[-1].append(float(value))
+    for dimension in initial_boundaries:
+        dimension.sort()        
+    
     return initial_boundaries
 
 def parseSampleRegion(config):
-    initial_boundaries = []
+    sample_region = []
     config_string = config.get('hdWE', 'sample-region')
-    for boundary_string in config_string.split(','):
-        initial_boundaries.append([])
-        for value in boundary_string.split():
-            initial_boundaries[-1].append(float(value))
-    return initial_boundaries
+    for sample_region_string in config_string.split(','):
+        sample_region.append([])
+        for value in sample_region_string.split():
+            sample_region[-1].append(float(value))
+    for dimension in sample_region:
+        dimension.sort()    
+        
+    return sample_region
 
 def parseStartingStructures(config):
     """
