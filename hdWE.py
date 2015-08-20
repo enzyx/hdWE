@@ -145,7 +145,8 @@ if APPEND:
     iterations = logger.loadLastIterations(N=1)
     # Load the previous iterations to restore the rate matrices for the reweighter module
     if REWEIGHTING_RANGE > 0 and iterations[-1].getId() <= REWEIGHTING_MAX_ITERATION:
-        for iteration_counter_tmp in range(1,iterations[-1].getId()):
+        print('Loading previous iterations to restore rate matrix for reweighting...')
+        for iteration_counter_tmp in range(1,iterations[-1].getId() + 1):
             iteration_tmp = logger.loadIteration(iteration_counter_tmp)
             reweighter.storeRateMatrix(iteration_tmp)
         iteration_tmp = []
