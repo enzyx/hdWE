@@ -72,6 +72,9 @@ parser.add_argument('-w', '--reweighting-iterations', dest="reweighting_iteratio
 parser.add_argument('-N', '--pmf-bins', dest="pmf_bins",
                     type=int, default=200, metavar="INT",
                     help="Number of bins for the PMF.")
+parser.add_argument('-t', '--tau', dest="tau",
+                    type=float, default = 0, required=False,
+                    help="tau used in hdWE simulations.")
 
 # Initialize
 args = parser.parse_args()
@@ -95,18 +98,18 @@ for this_bin in current_iteration:
     for this_segment in this_bin:
         this_state = getStateFromCoordinate(this_segment, state_A, state_B)
         if this_state == 'A':
-            this_segment.setProbability(np.array([float(1.0/N),float(0.0)]))
+            this_segment.setProbability(np.array([float(1.0/N),float(0.0),float(0.0)]))
         elif this_state == 'B':
-            this_segment.setProbability(np.array([float(0.0),float(1.0/N)]))
+            this_segment.setProbability(np.array([float(0.0),float(1.0/N),float(0.0)]))
         else:
-            this_segment.setProbability(np.array([float(0.5/N),float(0.5/N)]))
+            this_segment.setProbability(np.array([float(0.0),float(0.0),float(1.0/N)]))
     for this_segment in this_bin.initial_segments:
         if this_state == 'A':
-            this_segment.setProbability(np.array([float(1.0/N),float(0.0)]))
+            this_segment.setProbability(np.array([float(1.0/N),float(0.0),float(0.0)]))
         elif this_state == 'B':
-            this_segment.setProbability(np.array([float(0.0),float(1.0/N)]))
+            this_segment.setProbability(np.array([float(0.0),float(1.0/N),float(0.0)]))
         else:
-            this_segment.setProbability(np.array([float(0.5)/N,float(0.5/N)]))
+            this_segment.setProbability(np.array([float(0.0),float(0.0),float(1.0/N)]))
                      
 
 flux_into_A         = []
@@ -125,8 +128,8 @@ bin_prob_out = open('ana_trace_flux.binprobs.dat', 'w')
 for i in range(first_iteration + 1, last_iteration + 1):
     previous_iteration = current_iteration
     current_iteration = logger.loadIteration(i)
-    sys.stdout.write('Iteration: {:05d}, Active bins: {:05d}\r'.
-                     format(i, current_iteration.getNumberOfActiveBins()))
+    sys.stdout.write('Iteration: {:05d}, Active Bins: {:05d}, Total Prob.: {:1.8f}\r'.
+                     format(i, current_iteration.getNumberOfActiveBins(), sum(previous_iteration.getProbability())))
     sys.stdout.flush()
         
     # Initialize data
@@ -136,11 +139,6 @@ for i in range(first_iteration + 1, last_iteration + 1):
     probability_state_B_iter = 0.0 
     probability_from_A_iter  = 0.0 
     probability_from_B_iter  = 0.0  
-    
-    segment_probs = []
-    segment_probs_after = []
-    
-    #print (current_iteration.getProbability())
            
     for this_bin in current_iteration:
                     
@@ -151,9 +149,6 @@ for i in range(first_iteration + 1, last_iteration + 1):
                                 .segments[this_initial_segment.getParentSegmentId()].getProbability()
             this_initial_segment.setProbability(new_probability)
 
-        #debug
-        for this_segment in this_bin:
-            segment_probs.append( this_segment.getProbability() )
 
         if this_bin.sample_region == True:
             # No split and merge
@@ -187,8 +182,8 @@ for i in range(first_iteration + 1, last_iteration + 1):
                 
                 # strange behavior with list?  
                 probabilities = np.array(probabilities)
-    
-                #reconstruct probabilities from merge list
+                # OLD ADDITIVE MERGE MODE
+                ##reconstruct probabilities from merge list
                 for merge_entry in this_bin.merge_list:
                     # get merged probability
                     merged_probability = probabilities[merge_entry[0]]
@@ -197,12 +192,34 @@ for i in range(first_iteration + 1, last_iteration + 1):
                         probabilities[target_segment] += np.array(merged_probability)                 
                     probabilities = np.delete(probabilities, merge_entry[0],0)
                 
+                # NEW SCALING MERGE MODE:
+                # if merged segment is the only segment containing probability of one history,
+                # it is treaded additively because this probability can not be rescaled 
+                #reconstruct probabilities from merge list
+                #for merge_entry in this_bin.merge_list:
+                #    # get merged probability
+                #    merged_probability = probabilities[merge_entry[0]]
+                #    sum_probabilities  = 0
+                #    for segment_tmp in merge_entry:
+                #        sum_probabilities  += probabilities[segment_tmp]
+                #    prob_add  = [0.0, 0.0, 0.0]
+                #    prob_mult = [1.0, 1.0, 1.0]
+                #    for k in [0, 1, 2]:
+                #        if (sum_probabilities[k] - merged_probability[k]) > 0.0:
+                #            prob_mult[k] = sum_probabilities[k] / (sum_probabilities[k] - merged_probability[k])
+                #        else:
+                #            prob_add[k] = 1.0 * merged_probability[k] / (len(merge_entry) - 1 )
+                            
+                #    for target_segment in merge_entry[1:]:
+                #        probabilities[target_segment] *= prob_mult   
+                #        probabilities[target_segment] += prob_add                
+                #    probabilities = np.delete(probabilities, merge_entry[0],0)
+
     
                 # set merged probabilities of the segments 
                 for segment_index in range(0,len(this_bin.segments)):
                     this_bin.segments[segment_index].setProbability(probabilities[segment_index])
 
-          
     # Reset Outer Region Bins
     current_iteration.resetOuterRegion()
     
@@ -214,23 +231,12 @@ for i in range(first_iteration + 1, last_iteration + 1):
             if this_state == 'A':
                 probability_state_A_iter += sum(probability)
                 flux_into_A_iter  += probability[1]
-                this_segment.setProbability(np.array([sum(probability), 0.0])) 
+                this_segment.setProbability(np.array([sum(probability), 0.0, 0.0])) 
             elif this_state == 'B':
                 probability_state_B_iter += sum(probability)
                 flux_into_B_iter  += probability[0]
-                this_segment.setProbability(np.array([0.0, sum(probability)]))   
-        #debug
-        for this_segment in this_bin:
-            segment_probs_after.append( sum(this_segment.getProbability())  )
-                                        
-    #for x in range(len(segment_probs)):
-    #    if segment_probs[x] - segment_probs_after[x] != 0:
-    #        print x, segment_probs[x] - segment_probs_after[x]
+                this_segment.setProbability(np.array([0.0, sum(probability), 0.0]))   
     
-    #debug
-    #print current_iteration.getProbability()
-    #print sum(current_iteration.getProbability())
-
     # Reweighting of bin probabilities
     #    The order of the following steps should no longer matter.  
     if i < args.reweighting_iterations:
@@ -358,6 +364,8 @@ print  'Prob: ', f.block_bootstrap(probability_state_A[b:e], np.mean, block_size
 print  'Prob from A:', f.block_bootstrap(probability_from_A[b:e], np.mean, block_size)  
 print 'rate:'
 print   np.mean(flux_into_B[b:e])  / np.mean(probability_state_A[b:e])
+if args.tau > 0:
+    print   (np.mean(flux_into_B[b:e])  / np.mean(probability_state_A[b:e]))/args.tau, '1/s'
 print '1/mfpt:'
 print   np.mean(flux_into_B[b:e])  / np.mean(probability_from_A[b:e])
 
@@ -367,5 +375,7 @@ print   'Prob: ', f.block_bootstrap(probability_state_B[b:e], np.mean, block_siz
 print   'Prob from B:', f.block_bootstrap(probability_from_B[b:e], np.mean, block_size)  
 print 'rate:'
 print   np.mean(flux_into_A[b:e])  / np.mean(probability_state_B[b:e])
+if args.tau > 0:
+    print   (np.mean(flux_into_A[b:e])  / np.mean(probability_state_B[b:e]))/args.tau, '1/s'
 print '1/mfpt:'
 print   np.mean(flux_into_A[b:e])  / np.mean(probability_from_B[b:e])    
