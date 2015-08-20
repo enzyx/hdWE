@@ -144,12 +144,12 @@ if REWEIGHTING_RANGE > 0:
 if APPEND:
     iterations = logger.loadLastIterations(N=1)
     # Load the previous iterations to restore the rate matrices for the reweighter module
-    if REWEIGHTING_RANGE > 0:
+    if REWEIGHTING_RANGE > 0 and iterations[-1].getId() <= REWEIGHTING_MAX_ITERATION:
         for iteration_counter_tmp in range(1,iterations[-1].getId()):
             iteration_tmp = logger.loadIteration(iteration_counter_tmp)
             reweighter.storeRateMatrix(iteration_tmp)
         iteration_tmp = []
-        
+            
     if APPEND_NEW_CONFIG:
         iterations[-1].boundaries    = INITIAL_BOUNDARIES
         iterations[-1].sample_region = INITIAL_SAMPLE_REGION

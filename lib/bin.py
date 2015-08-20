@@ -116,6 +116,8 @@ class Bin(object):
                     for j in range(0, len(rmsds)):
                         if rmsds[i,j] == 0.0:
                             print('RMSD is zero, this is probably  due to an RMSD calculation error')   
+                            print('Here is the rmsd matrix:')
+                            print(rmsds)
                 for c in range(len(self.segments) - self.target_number_of_segments):
                     # do not merge segments if the lowest rmsd is above threshold
                     if (MERGE_THRESHOLD > 0.0) and (numpy.min(rmsds) > MERGE_THRESHOLD):
