@@ -38,6 +38,9 @@ class Bin(object):
         # First entry is the extinction index
         # The following entries are the destination indices before index fixing
         self.merge_list                = []
+        # If merge_mode = closest, list with the rmsd between the merged structures 
+        # is stored for later analysis. The order corresponds to the merge events as in merge_list.
+        self.merge_rmsd_list           = []
 
     def generateSegment(self, probability, parent_iteration_id, parent_bin_id, parent_segment_id):
         """
@@ -122,16 +125,18 @@ class Bin(object):
                     # get indices of the two segments with the lowest RMSD with respect to each other
                     # randomly choose one segment of these two that will be merged into the other
                     lowest_rmsd_indices  = numpy.unravel_index(numpy.argmin(rmsds), rmsds.shape)
-                    target_random_int = rnd.randint(0,1)
+                    lowest_rmsd          = rmsds[lowest_rmsd_indices[0], lowest_rmsd_indices[1]]
+                    target_random_int    = rnd.randint(0,1)
                     if target_random_int == 0:
                         ext_random_int = 1
                     else:
                         ext_random_int = 0 
                     target_index = lowest_rmsd_indices[target_random_int]                      
                     ext_index    = lowest_rmsd_indices[ext_random_int]
-                    #print(self.segments[ext_index].getCoordinates(), self.segments[target_index].getCoordinates() )
                     # save indices in merge_list
                     self.merge_list.append([ext_index, target_index])
+                    # save the rmsd between the merged structure in merge_rmsd_list
+                    self.merge_rmsd_list.append(lowest_rmsd)
                     # shift the probability of deleted segment to the target segment
                     self.segments[target_index].addProbability(self.segments[ext_index].getProbability())
                     # delete segments and fix segment ids
