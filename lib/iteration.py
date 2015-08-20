@@ -286,10 +286,14 @@ class Iteration(object):
                     parent_bin_id = this_initial_segment.getParentBinId()
                     probability   = this_initial_segment.getProbability()
                     probability   = 1.0 * probability / self.bins[parent_bin_id].getNumberOfSegments()
-                    for this_parent_segment in self.bins[parent_bin_id]:
-                        #this_parent_segment.addProbability(probability)
-                        # For some reason addProbability function does not work correctly here
-                        this_parent_segment.probability = this_parent_segment.getProbability() + probability
+                    if self.bins[parent_bin_id].getNumberOfSegments() > 0:
+                        for this_parent_segment in self.bins[parent_bin_id]:
+                            # this_parent_segment.addProbability(probability)
+                            # For some reason addProbability function does not work correctly here
+                            this_parent_segment.probability = this_parent_segment.getProbability() + probability
+                    else:
+                        print('Warning: Probability flow in to outer region could not be reset to parent bin {}, \
+                        because parent bin is empty. Probability is deleted'.format(parent_bin = parent_bin_id))
                 this_bin.deleteAllSegments()
 
         return
@@ -334,6 +338,3 @@ class Iteration(object):
             if bin_loop.getNumberOfSegments() == 0 and bin_loop.getSampleRegion() == True:
                 empty_bins += 1
         return empty_bins
-            
-            
-        
