@@ -68,14 +68,14 @@ APPEND                            = args.append
 APPEND_NEW_CONFIG                 = args.append_new_config
 OVERWRITE                         = args.overwrite
 DEBUG                             = args.debug
-NUMBER_OF_THREADS                 = int(config.get('hdWE','number-of-threads'))
+NUMBER_OF_THREADS                 = config_parser.parseNumberOfThreads(config)
 KEEP_COORDS_FREQUENCY             = config_parser.parseKeepCoordsFrequency(config)
 KEEP_COORDS_SEGMENTS              = config_parser.parseKeepCoordsSegments(config)
 COMPRESS_ITERATION                = config_parser.parseCompressIteration(config)
 COMPRESS_CLOSEST_MASK             = config_parser.parseCompressClosestMask(config)
 # hdWE Options
 STARTING_STRUCTURES               = config_parser.parseStartingStructures(config)
-MAX_ITERATIONS                    = int(config.get('hdWE','max-iterations'))
+MAX_ITERATIONS                    = config_parser.parseMaxIterations(config)
 INITIAL_TARGET_NUMBER_OF_SEGMENTS = int(config.get('hdWE','segments-per-bin'))
 INITIAL_BOUNDARIES                = config_parser.parseInitialBoundaries(config)
 INITIAL_SAMPLE_REGION             = config_parser.parseSampleRegion(config)
@@ -171,7 +171,7 @@ else:
                                                       md_module))
     logger.log(iterations[0], CONFIGFILE)
 
-# List of cleanup thread handles
+# Handle the deletion/compression of MD output files 
 cleaner = cleanup.Cleanup(md_module, NUMBER_OF_THREADS, COMPRESS_ITERATION, 
                  COMPRESS_CLOSEST_MASK, KEEP_COORDS_FREQUENCY, KEEP_COORDS_SEGMENTS, DEBUG)
 
@@ -217,9 +217,9 @@ for iteration_counter in range(iterations[-1].getId() + 1, MAX_ITERATIONS + 1):
     if NUMBER_OF_THREADS > 1:
         thread_container = ThreadContainer()
         for this_bin in iterations[-1]:
-            thread_container.appendJob(threading.Thread(target=this_bin.resampleSegments(MERGE_MODE, 
+            thread_container.appendJob(threading.Thread(target=this_bin.resampleSegments, args=(MERGE_MODE, 
                                                                                          MERGE_THRESHOLD, 
-                                                                                         md_module) ))
+                                                                                         md_module,) ))
             if thread_container.getNumberOfJobs() >= NUMBER_OF_THREADS:
                 thread_container.runJobs()
         # Run remaining jobs

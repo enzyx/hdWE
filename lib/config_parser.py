@@ -4,6 +4,7 @@ It is not a data structure containing config values.
 """
 
 import glob
+import sys
 
 def parseInitialBoundaries(config):
     initial_boundaries = []
@@ -111,6 +112,30 @@ def parseReweightingMaxIteration(config):
     except:
         pass
     return reweigthing_max_iteration   
+
+def parseNumberOfThreads(config):
+    """
+    @return  The number of threads which can be used on this machine
+    @default 1
+    """
+    number_of_threads = 1
+    try:
+        number_of_threads = int(config.get('hdWE','number-of-threads'))
+    except:
+        pass
+    return number_of_threads
+
+def parseMaxIterations(config):
+    """
+    @return Number of iterations to simulate.
+    @default Print error and exit
+    """
+    try:
+        max_iterations = int(config.get('hdWE','max-iterations'))
+        return max_iterations
+    except:
+        print("Error while processing configuration file entry 'max-iterations'")
+        sys.exit(-1)
 
 ###################
 #      AMBER      #
