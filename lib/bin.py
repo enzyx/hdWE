@@ -56,7 +56,7 @@ class Bin(object):
         return self.__addSegment(__segment)
 
         
-    def resampleSegments(self, MERGE_MODE, MERGE_THRESHOLD, md_module):
+    def resampleSegments(self, MERGE_MODE, MERGE_THRESHOLD, rmsd_matrix=None):
         """
         Split or Merge segments to generate the target number of segments
         """
@@ -106,7 +106,7 @@ class Bin(object):
             ###############################################################################                  
             # Merge Mode 2: Determine the rmsd matrix and merge segments closest in rmsd
             elif MERGE_MODE == 'closest':
-                rmsds = md_module.getRmsdsToSegment(self.segments)
+                rmsds = rmsd_matrix
 
                 # deal with the rmsds to the segment itself which is always zero
                 for i in range(0, len(rmsds)):

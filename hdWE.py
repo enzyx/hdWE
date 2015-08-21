@@ -212,24 +212,30 @@ for iteration_counter in range(iterations[-1].getId() + 1, MAX_ITERATIONS + 1):
 
     # 3. Resampling
     sys.stdout.write(' - Resampling\n')
-    sys.stdout.flush() 
-    # Parallel
-    if NUMBER_OF_THREADS > 1:
-        thread_container = ThreadContainer()
-        for this_bin in iterations[-1]:
-            thread_container.appendJob(threading.Thread(target=this_bin.resampleSegments, args=(MERGE_MODE, 
-                                                                                         MERGE_THRESHOLD, 
-                                                                                         md_module,) ))
-            if thread_container.getNumberOfJobs() >= NUMBER_OF_THREADS:
-                thread_container.runJobs()
-        # Run remaining jobs
-        thread_container.runJobs()
-    # Serial
-    else:
+    sys.stdout.flush()
+    
+    if MERGE_MODE == "closest":
+        bins_rmsds = md_module.calcBinsRmsds(iterations[-1])
         for this_bin in iterations[-1]:
             this_bin.resampleSegments(MERGE_MODE, 
                                       MERGE_THRESHOLD, 
-                                      md_module)
+                                      bins_rmsds[this_bin.getId()])
+    else:
+        # Parallel
+        if NUMBER_OF_THREADS > 1:
+            thread_container = ThreadContainer()
+            for this_bin in iterations[-1]:
+                thread_container.appendJob(threading.Thread(target=this_bin.resampleSegments, args=(MERGE_MODE, 
+                                                                                             MERGE_THRESHOLD, )))
+                if thread_container.getNumberOfJobs() >= NUMBER_OF_THREADS:
+                    thread_container.runJobs()
+            # Run remaining jobs
+            thread_container.runJobs()
+        # Serial
+        else:
+            for this_bin in iterations[-1]:
+                this_bin.resampleSegments(MERGE_MODE, 
+                                          MERGE_THRESHOLD)
   
     # 4. Treatment of outer-region bins.
     #    Has to be after resampling for consistency with ana_TraceFlux  

@@ -58,9 +58,10 @@ class MD_module():
             # A list of cuda visible devices indices [0,1,...]
             self.cuda_visible_devices = map(int, config.get('amber', 'cuda_visible_devices').strip().split(','))
         # local link to iteration
-        self.iteration             = None
-        self.ITERATION_DUMP_FNAME  = '{jn}-run/iteration.dump'.format(jn=self.jobname)
+        self.iteration              = None
+        self.ITERATION_DUMP_FNAME   = '{jn}-run/iteration.dump'.format(jn=self.jobname)
         self.COORDINATES_DUMP_FNAME = '{jn}-run/coordinates.dump'.format(jn=self.jobname)
+        self.BINS_RMSDS_DUMP_FNAME  = '{jn}-run/binsrmsds.dump'.format(jn=self.jobname)
         
         self.keep_trajectory_files = bool(config.get('hdWE', 'keep-trajectory-files').lower() == "true")
         
@@ -70,7 +71,7 @@ class MD_module():
         if not os.path.isfile(self.amber_infile):
             raise Exception("No infile found at given path:\n{}".format(self.amber_infile))
         
-        # get coordiante masks
+        # get coordinate masks
         self.COORDINATE_MASKS = []
         c_mask_file = open(self.coordinate_masks_file,'r')
         for line in c_mask_file.readlines():
@@ -306,11 +307,14 @@ class MD_module():
         
         return coordinates
     
-    def getRmsdsToSegment(self, segments):
+    def getRmsdsToSegments(self, segments, target_number_of_segments=0):
         """
-        Calculates the rmsd of all segements with respect to each other.
+        Calculates the rmsd of all segments with respect to each other.
         @return matrix of rmsds
         """
+        # Only work if merge is required
+        if len(segments) <= target_number_of_segments:
+            return 0.0
         # Use ParentNameString because this routine runs before the MD
         
         # Write the cpptraj infile
@@ -414,6 +418,28 @@ class MD_module():
         """ Remove coordinate matrix dump file """
         os.remove(self.COORDINATES_DUMP_FNAME)
 
+
+    def dumpBinsRmsdsToFile(self, bins_rmsds):
+        """
+        Store the bins segment vs. segments rmsds array from dump file
+        """
+        bins_rmsds_dump_file = open(self.BINS_RMSDS_DUMP_FNAME, 'w')
+        pickle.dump(bins_rmsds, bins_rmsds_dump_file)
+        bins_rmsds_dump_file.close()
+        
+    def loadBinsRmsdsFromDumpFile(self):
+        """
+        Load the bins segment vs. segments rmsds array from dump file
+        """
+        bins_rmsds_dump_file = open(self.BINS_RMSDS_DUMP_FNAME , 'r')
+        bins_rmsds = pickle.load(bins_rmsds_dump_file)
+        bins_rmsds_dump_file.close()
+        return bins_rmsds
+    
+    def removeBinsRmsdsToFile(self):
+        """ Remove the bins segment vs. segments rmsds array from dump file """
+        os.remove(self.BINS_RMSDS_DUMP_FNAME)
+
     def calcCoordinates(self, iteration):
         """
         Calculates the coordinates with respect 
@@ -461,6 +487,44 @@ class MD_module():
                     this_segment.setCoordinates(coordinates[i])
                     i += 1
         return coordinates
+
+    def calcBinsRmsds(self, iteration):
+        """
+        Calculates the segments vs segments rmsds for each  
+        bin.
+        @return array of matrices with segment vs. segment rmsds [N_bins x [N_segments x N_segments]]
+        """
+        self.setIteration(iteration)
+        if self.parallelization_mode == "serial":
+            # Setup the list of matrices
+            rmsds = numpy.array([None] * iteration.getNumberOfBins(), dtype=object)
+            i = 0
+            for this_bin in iteration:
+                rmsds[i] = self.getRmsdsToSegments(this_bin.segments, this_bin.getTargetNumberOfSegments())
+                i += 1
+        
+        if self.parallelization_mode == "mpi":
+            # dump the iteration object to a file
+            self.dumpIterationToFile()
+            # Call myself with MPI...
+            if self.debug:
+                print("Switching to MPI for bins rmsd matrix calculation.")
+            error_code = os.system("{0} {1} {2} {3} {4} {5} ".format(self.mpirun, 
+                                                        sys.executable,
+                                                        os.path.realpath(__file__),
+                                                        "MPIBINRMSDS",
+                                                        self.configfile, 
+                                                        str(self.debug)))
+            if error_code != 0:
+                sys.stderr.flush()
+                sys.stderr.write("Received error code during calcBinsRmsds: {0}\n".format(error_code))
+                sys.exit()
+            rmsds = self.loadBinsRmsdsFromDumpFile()
+            if not self.debug:
+                self.removeBinsRmsdsToFile()
+            # assign coordinates to segments
+                
+        return rmsds
         
     def ana_calcCoordinateOfSegment(self, segment_name_string, cpptraj_lines, use_trajectory):
         """
@@ -562,6 +626,8 @@ class MD_module():
     
     
 ###########################################
+#     WHEN CALLED IN MPI CONTEXT          #
+###########################################
 def doMPIMD(CONFIGFILE, debug):
     """
     This function can run on multiple MPI processes in parallel
@@ -643,6 +709,42 @@ def doMPICalcCoordinates(CONFIGFILE, debug):
             print("All Coordinate Ids: \n", coordinates)
             print("Finished MPI Coordinates calculation")
 
+def doMPICalcBinsRmsds(CONFIGFILE, debug):
+    # Read in the call arguments
+    CONFIGFILE = CONFIGFILE
+    debug      = bool(debug == "True")
+    # Initialize MD module
+    md_module  = MD_module(CONFIGFILE = CONFIGFILE, debug = debug)
+    md_module.loadIterationFromDumpFile()
+    iteration  = md_module.iteration
+    
+    if debug and rank == 0:
+        sys.stderr.write("Number of MPI processes: {0}\n".format(size))
+        sys.stderr.flush()
+
+    # Setup the list of matrices
+    bins_rmsds = numpy.array([0.0] * iteration.getNumberOfBins(), dtype=object)
+    
+    # Select only those bins which require merge
+    merge_requiring_bins = []
+    for this_bin in iteration:
+        if this_bin.getNumberOfSegments() > this_bin.getTargetNumberOfSegments():
+            merge_requiring_bins.append(this_bin)
+    # calculate entries
+    i = 0
+    for this_bin in merge_requiring_bins:
+        if i % size == rank:
+            bins_rmsds[this_bin.getId()] = md_module.getRmsdsToSegments(this_bin.segments, this_bin.getTargetNumberOfSegments())
+        i += 1
+        
+    # Collect the matrix on the root process (rank == 0)
+    bins_rmsds = comm.reduce(bins_rmsds, op = MPI.SUM, root = 0)
+    # Dump matrix to file
+    if rank == 0:
+        md_module.dumpBinsRmsdsToFile(bins_rmsds)
+        if debug:
+            print("All bins RMSD matrices: \n", bins_rmsds)
+            print("Finished MPI bin RMSD matrix calculation")
 
 class MD_analysis_module():
     """ a MD module for analysis operations
@@ -676,9 +778,7 @@ if __name__ == "__main__":
                 debug=sys.argv[3])
     if sys.argv[1] == "MPICOORD":
         doMPICalcCoordinates(CONFIGFILE=sys.argv[2],
-                               debug=sys.argv[3])
-
-
-
-    
-    
+                             debug=sys.argv[3])
+    if sys.argv[1] == "MPIBINRMSDS":
+        doMPICalcBinsRmsds(CONFIGFILE=sys.argv[2],
+                           debug=sys.argv[3])
