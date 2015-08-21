@@ -323,7 +323,7 @@ class MD_module():
             cpptraj_logfile_path = "{jn}-log/cpptraj_rmsds.log".format(jn=self.jobname)
 
         else:
-            cpptraj_infile_path = "/tmp/{0}_{1}.cpptraj_rmds_in".format(segment_name_string, UUID)
+            cpptraj_infile_path  = "/tmp/{0}_{1}.cpptraj_rmds_in".format(segment_name_string, UUID)
             cpptraj_outfile_path = "/tmp/{0}_{1}.cpptraj_rmds_out".format(segment_name_string, UUID)
             cpptraj_logfile_path = "/dev/null"
 

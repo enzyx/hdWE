@@ -21,7 +21,7 @@ class ThreadContainer:
             job.join()
         # Reset the job list
         self.jobs = []
-
+    
     def appendJob(self, thread):
         """
         Append a job to the queue

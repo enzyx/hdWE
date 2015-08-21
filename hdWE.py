@@ -24,6 +24,7 @@ import lib.config_parser as config_parser
 import lib.constants as constants
 import lib.resorting as resorting
 import lib.reweighting as reweighting
+import lib.cleanup as cleanup
 
 #### Parse command line #### 
 
@@ -170,6 +171,9 @@ else:
                                                       md_module))
     logger.log(iterations[0], CONFIGFILE)
 
+# List of cleanup thread handles
+cleaner = cleanup.Cleanup(md_module, NUMBER_OF_THREADS, COMPRESS_ITERATION, 
+                 COMPRESS_CLOSEST_MASK, KEEP_COORDS_FREQUENCY, KEEP_COORDS_SEGMENTS, DEBUG)
 
 #############################
 #         Main Loop         #
@@ -254,26 +258,22 @@ for iteration_counter in range(iterations[-1].getId() + 1, MAX_ITERATIONS + 1):
     logger.log(iterations[-1], CONFIGFILE)
 
     # 9. compress files and delete unwanted files
-    print(" - Compressing/Deleting MD files")
-    if COMPRESS_ITERATION:
-        md_module.compressIteration(iterations[-2], COMPRESS_CLOSEST_MASK)
-    if  KEEP_COORDS_FREQUENCY == 0 or iterations[-2].getId() % KEEP_COORDS_FREQUENCY != 0:
-        if KEEP_COORDS_SEGMENTS > 0:
-            md_module.removeCoordinateFiles(iterations[-2], KEEP_COORDS_SEGMENTS)
-        else:
-            md_module.removeCoordinateFiles(iterations[-2])
+    print(" - Compressing/Deleting MD files")    
+    if len(iterations) > 2:
+        cleaner.doCleanup(iterations[-3])
     
     if DEBUG: 
         print("\n    The overall probability is {0:05f}".format(iterations[-1].getProbability()))
     
     print('    Empty bins: ' + str(iterations[-1].countEmptyBins()))
     
-    # Save some RAM
-    iterations = iterations[-2:]
+    # 10. Save some RAM
+    iterations = iterations[-3:]
 
 #############################
 #     End of Main Loop      #
 #############################
+cleaner.finishCleanupThreads()
 print('\nhdWE completed.')
 
 

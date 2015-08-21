@@ -105,7 +105,7 @@ if args.bin_to_bin_transitions:
     for this_bin in iterations[-1]:
         coordinate_ids_for_plot.append(this_bin.getCoordinateIds())
 
-    # if must be so clumsy because python evaulates 0 as false
+    # if must be so clumsy because python evaluates 0 as false
     if type(args.sort) == int:
         SORT_DIMENSION = int(args.sort)
 
