@@ -111,11 +111,14 @@ class Bin(object):
                 # deal with the rmsds to the segment itself which is always zero
                 for i in range(0, len(rmsds)):
                     rmsds[i,i] = 'Inf'
-                #check for remaining 0 entries (which are most probably due to RMSD calculation error)
+                # check for remaining 0 entries (which are most probably due to RMSD calculation error)
+                # Or when to simulations are run with the same random seed (very rare)
+                #TODO: remove this message or put it to debugging
                 for i in range(0, len(rmsds)):
                     for j in range(0, len(rmsds)):
                         if rmsds[i,j] == 0.0:
-                            print('RMSD is zero, this might be due to an RMSD calculation error')   
+                            print('RMSD is zero, this might be due to an RMSD calculation error')
+                            print('or because two MDs were run with the same random seed')
                             print('Here is the RMSD matrix:')
                             print(rmsds)
                 for c in range(len(self.segments) - self.target_number_of_segments):

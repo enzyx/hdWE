@@ -34,6 +34,14 @@ class MD_module():
     def __init__(self, CONFIGFILE, debug):
         """Initializes the MD module and Reads the amber configuration file.
         """
+        self.debug                 = debug
+        try:
+            self.loadConfigFile(CONFIGFILE)
+        except:
+            os.system('sync; sleep 2')
+            self.loadConfigFile(CONFIGFILE)
+    
+    def loadConfigFile(self, CONFIGFILE):
         #read in configuration file
         self.configfile            = CONFIGFILE
         config                     = ConfigParser.ConfigParser()
@@ -51,7 +59,7 @@ class MD_module():
         # Only search mpirun binary in config file if MPI switched on
         if self.parallelization_mode == 'mpi':
             self.mpirun                = config.get('amber', 'mpirun')
-        self.debug                 = debug
+        
         # Check for GPU support
         self.has_cuda = (os.path.basename(self.amber_binary) == "pmemd.cuda")
         if self.has_cuda: 
@@ -133,7 +141,12 @@ class MD_module():
             logfile.write(self.MdLogString(segment, status = 0))
         
         # Run MD
-        os.system(command_line)
+        ret_code = os.system(command_line)
+        
+        # If anything went wrong, sync, wait a second, then retry
+        if ret_code != 0:
+            os.system('sync; sleep 1')
+            ret_code = os.system(command_line)
         
         if self.debug:
             logfile.write(self.MdLogString(segment, status = 1 ))
@@ -374,14 +387,23 @@ class MD_module():
 
         return rmsds
 
-    def loadIterationFromDumpFile(self):
+    def loadIterationFromDumpFile(self, retry=False):
         """
         Load the local copy of iteration from the 
         default dump file name 
         """
-        iteration_dump_file = open(self.ITERATION_DUMP_FNAME, "r")
-        self.setIteration(pickle.load(iteration_dump_file))
-        iteration_dump_file.close()
+        try:
+            iteration_dump_file = open(self.ITERATION_DUMP_FNAME, "r")
+            self.setIteration(pickle.load(iteration_dump_file))
+            iteration_dump_file.close()
+        except:
+            # Sync, wait, retry
+            if retry == False:
+                os.system('sync; sleep 2;')
+                self.loadIterationFromDumpFile(retry=True)
+            else:
+                raise
+            
     
     def dumpIterationToFile(self):
         """
