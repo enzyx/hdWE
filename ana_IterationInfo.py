@@ -37,7 +37,7 @@ def bin_compare(x, y):
         if (x.coordinate_ids[dimension] - y.coordinate_ids[dimension]) != 0:
             return diff
 
-#iteration.bins = sorted(iteration.bins, cmp = bin_compare)
+iteration.bins = sorted(iteration.bins, cmp = bin_compare)
 
 
 for this_bin in iteration:

@@ -207,11 +207,13 @@ class MD_module():
         active_segments = self.iteration.getNumberOfActiveSegments()
         active_bins     = self.iteration.getNumberOfActiveBins()
         bins            = self.iteration.getNumberOfBins()
+        empty_bins      = self.iteration.getNumberOfEmptyBins()
         inactive_bins   = bins - active_bins
-        string = '\r     Number of active (inactive) bins {active_bins} ({inactive_bins}); '\
+        string = '\r     Number of active (inactive/empty) bins {active_bins} ({inactive_bins}/{empty_bins}); '\
                  'Segment {segment:05d}/{active_segments:05d}'.format(
                          active_bins     = active_bins,
                          inactive_bins   = inactive_bins,
+                         empty_bins      = empty_bins,
                          segment         = MD_run_count,
                          active_segments = active_segments)
         return string
@@ -590,16 +592,25 @@ class MD_module():
         else:
             return coordinates[:,1]
     
-    def removeCoordinateFiles(self, iteration, keep=0):
+    def removeCoordinateFiles(self, iteration, compress, keep=0):
         """
         @param keep: do not delete the first #keep segment coordinate files per bin
         """
+        # to avoid data loss, check if the compressed .nc file has been created.
+        # do not remove the rst7 files in case an error occured during compression  
+        if compress == True:
+            nc_file_path = '{jn}-run/{iterationId}.nc\n'.format(jn = self.jobname, iterationId=iteration.getNameString())
+            if os.path.isfile(nc_file_path) == False:
+                    print('No compressed trajectory file (.nc) of iteration {:05d} found although compression was requested.'.format(iteration.getNameString())) 
+                    print('Not deleting .rst7 files.')
+                    return
+
         for this_bin in iteration:
             for this_segment in this_bin.segments[keep:]:
-                try:
-                    os.remove("{jn}-run/{seg}.rst7".format(jn=self.jobname, seg=this_segment.getNameString()))
-                except OSError:
-                    continue
+                    try:
+                        os.remove("{jn}-run/{seg}.rst7".format(jn=self.jobname, seg=this_segment.getNameString()))
+                    except OSError:
+                        continue
                 
 
     def compressIteration(self, iteration, cpptraj_closest_mask=""):

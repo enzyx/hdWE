@@ -274,8 +274,6 @@ for iteration_counter in range(iterations[-1].getId() + 1, MAX_ITERATIONS + 1):
     if DEBUG: 
         print("\n    The overall probability is {0:05f}".format(iterations[-1].getProbability()))
     
-    print('    Empty bins: ' + str(iterations[-1].countEmptyBins()))
-    
     # 10. Save some RAM
     iterations = iterations[-3:]
 

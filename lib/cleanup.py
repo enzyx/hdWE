@@ -30,7 +30,7 @@ class Cleanup(object):
         if self.compress_iteration:
             self.md_module.compressIteration(iteration, self.compress_closest_mask)
         if  self.keep_coords_frequency == 0 or iteration.getId() % self.keep_coords_frequency != 0:
-            self.md_module.removeCoordinateFiles(iteration, self.keep_coords_segments)
+            self.md_module.removeCoordinateFiles(iteration, self.compress_iteration, self.keep_coords_segments)
         if self.debug:
             print("Cleanup process done (iteration {:05d})".format(iteration.getId()))
 

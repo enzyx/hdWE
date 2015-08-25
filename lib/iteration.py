@@ -329,7 +329,7 @@ class Iteration(object):
    
         return True
     
-    def countEmptyBins(self):
+    def getNumberOfEmptyBins(self):
         """
         returns the number of current empty active bins
         """
