@@ -83,7 +83,7 @@ INITIAL_SAMPLE_REGION             = config_parser.parseSampleRegion(config)
 MERGE_MODE                        = str(config.get('hdWE', 'merge-mode'))
 if MERGE_MODE == 'closest':
     MERGE_THRESHOLD               = float(config.get('hdWE', 'merge-threshold'))
-elif MERGE_MODE == 'weighted' or MERGE_MODE == 'random':
+elif MERGE_MODE == 'weighted' or MERGE_MODE == 'random' or MERGE_MODE == 'marginonly':
     MERGE_THRESHOLD               = 0 # needs to be defined
 else:
     raise Exception("Merge mode not found")    
@@ -219,7 +219,8 @@ for iteration_counter in range(iterations[-1].getId() + 1, MAX_ITERATIONS + 1):
         for this_bin in iterations[-1]:
             this_bin.resampleSegments(MERGE_MODE, 
                                       MERGE_THRESHOLD, 
-                                      bins_rmsds[this_bin.getId()])
+                                      bins_rmsds[this_bin.getId()],
+                                      len(iterations[-1].boundaries[0]))
     else:
         # Parallel
         if NUMBER_OF_THREADS > 1:

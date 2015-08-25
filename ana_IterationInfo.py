@@ -16,9 +16,6 @@ parser.add_argument('-l', '--log', type=str, dest="logdir",
 parser.add_argument('-i', '--iteration', dest="iteration_index",
                     type=int, default=-1,
                     help="Iteration which is modified")
-parser.add_argument('--sort', dest="sorting",
-                    type=bool, default=True,
-                    help="Flag for sorting of bins according to coordinate Ids")
 prev_data = parser.add_mutually_exclusive_group()
 prev_data.add_argument('-s', '--segments', dest="print_segments", default=False, action="store_true",
                     help="Print segment info")
@@ -34,15 +31,13 @@ except IOError:
     print("Could not find file for iteration {}!".format(args.iteration_index))
     sys.exit(-1)
 
+def bin_compare(x, y):
+    for dimension in range(0, len(x.coordinate_ids)):
+        diff = (x.coordinate_ids[dimension] - y.coordinate_ids[dimension])
+        if (x.coordinate_ids[dimension] - y.coordinate_ids[dimension]) != 0:
+            return diff
 
-if args.sorting:
-    def bin_compare(x, y):
-        for dimension in range(0, len(x.coordinate_ids)):
-            diff = (x.coordinate_ids[dimension] - y.coordinate_ids[dimension])
-            if (x.coordinate_ids[dimension] - y.coordinate_ids[dimension]) != 0:
-                return diff
-
-    iteration.bins = sorted(iteration.bins, cmp = bin_compare)
+#iteration.bins = sorted(iteration.bins, cmp = bin_compare)
 
 
 for this_bin in iteration:
