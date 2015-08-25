@@ -358,24 +358,51 @@ fout.close()
 # Output
 block_size = 10
 
-print "A --> B"
-print  'Flux: ',  f.block_bootstrap(flux_into_B[b:e], np.mean, block_size)    
-print  'Prob: ', f.block_bootstrap(probability_state_A[b:e], np.mean, block_size)
-print  'Prob from A:', f.block_bootstrap(probability_from_A[b:e], np.mean, block_size)  
-print 'rate:'
-print   np.mean(flux_into_B[b:e])  / np.mean(probability_state_A[b:e])
+############################
+#      Pretty print        #
+############################
+print("States:  A=[{},{}]  B=[{},{}]".format(state_A[0], state_A[1], state_B[0], state_B[1]))
+# State A 
+print
+print(" State A -> B:")
+block_bootstrap_flux_into_B =  f.block_bootstrap(flux_into_B[b:e], np.mean, block_size)
+print("    Flux(A->B):  {:5.4e}  CI: [{:5.4e}, {:5.4e}]".format(block_bootstrap_flux_into_B[0], 
+                                                               block_bootstrap_flux_into_B[1][0],
+                                                               block_bootstrap_flux_into_B[1][1]))
+block_bootstrap_prop_A = f.block_bootstrap(probability_state_A[b:e], np.mean, block_size)
+print("    P(A):        {:5.4e}  CI: [{:5.4e}, {:5.4e}]".format(block_bootstrap_prop_A[0],
+                                                               block_bootstrap_prop_A[1][0],
+                                                               block_bootstrap_prop_A[1][1]))
+block_bootstrap_prop_from_A = f.block_bootstrap(probability_from_A[b:e], np.mean, block_size)
+print("    P(from A):   {:5.4e}  CI: [{:5.4e}, {:5.4e}]".format(block_bootstrap_prop_from_A[0],
+                                                               block_bootstrap_prop_from_A[1][0],
+                                                               block_bootstrap_prop_from_A[1][1]))
 if args.tau > 0:
-    print   (np.mean(flux_into_B[b:e])  / np.mean(probability_state_A[b:e]))/args.tau, '1/s'
-print '1/mfpt:'
-print   np.mean(flux_into_B[b:e])  / np.mean(probability_from_A[b:e])
+    print("    k(A->B):     {:5.4e} 1/s".format((np.mean(flux_into_B[b:e])  / np.mean(probability_state_A[b:e]))/args.tau))
+else:
+    print("    k(A->B):     {:5.4e}".format(np.mean(flux_into_B[b:e])  / np.mean(probability_state_A[b:e])))
+print("    1/(MFPT):    {:5.4e}".format(np.mean(flux_into_B[b:e])  / np.mean(probability_from_A[b:e])))
 
-print "B --> A"
-print   'Flux: ',  f.block_bootstrap(flux_into_A[b:e], np.mean, block_size)    
-print   'Prob: ', f.block_bootstrap(probability_state_B[b:e], np.mean, block_size)
-print   'Prob from B:', f.block_bootstrap(probability_from_B[b:e], np.mean, block_size)  
-print 'rate:'
-print   np.mean(flux_into_A[b:e])  / np.mean(probability_state_B[b:e])
+# State B
+print
+print(" State B -> A:")
+block_bootstrap_flux_into_A =  f.block_bootstrap(flux_into_A[b:e], np.mean, block_size)
+print("    Flux(B->A):  {:5.4e}  CI: [{:5.4e}, {:5.4e}]".format(block_bootstrap_flux_into_A[0], 
+                                                               block_bootstrap_flux_into_A[1][0],
+                                                               block_bootstrap_flux_into_A[1][1]))
+block_bootstrap_prop_B = f.block_bootstrap(probability_state_B[b:e], np.mean, block_size)
+print("    P(B):        {:5.4e}  CI: [{:5.4e}, {:5.4e}]".format(block_bootstrap_prop_B[0],
+                                                               block_bootstrap_prop_B[1][0],
+                                                               block_bootstrap_prop_B[1][1]))
+block_bootstrap_prop_from_B = f.block_bootstrap(probability_from_B[b:e], np.mean, block_size)
+print("    P(from B):   {:5.4e}  CI: [{:5.4e}, {:5.4e}]".format(block_bootstrap_prop_from_B[0],
+                                                               block_bootstrap_prop_from_B[1][0],
+                                                               block_bootstrap_prop_from_B[1][1]))
 if args.tau > 0:
-    print   (np.mean(flux_into_A[b:e])  / np.mean(probability_state_B[b:e]))/args.tau, '1/s'
-print '1/mfpt:'
-print   np.mean(flux_into_A[b:e])  / np.mean(probability_from_B[b:e])    
+    print("    k(B->A):     {:5.4e} 1/s".format((np.mean(flux_into_A[b:e])  / np.mean(probability_state_B[b:e]))/args.tau))
+else:
+    print("    k(B->A):     {:5.4e}".format(np.mean(flux_into_A[b:e])  / np.mean(probability_state_B[b:e])))
+print("    1/(MFPT):    {:5.4e}".format(np.mean(flux_into_A[b:e])  / np.mean(probability_from_B[b:e])))
+
+########################################
+
