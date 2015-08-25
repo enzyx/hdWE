@@ -6,6 +6,8 @@ It is not a data structure containing config values.
 import glob
 import sys
 
+CONFIG_ERROR_CODE = -22
+
 def parseInitialBoundaries(config):
     initial_boundaries = []
     config_string = config.get('hdWE', 'boundaries')
@@ -134,9 +136,49 @@ def parseMaxIterations(config):
         max_iterations = int(config.get('hdWE','max-iterations'))
         return max_iterations
     except:
-        print("Error while processing configuration file entry 'max-iterations'")
-        sys.exit(-1)
+        print("Error: While processing configuration file entry 'max-iterations'")
+        sys.exit(CONFIG_ERROR_CODE)
 
+def parseMergeMode(config):
+    """
+    @return {closest, random, weighted, marginonly}
+    """
+    merge_mode = ""
+    try:
+        merge_mode = str(config.get('hdWE', 'merge-mode')).strip()
+        if merge_mode not in ['closest', 'random', 'weighted', 'marginonly']:
+            raise BaseException
+    except:
+        print("Error: Could not find valid merge mode in config file.")
+        sys.exit(CONFIG_ERROR_CODE)
+    return merge_mode
+
+def parseMergeThreshold(config):
+    """
+    @return merge threshold
+    """
+    merge_mode = parseMergeMode(config)
+    merge_threshold = 0
+    
+    if merge_mode == 'closest':
+        try:
+            merge_threshold = float(config.get('hdWE', 'merge-threshold'))
+        except:
+            print("Error: Merge mode 'closest' needs merge-threshold flag in config file.")
+    
+    return merge_threshold
+
+def parseSegmentPerBin(config):
+    """
+    @return segments per bin
+    """
+    try:
+        segments_per_bin = int(config.get('hdWE','segments-per-bin'))
+        return segments_per_bin
+    except:
+        print("Error: Error: While processing configuration file entry 'segments-per-bin'.")
+        sys.exit(CONFIG_ERROR_CODE)
+    
 ###################
 #      AMBER      #
 ###################
@@ -164,3 +206,34 @@ def parseAmberBinary(config):
     except:
         pass
     return amber_binary
+
+def parseAmberRmsdMask(config):
+    """
+    @return  rmsd fit mask for closest merge mode
+    @default None if mergemode is not closest 
+    """
+    rmsd_mask = None
+    merge_mode = parseMergeMode(config)
+    
+    if merge_mode == 'closest':
+        try:
+            rmsd_mask = str(config.get('amber', 'rmsd-mask'))
+        except:
+            print("rmsd-mask is required for merge mode 'closest'")
+            sys.exit(CONFIG_ERROR_CODE)
+    return rmsd_mask
+
+def parseAmberRmsdFitMask(config):
+    """
+    @return rmsd fit mask if merge mode closest
+    """
+    rmsd_fit_mask = None
+    merge_mode = parseMergeMode(config)
+    
+    if merge_mode == 'closest':
+        try:
+            rmsd_fit_mask = str(config.get('amber', 'rmsd-fit-mask'))
+        except:
+            print("rmsd-fit-mask is required for merge mode 'closest'")
+            sys.exit(CONFIG_ERROR_CODE)
+    return rmsd_fit_mask

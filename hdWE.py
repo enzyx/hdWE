@@ -79,15 +79,11 @@ MAX_ITERATIONS                    = config_parser.parseMaxIterations(config)
 INITIAL_TARGET_NUMBER_OF_SEGMENTS = int(config.get('hdWE','segments-per-bin'))
 INITIAL_BOUNDARIES                = config_parser.parseInitialBoundaries(config)
 INITIAL_SAMPLE_REGION             = config_parser.parseSampleRegion(config)
-# -merging
-MERGE_MODE                        = str(config.get('hdWE', 'merge-mode'))
-if MERGE_MODE == 'closest':
-    MERGE_THRESHOLD               = float(config.get('hdWE', 'merge-threshold'))
-elif MERGE_MODE == 'weighted' or MERGE_MODE == 'random' or MERGE_MODE == 'marginonly':
-    MERGE_THRESHOLD               = 0 # needs to be defined
-else:
-    raise Exception("Merge mode not found")    
-# -reweighting
+# merging
+MERGE_MODE                        = config_parser.parseMergeMode(config)
+MERGE_THRESHOLD                   = config_parser.parseMergeThreshold(config)
+
+# reweighting
 REWEIGHTING_RANGE                 = config_parser.parseReweightingRange(config)
 if REWEIGHTING_RANGE > 0:
     REWEIGHTING_MAX_ITERATION     = config_parser.parseReweightingMaxIteration(config)

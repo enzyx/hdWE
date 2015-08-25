@@ -53,8 +53,8 @@ class MD_module():
         self.amber_binary          = config_parser.parseAmberBinary(config)
         self.cpptraj_binary        = config_parser.parseCpptrajBinary(config)
         self.coordinate_masks_file = config.get('amber', 'coordinate-masks')
-        self.rmsd_mask             = config.get('amber', 'rmsd-mask')
-        self.rmsd_fit_mask         = config.get('amber', 'rmsd-fit-mask')
+        self.rmsd_mask             = config_parser.parseAmberRmsdMask(config)
+        self.rmsd_fit_mask         = config_parser.parseAmberRmsdFitMask(config)
         self.parallelization_mode  = config.get('amber','parallelization-mode')
         # Only search mpirun binary in config file if MPI switched on
         if self.parallelization_mode == 'mpi':
