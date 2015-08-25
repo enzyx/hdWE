@@ -175,7 +175,7 @@ class Iteration(object):
         N = self.getNumberOfBins()
         flux_matrix = numpy.zeros((N,N), float)
         # Sum all probability that enters a bin from the parent bins
-        for this_bin in self:
+        for this_bin in self.bins:
             for this_segment in this_bin.initial_segments:
                 flux_matrix[this_segment.getParentBinId(), this_bin.getId()] += \
                                                 this_segment.getProbability()
@@ -190,7 +190,7 @@ class Iteration(object):
         N = self.getNumberOfBins()
         rate_matrix = numpy.zeros((N,N), float)
         # Sum all probability that enters a bin from the parent bins
-        for this_bin in self:
+        for this_bin in self.bins:
             for this_segment in this_bin.initial_segments:
                 # Check for numpy arrays and sum if required
                 tot_segment_prob = 0.0
@@ -222,7 +222,7 @@ class Iteration(object):
         """
         N = self.getNumberOfBins()
         transition_matrix = numpy.zeros((N,N), int)
-        for this_bin in self:
+        for this_bin in self.bins:
             for this_segment in this_bin.initial_segments:
                 transition_matrix[this_segment.getParentBinId(), this_segment.getBinId()] += 1
         return transition_matrix
@@ -280,7 +280,7 @@ class Iteration(object):
         and add the corresponding probability equally to the segments (no the initial_segments) of
         the parent bin
         """
-        for this_bin in self:
+        for this_bin in self.bins:
             if this_bin.sample_region == False:
                 for this_initial_segment in this_bin.initial_segments:
                     parent_bin_id = this_initial_segment.getParentBinId()

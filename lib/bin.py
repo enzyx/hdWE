@@ -96,7 +96,7 @@ class Bin(object):
                     
                     self.merge_list.append([ext_index])
                     del self.segments[ext_index]
-                    for this_segment in self:
+                    for this_segment in self.segments:
                         this_segment.addProbability(extinction_probability / self.getNumberOfSegments())  
                     for this_segment in self.segments:
                         self.merge_list[-1].append(this_segment.getId())
@@ -164,7 +164,7 @@ class Bin(object):
                     extinction_probability = self.segments[ext_index].getProbability()
                     self.merge_list.append([ext_index])
                     del self.segments[ext_index]
-                    for this_segment in self:
+                    for this_segment in self.segments:
                         this_segment.addProbability(extinction_probability / self.getNumberOfSegments())  
                     for this_segment in self.segments:
                         self.merge_list[-1].append(this_segment.getId())
@@ -204,7 +204,7 @@ class Bin(object):
                         
                         self.merge_list.append([ext_index])
                         del self.segments[ext_index]
-                        for this_segment in self:
+                        for this_segment in self.segments:
                             this_segment.addProbability(extinction_probability / self.getNumberOfSegments())  
                         for this_segment in self.segments:
                             self.merge_list[-1].append(this_segment.getId())
