@@ -215,16 +215,14 @@ for iteration_counter in range(iterations[-1].getId() + 1, MAX_ITERATIONS + 1):
         for this_bin in iterations[-1]:
             this_bin.resampleSegments(MERGE_MODE, 
                                       MERGE_THRESHOLD, 
-                                      len(iterations[-1].boundaries[0]),
-                                      bins_rmsds[this_bin.getId()])
+                                      rmsd_matrix = bins_rmsds[this_bin.getId()])
     else:
         # Parallel
         if NUMBER_OF_THREADS > 1:
             thread_container = ThreadContainer()
             for this_bin in iterations[-1]:
-                thread_container.appendJob(threading.Thread(target=this_bin.resampleSegments, args=(MERGE_MODE, 
-                                                                                             MERGE_THRESHOLD,
-                                                                                             len(iterations[-1].boundaries[0]) )))
+                thread_container.appendJob(threading.Thread(target = this_bin.resampleSegments,  
+                                                            args= (MERGE_MODE, MERGE_THRESHOLD, len(iterations[-1].boundaries[0])-1, None)))
                 if thread_container.getNumberOfJobs() >= NUMBER_OF_THREADS:
                     thread_container.runJobs()
             # Run remaining jobs
@@ -234,7 +232,8 @@ for iteration_counter in range(iterations[-1].getId() + 1, MAX_ITERATIONS + 1):
             for this_bin in iterations[-1]:
                 this_bin.resampleSegments(MERGE_MODE, 
                                           MERGE_THRESHOLD,
-                                          len(iterations[-1].boundaries[0]))
+                                          last_bin_coordinate_id = len(iterations[-1].boundaries[0])-1)
+                                          
   
     # 4. Treatment of outer-region bins.
     #    Has to be after resampling for consistency with ana_TraceFlux  
