@@ -56,7 +56,7 @@ class Bin(object):
         return self.__addSegment(__segment)
 
         
-    def resampleSegments(self, MERGE_MODE, MERGE_THRESHOLD, rmsd_matrix=None, last_bin_coordinate_id):
+    def resampleSegments(self, MERGE_MODE, MERGE_THRESHOLD,  last_bin_coordinate_id, rmsd_matrix=None):
         """
         Split or Merge segments to generate the target number of segments
         """
