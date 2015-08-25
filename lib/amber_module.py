@@ -601,7 +601,7 @@ class MD_module():
         if compress == True:
             nc_file_path = '{jn}-run/{iterationId}.nc\n'.format(jn = self.jobname, iterationId=iteration.getNameString())
             if os.path.isfile(nc_file_path) == False:
-                    print('No compressed trajectory file (.nc) of iteration {:05d} found although compression was requested.'.format(iteration.getNameString())) 
+                    print('No compressed trajectory file (.nc) of iteration {} found although compression was requested.'.format(iteration.getNameString())) 
                     print('Not deleting .rst7 files.')
                     return
 
