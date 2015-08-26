@@ -15,13 +15,14 @@ parser.add_argument('-l', '--log', type=str, dest="logdir",
                     help="The log directory for reading")
 parser.add_argument('-i', '--iteration', dest="iteration_index",
                     type=int, default=-1,
-                    help="Iteration which is modified")
+                    help="Iteration which is displayed")
+parser.add_argument('-n', '--initial-segments', dest="initial_segments", default=False, action="store_true",
+                    help="Print initial segments info")
 prev_data = parser.add_mutually_exclusive_group()
 prev_data.add_argument('-s', '--segments', dest="print_segments", default=False, action="store_true",
                     help="Print segment info")
 prev_data.add_argument('-p', '--parent-segments', dest="parent_segments", default=False, action="store_true",
                     help="Print segment parent info")
-
 
 args = parser.parse_args()
 logger = Logger(args.logdir)
@@ -39,7 +40,23 @@ def bin_compare(x, y):
 
 iteration.bins = sorted(iteration.bins, cmp = bin_compare)
 
-
+#######################################
+#      Print initial segments         #
+#######################################
+if args.initial_segments:
+    for this_bin in iteration:
+        print(" Bin: {:<4d} Segments: {:<4d} p: {:<5.4e}  Coord ids: {} Active: {}".format(this_bin.getId(),
+                                                   this_bin.getNumberOfInitialSegments(),
+                                                   this_bin.getInitialProbability(), 
+                                                   this_bin.getCoordinateIds(),
+                                                   this_bin.getSampleRegion()))
+        if args.print_segments:
+            for segment in this_bin.initial_segments:
+                    print("    Segment: {:<4d} p: {:<5.4e} Coords: {}".format(segment.getId(),
+                                                                              segment.getProbability(),
+                                                                              segment.getCoordinates()))
+    sys.exit()
+#######################################
 for this_bin in iteration:
     print(" Bin: {:<4d} Segments: {:<4d} p: {:<5.4e}  Coord ids: {} Active: {}".format(this_bin.getId(),
                                                this_bin.getNumberOfSegments(),
