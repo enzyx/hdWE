@@ -139,7 +139,12 @@ if REWEIGHTING_RANGE > 0:
 
 # Initiate iterations
 if APPEND:
-    iterations = logger.loadLastIterations(N=1)
+    # load the last two iterations if existing for proper function of
+    # cleanup module
+    if logger.getLastIterationId() > 1: 
+        iterations = logger.loadLastIterations(N=2)
+    else:
+        logger.loadLastIterations(N=1)
     # Load the previous iterations to restore the rate matrices for the reweighter module
     if REWEIGHTING_RANGE > 0 and iterations[-1].getId() <= REWEIGHTING_MAX_ITERATION:
         print('Loading previous iterations to restore rate matrix for reweighting...')
@@ -262,7 +267,7 @@ for iteration_counter in range(iterations[-1].getId() + 1, MAX_ITERATIONS + 1):
     logger.log(iterations[-1], CONFIGFILE)
 
     # 9. compress files and delete unwanted files
-    print(" - Compressing/Deleting MD files")    
+    print(" -Cleanup of MD files")    
     if len(iterations) > 2:
         cleaner.doCleanup(iterations[-3])
     

@@ -599,7 +599,7 @@ class MD_module():
         # to avoid data loss, check if the compressed .nc file has been created.
         # do not remove the rst7 files in case an error occured during compression  
         if compress == True:
-            nc_file_path = '{jn}-run/{iterationId}.nc\n'.format(jn = self.jobname, iterationId=iteration.getNameString())
+            nc_file_path = '{jn}-run/{iterationId}.nc'.format(jn = self.jobname, iterationId=iteration.getNameString())
             if os.path.isfile(nc_file_path) == False:
                     print('No compressed trajectory file (.nc) of iteration {} found although compression was requested.'.format(iteration.getNameString())) 
                     print('Not deleting .rst7 files.')
