@@ -146,7 +146,7 @@ def parseMergeMode(config):
     merge_mode = ""
     try:
         merge_mode = str(config.get('hdWE', 'merge-mode')).strip()
-        if merge_mode not in ['closest', 'random', 'weighted', 'marginonly']:
+        if merge_mode not in ['closest', 'random', 'weighted', 'none']:
             raise BaseException
     except:
         print("Error: Could not find valid merge mode in config file.")

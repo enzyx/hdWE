@@ -56,7 +56,7 @@ class Bin(object):
         return self.__addSegment(__segment)
 
         
-    def resampleSegments(self, MERGE_MODE, MERGE_THRESHOLD,  last_bin_coordinate_id = None , rmsd_matrix = None):
+    def resampleSegments(self, MERGE_MODE, MERGE_THRESHOLD, rmsd_matrix = None):
         """
         Split or Merge segments to generate the target number of segments
         """
@@ -174,42 +174,9 @@ class Bin(object):
                     
                     
             ################################################################################
-            # Merge Mode 4: Choose a segment randomly according to probability
-            #               Distribute the probability of the deleted segments
-            #               equally amongst the remaining segments
-            elif MERGE_MODE == 'marginonly':    
-                if self.coordinate_ids[0] == 0 or self.coordinate_ids[0] == last_bin_coordinate_id:       
-                    extinction_probability = 0.0
-                    for c in range(len(self.segments) - self.target_number_of_segments):
-                        # Get the extinction index
-                        ext_index = 0
-                        inv_weights = []
-                        inv_weights_tot = 0.0
-                        for segment in self.segments:
-                            inv_weights_tot += prob_tot/segment.getProbability()
-                            inv_weights.append(prob_tot/segment.getProbability())
-                        extinction_probabilities = []
-                        for inv_weight in inv_weights:
-                            extinction_probabilities.append(inv_weight/inv_weights_tot)
-                        rand = rnd.random()
-                        cumulated_probability = 0.0
-                        for index in range(len(extinction_probabilities)):
-                            cumulated_probability += extinction_probabilities[index]
-                            if cumulated_probability >= rand:
-                                ext_index = index
-                                break
-                            
-                        # Reassign the extinction probability / N_segments to the remaining segments
-                        extinction_probability = self.segments[ext_index].getProbability()
-                        
-                        self.merge_list.append([ext_index])
-                        del self.segments[ext_index]
-                        for this_segment in self.segments:
-                            this_segment.addProbability(extinction_probability / self.getNumberOfSegments())  
-                        for this_segment in self.segments:
-                            self.merge_list[-1].append(this_segment.getId())
-                        # Reorder segment ids after deletion 
-                        self.__fixSegmentIds()
+            # Merge Mode 4: Do not merge any segments.
+            elif MERGE_MODE == 'none':    
+                return
                     
             else:
                 print('Merge mode not found')
