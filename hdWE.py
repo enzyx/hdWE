@@ -175,7 +175,7 @@ else:
 # apply steady state splitting: split only in start state
 if STEADY_STATE:
     iterations[-1].target_number_of_segments = 1
-    for this_bin_ in iterations[-1].bins:
+    for this_bin in iterations[-1].bins:
         if this_bin.getId() > 0:
             this_bin.target_number_of_segments = 1    
 
