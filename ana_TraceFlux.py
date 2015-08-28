@@ -8,36 +8,6 @@ import lib.reweighting as reweighting
 import lib.constants as constants
 from math import log
 
-#####################
-###### classes ######
-#####################
-
-#####################
-##### functions #####
-#####################
-
-def getStateFromCoordinate(segment, state_A, state_B):
-    """
-    Returns the state of a segment
-    @return string state
-    """
-    state_per_dimension = []
-    # lazy 1d implementation
-    for coordinate in [segment.getCoordinates()[0]]:
-        if coordinate > state_A[0] and coordinate <= state_A[1]:
-            state_per_dimension.append('A')
-        elif coordinate > state_B[0] and coordinate <= state_B[1]:
-            state_per_dimension.append('B')
-        else:
-            state_per_dimension.append('0')
-    
-    this_state = state_per_dimension[0]
-    for state in state_per_dimension[1:]:
-            if state != this_state:
-                this_state = '0'
-                break 
-    return this_state         
-
 ###### Parse command line ###### 
 parser = argparse.ArgumentParser(description=
     'Bare Model to load iterations. ')
@@ -80,23 +50,21 @@ parser.add_argument('-t', '--tau', dest="tau",
 args = parser.parse_args()
 first_iteration = args.first_iteration
 last_iteration  = args.last_iteration
-state_A         = np.sort(args.state_A) 
-state_B         = np.sort(args.state_B)
-
-################################
-
-# Get the iterations and parameters
 logger = Logger(args.logdir)
 if last_iteration < 0:
     last_iteration = logger.getLastIterationId()
 
 current_iteration = logger.loadIteration(first_iteration)
-N = current_iteration.getNumberOfSegments()
+
+state_A         = np.sort(args.state_A) 
+state_B         = np.sort(args.state_B)
+
 
 # assign initial probabilities
+N = current_iteration.getNumberOfSegments()
 for this_bin in current_iteration:
     for this_segment in this_bin:
-        this_state = getStateFromCoordinate(this_segment, state_A, state_B)
+        this_state = f.getStateFromCoordinate(this_segment, state_A, state_B)
         if this_state == 'A':
             this_segment.setProbability(np.array([float(1.0/N),float(0.0),float(0.0)]))
         elif this_state == 'B':
@@ -175,58 +143,34 @@ for i in range(first_iteration + 1, last_iteration + 1):
 
             # Merge
             elif this_bin.getNumberOfSegments() < this_bin.getNumberOfInitialSegments():
-    
-                probabilities = []
-                for this_initial_segment in this_bin.initial_segments:
-                    probabilities.append(this_initial_segment.getProbability())
-                
-                # strange behavior with list?  
-                probabilities = np.array(probabilities)
-                # OLD ADDITIVE MERGE MODE
-                ##reconstruct probabilities from merge list
-                for merge_entry in this_bin.merge_list:
-                    # get merged probability
-                    merged_probability = probabilities[merge_entry[0]]
-                    merged_probability  = 1.0 * merged_probability / (len(merge_entry) - 1 )
-                    for target_segment in merge_entry[1:]:
-                        probabilities[target_segment] += np.array(merged_probability)                 
-                    probabilities = np.delete(probabilities, merge_entry[0],0)
-                
-                # NEW SCALING MERGE MODE:
-                # if merged segment is the only segment containing probability of one history,
-                # it is treaded additively because this probability can not be rescaled 
-                #reconstruct probabilities from merge list
-                #for merge_entry in this_bin.merge_list:
-                #    # get merged probability
-                #    merged_probability = probabilities[merge_entry[0]]
-                #    sum_probabilities  = 0
-                #    for segment_tmp in merge_entry:
-                #        sum_probabilities  += probabilities[segment_tmp]
-                #    prob_add  = [0.0, 0.0, 0.0]
-                #    prob_mult = [1.0, 1.0, 1.0]
-                #    for k in [0, 1, 2]:
-                #        if (sum_probabilities[k] - merged_probability[k]) > 0.0:
-                #            prob_mult[k] = sum_probabilities[k] / (sum_probabilities[k] - merged_probability[k])
-                #        else:
-                #            prob_add[k] = 1.0 * merged_probability[k] / (len(merge_entry) - 1 )
-                            
-                #    for target_segment in merge_entry[1:]:
-                #        probabilities[target_segment] *= prob_mult   
-                #        probabilities[target_segment] += prob_add                
-                #    probabilities = np.delete(probabilities, merge_entry[0],0)
-
-    
-                # set merged probabilities of the segments 
-                for segment_index in range(0,len(this_bin.segments)):
-                    this_bin.segments[segment_index].setProbability(probabilities[segment_index])
+                # Skip merging if no merge_list exists, which means merge_mode was none
+                if len(this_bin.merge_list) > 1:
+                    probabilities = []
+                    for this_initial_segment in this_bin.initial_segments:
+                        probabilities.append(this_initial_segment.getProbability())
+                    
+                    # strange behavior with list?  
+                    probabilities = np.array(probabilities)
+                    # reconstruct probabilities from merge list
+                    for merge_entry in this_bin.merge_list:
+                        # get merged probability
+                        merged_probability = probabilities[merge_entry[0]]
+                        merged_probability  = 1.0 * merged_probability / (len(merge_entry) - 1 )
+                        for target_segment in merge_entry[1:]:
+                            probabilities[target_segment] += np.array(merged_probability)                 
+                        probabilities = np.delete(probabilities, merge_entry[0],0)
+                    
+                    # set merged probabilities of the segments 
+                    for segment_index in range(0,len(this_bin.segments)):
+                        this_bin.segments[segment_index].setProbability(probabilities[segment_index])
 
     # Reset Outer Region Bins
     current_iteration.resetOuterRegion()
-    
+
     # STATES
     for this_bin in current_iteration:
         for this_segment in this_bin:
-            this_state = getStateFromCoordinate(this_segment, state_A, state_B)
+            this_state = f.getStateFromCoordinate(this_segment, state_A, state_B)
             probability = this_segment.getProbability()
             if this_state == 'A':
                 probability_state_A_iter += sum(probability)
@@ -236,7 +180,7 @@ for i in range(first_iteration + 1, last_iteration + 1):
                 probability_state_B_iter += sum(probability)
                 flux_into_B_iter  += probability[0]
                 this_segment.setProbability(np.array([0.0, sum(probability), 0.0]))   
-    
+
     # Reweighting of bin probabilities
     #    The order of the following steps should no longer matter.  
     if i < args.reweighting_iterations:
@@ -244,7 +188,6 @@ for i in range(first_iteration + 1, last_iteration + 1):
         reweighter.storeRateMatrix(current_iteration)
         if current_iteration.getNumberOfBins() > 1:
             reweighter.reweightBinProbabilities(current_iteration)
-
     
     # keep track of PMF-relevant segment data
     if i > args.first_ana_iteration:

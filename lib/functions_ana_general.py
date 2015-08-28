@@ -120,6 +120,27 @@ def cumulative_mean(data):
         cumulative_mean.append(numpy.mean(data[0:i+1]))
     return cumulative_mean
         
+def getStateFromCoordinate(segment, state_A, state_B):
+    """
+    Returns the state of a segment
+    @return string state
+    """
+    state_per_dimension = []
+    # lazy 1d implementation
+    for coordinate in [segment.getCoordinates()[0]]:
+        if coordinate > state_A[0] and coordinate <= state_A[1]:
+            state_per_dimension.append('A')
+        elif coordinate > state_B[0] and coordinate <= state_B[1]:
+            state_per_dimension.append('B')
+        else:
+            state_per_dimension.append('0')
+    
+    this_state = state_per_dimension[0]
+    for state in state_per_dimension[1:]:
+            if state != this_state:
+                this_state = '0'
+                break 
+    return this_state   
     
     
     

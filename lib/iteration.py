@@ -274,7 +274,7 @@ class Iteration(object):
     def getProbabilityFlow(self):
         return self.probability_flow
     
-    def resetOuterRegion(self):
+    def resetOuterRegion(self, steady_state):
         """
         Remove the segments (not the initial_segments) from outer-region bins 
         and add the corresponding probability equally to the segments (no the initial_segments) of
@@ -282,20 +282,26 @@ class Iteration(object):
         """
         for this_bin in self.bins:
             if this_bin.sample_region == False:
-                for this_initial_segment in this_bin.initial_segments:
-                    parent_bin_id = this_initial_segment.getParentBinId()
-                    probability   = this_initial_segment.getProbability()
-                    probability   = 1.0 * probability / self.bins[parent_bin_id].getNumberOfSegments()
-                    if self.bins[parent_bin_id].getNumberOfSegments() > 0:
-                        for this_parent_segment in self.bins[parent_bin_id]:
-                            # this_parent_segment.addProbability(probability)
-                            # For some reason addProbability function does not work correctly here
-                            this_parent_segment.probability = this_parent_segment.getProbability() + probability
-                    else:
-                        print('Warning: Probability flow in to outer region could not be reset to parent bin {}, \
-                        because parent bin is empty. Probability is deleted'.format(parent_bin = parent_bin_id))
-                this_bin.deleteAllSegments()
-
+                if steady_state:
+                    probability = this_bin.getProbability()
+                    probability = 1.0 * probability / self.bins[0].getNumberOfSegments()
+                    for this_start_state_segment in self.bins[0]:
+                        this_start_state_segment.probability = this_start_state_segment.getProbability() + probability
+                    this_bin.deleteAllSegments()    
+                else:
+                    for this_initial_segment in this_bin.initial_segments:
+                        parent_bin_id = this_initial_segment.getParentBinId()
+                        probability   = this_initial_segment.getProbability()
+                        probability   = 1.0 * probability / self.bins[parent_bin_id].getNumberOfSegments()
+                        if self.bins[parent_bin_id].getNumberOfSegments() > 0:
+                            for this_parent_segment in self.bins[parent_bin_id]:
+                                # this_parent_segment.addProbability(probability)
+                                # For some reason addProbability function does not work correctly here
+                                this_parent_segment.probability = this_parent_segment.getProbability() + probability
+                        else:
+                            print('Warning: Probability flow in to outer region could not be reset to parent bin {}, \
+                            because parent bin is empty. Probability is deleted'.format(parent_bin = parent_bin_id))
+                    this_bin.deleteAllSegments()
         return
         
     def isInSampleRegion(self, coordinate_ids):

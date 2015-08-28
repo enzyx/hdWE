@@ -110,7 +110,7 @@ def parseReweightingMaxIteration(config):
     """    
     reweigthing_max_iteration = 'inf'
     try:
-        reweigthing_max_iteration = int(config.get('hdWE', 'reweigthing-max-iteration'))
+        reweigthing_max_iteration = int(config.get('hdWE', 'reweighting-max-iteration'))
     except:
         pass
     return reweigthing_max_iteration   
@@ -237,3 +237,14 @@ def parseAmberRmsdFitMask(config):
             print("rmsd-fit-mask is required for merge mode 'closest'")
             sys.exit(CONFIG_ERROR_CODE)
     return rmsd_fit_mask
+
+def parseSteadyState(config):
+    """
+    @return parse steady state flag 
+    """
+    steady_state = False
+    try:
+        steady_state = config.getboolean('hdWE','steady-state')#
+    except:
+        pass
+    return steady_state

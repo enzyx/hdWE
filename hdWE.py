@@ -79,14 +79,13 @@ MAX_ITERATIONS                    = config_parser.parseMaxIterations(config)
 INITIAL_TARGET_NUMBER_OF_SEGMENTS = int(config.get('hdWE','segments-per-bin'))
 INITIAL_BOUNDARIES                = config_parser.parseInitialBoundaries(config)
 INITIAL_SAMPLE_REGION             = config_parser.parseSampleRegion(config)
+STEADY_STATE                      = config_parser.parseSteadyState(config)
 # merging
 MERGE_MODE                        = config_parser.parseMergeMode(config)
 MERGE_THRESHOLD                   = config_parser.parseMergeThreshold(config)
-
 # reweighting
 REWEIGHTING_RANGE                 = config_parser.parseReweightingRange(config)
-if REWEIGHTING_RANGE > 0:
-    REWEIGHTING_MAX_ITERATION     = config_parser.parseReweightingMaxIteration(config)
+REWEIGHTING_MAX_ITERATION         = config_parser.parseReweightingMaxIteration(config)
 
 # MD module
 if "amber" in config.sections():
@@ -108,7 +107,7 @@ if not os.path.isfile(CONFIGFILE):
 if APPEND and not (os.path.exists(LOGDIR) and
                    os.path.exists(RUNDIR) and 
                    glob.glob(LOGDIR + "*.iter")):
-    #sys.stderr.write("WARNING: appending failed. turning it off.\n")
+    sys.stderr.write("WARNING: appending failed. turning it off.\n")
     APPEND = False
 
 #############################
@@ -138,7 +137,7 @@ if REWEIGHTING_RANGE > 0:
     reweighter = reweighting.Reweighting( reweighting_range = REWEIGHTING_RANGE )
 
 # Initiate iterations
-if APPEND:
+if APPEND == True:
     # load the last two iterations if existing for proper function of
     # cleanup module
     if logger.getLastIterationId() > 1: 
@@ -157,8 +156,8 @@ if APPEND:
         iterations[-1].boundaries    = INITIAL_BOUNDARIES
         iterations[-1].sample_region = INITIAL_SAMPLE_REGION
         iterations[-1].target_number_of_segments  = INITIAL_TARGET_NUMBER_OF_SEGMENTS
-        for this_bin in iterations[-1]:
-            this_bin.target_number_of_segments = iterations[-1].target_number_of_segments
+        for this_bin in iterations[-1].bins:
+            this_bin.target_number_of_segments = iterations[-1].target_number_of_segments                
             this_bin.sample_region = iterations[-1].isInSampleRegion(this_bin.getCoordinateIds()) 
 
     #TODO: check if all files are present
@@ -171,6 +170,14 @@ else:
                                                       INITIAL_SAMPLE_REGION,
                                                       md_module))
     logger.log(iterations[0], CONFIGFILE)
+
+
+# apply steady state splitting: split only in start state
+if STEADY_STATE:
+    iterations[-1].target_number_of_segments = 1
+    for this_bin_ in iterations[-1].bins:
+        if this_bin.getId() > 0:
+            this_bin.target_number_of_segments = 1    
 
 # Handle the deletion/compression of MD output files 
 cleaner = cleanup.Cleanup(md_module, NUMBER_OF_THREADS, COMPRESS_ITERATION, 
@@ -241,7 +248,7 @@ for iteration_counter in range(iterations[-1].getId() + 1, MAX_ITERATIONS + 1):
   
     # 4. Treatment of outer-region bins.
     #    Has to be after resampling for consistency with ana_TraceFlux  
-    iterations[-1].resetOuterRegion()          
+    iterations[-1].resetOuterRegion(STEADY_STATE)          
 
     # 5. Reweighting
     if REWEIGHTING_RANGE > 0.0 and iteration_counter <= REWEIGHTING_MAX_ITERATION:
