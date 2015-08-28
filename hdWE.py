@@ -174,10 +174,12 @@ else:
 
 # apply steady state splitting: split only in start state
 if STEADY_STATE:
+    INITIAL_TARGET_NUMBER_OF_SEGMENTS = 1
     iterations[-1].target_number_of_segments = 1
     for this_bin in iterations[-1].bins:
         if this_bin.getId() > 0:
-            this_bin.target_number_of_segments = 1    
+            this_bin.target_number_of_segments = 1   
+     
 
 # Handle the deletion/compression of MD output files 
 cleaner = cleanup.Cleanup(md_module, NUMBER_OF_THREADS, COMPRESS_ITERATION, 
