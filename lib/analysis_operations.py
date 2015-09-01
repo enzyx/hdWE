@@ -107,11 +107,11 @@ def BinProbabilitiesFromRates(rate_matrix):
 
 def mergeModeSplitForward(iteration, number_of_children, split_forward_coordinate_id):
     for this_bin in iteration:
+        split_indices = [0] * this_bin.getNumberOfSegments()
         for this_segment in this_bin.segments:
-            split_indices = [0] * this_bin.getNumberOfSegments()
             parent_bin_id = this_segment.getParentBinId()
             # Check whether this segment came from an earlier bin:
-            if iteration.bins[parent_bin_id].getCoordinateIds()[split_forward_coordinate_id] < this_bin.getCoordinateIds()[split_forward_coordinate_id]:
+            if iteration.bins[parent_bin_id].getCoordinateIds()[split_forward_coordinate_id] > this_bin.getCoordinateIds()[split_forward_coordinate_id]:
                 # split this segment
                 split_indices[this_segment.getId()] = number_of_children
                 
