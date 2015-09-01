@@ -13,10 +13,8 @@ from __future__ import print_function
 import sys
 import ConfigParser
 import argparse
-import threading
 import os
 import glob
-from   lib.thread_container import ThreadContainer
 from   lib.iteration import Iteration
 from   lib.logger import Logger 
 import lib.initiate as initiate
@@ -25,7 +23,7 @@ import lib.constants as constants
 import lib.resorting as resorting
 import lib.reweighting as reweighting
 import lib.cleanup as cleanup
-from lib import analysis_operations
+import lib.resampling as resampling
 
 #### Parse command line #### 
 
@@ -82,8 +80,8 @@ INITIAL_BOUNDARIES                = config_parser.parseInitialBoundaries(config)
 INITIAL_SAMPLE_REGION             = config_parser.parseSampleRegion(config)
 STEADY_STATE                      = config_parser.parseSteadyState(config)
 # merging
-MERGE_MODE                        = config_parser.parseMergeMode(config)
-MERGE_THRESHOLD                   = config_parser.parseMergeThreshold(config)
+RESAMPLING_MODE                   = config_parser.parseResamplingMode(config)
+CLOSEST_MERGE_THRESHOLD           = config_parser.parseMergeThreshold(config)
 SPLIT_FORWARD_NUMBER_OF_CHILDREN  = config_parser.parseSplitForwardNumberOfChildren(config)
 SPLIT_FORWARD_COORDINATE_ID       = config_parser.parseSplitForwardCoordinateId(config)
 # reweighting
@@ -174,7 +172,6 @@ else:
                                                       md_module))
     logger.log(iterations[0], CONFIGFILE)
 
-
 # apply steady state splitting: split only in start state
 if STEADY_STATE:
     INITIAL_TARGET_NUMBER_OF_SEGMENTS = 1
@@ -184,9 +181,14 @@ if STEADY_STATE:
             this_bin.target_number_of_segments = 1   
      
 
+# Create an instance of the resampling module
+resampler = resampling.Resampling(md_module, RESAMPLING_MODE, CLOSEST_MERGE_THRESHOLD, 
+                                  SPLIT_FORWARD_COORDINATE_ID, SPLIT_FORWARD_NUMBER_OF_CHILDREN)
+
 # Handle the deletion/compression of MD output files 
 cleaner = cleanup.Cleanup(md_module, NUMBER_OF_THREADS, COMPRESS_ITERATION, 
-                 COMPRESS_CLOSEST_MASK, KEEP_COORDS_FREQUENCY, KEEP_COORDS_SEGMENTS, DEBUG)
+                          COMPRESS_CLOSEST_MASK, KEEP_COORDS_FREQUENCY, 
+                          KEEP_COORDS_SEGMENTS, DEBUG)
 
 #############################
 #         Main Loop         #
@@ -220,42 +222,11 @@ for iteration_counter in range(iterations[-1].getId() + 1, MAX_ITERATIONS + 1):
     #    - This list should be immutable 
     for this_bin in iterations[-1]:
         this_bin.backupInitialSegments()
-        
-
 
     # 3. Resampling
     sys.stdout.write(' - Resampling\n')
     sys.stdout.flush()
-    
-    if MERGE_MODE == "closest":
-        bins_rmsds = md_module.calcBinsRmsds(iterations[-1])
-        for this_bin in iterations[-1]:
-            this_bin.resampleSegments(MERGE_MODE, 
-                                      MERGE_THRESHOLD, 
-                                      rmsd_matrix = bins_rmsds[this_bin.getId()])
-    elif MERGE_MODE == 'split-forward':
-        for this_bin in iterations[-1]:
-            this_bin.resampleSegments(MERGE_MODE, MERGE_THRESHOLD)
-        analysis_operations.mergeModeSplitForward(iterations[-1],
-                                                      SPLIT_FORWARD_NUMBER_OF_CHILDREN, 
-                                                      SPLIT_FORWARD_COORDINATE_ID)
-    else:
-        # Parallel
-        if NUMBER_OF_THREADS > 1:
-            thread_container = ThreadContainer()
-            for this_bin in iterations[-1]:
-                thread_container.appendJob(threading.Thread(target = this_bin.resampleSegments,  
-                                                            args= (MERGE_MODE, MERGE_THRESHOLD)))
-                if thread_container.getNumberOfJobs() >= NUMBER_OF_THREADS:
-                    thread_container.runJobs()
-            # Run remaining jobs
-            thread_container.runJobs()
-        # Serial
-        else:
-            for this_bin in iterations[-1]:
-                this_bin.resampleSegments(MERGE_MODE, 
-                                          MERGE_THRESHOLD)
-                                          
+    resampler.resample(iterations[-1])                                     
   
     # 4. Treatment of outer-region bins.
     #    Has to be after resampling for consistency with ana_TraceFlux  

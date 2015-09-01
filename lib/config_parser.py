@@ -139,17 +139,19 @@ def parseMaxIterations(config):
         print("Error: While processing configuration file entry 'max-iterations'")
         sys.exit(CONFIG_ERROR_CODE)
 
-def parseMergeMode(config):
+def parseResamplingMode(config):
     """
-    @return {closest, random, weighted, marginonly, split-forward}
+    @return {closest, random, weighted, no-merge, split-forward}
     """
+    valid_modi = ['closest', 'random', 'weighted', 'no-merge', 'split-forward']
     merge_mode = ""
     try:
-        merge_mode = str(config.get('hdWE', 'merge-mode')).strip()
-        if merge_mode not in ['closest', 'random', 'weighted', 'none', 'split-forward']:
+        merge_mode = str(config.get('hdWE', 'resampling-mode')).strip()
+        if merge_mode not in valid_modi:
             raise BaseException
     except:
-        print("Error: Could not find valid merge mode in config file.")
+        print("Error: Could not find valid resampling mode in config file.")
+        print("valid modi are: " + str(valid_modi))
         sys.exit(CONFIG_ERROR_CODE)
     return merge_mode
 
@@ -157,7 +159,7 @@ def parseMergeThreshold(config):
     """
     @return merge threshold
     """
-    merge_mode = parseMergeMode(config)
+    merge_mode = parseResamplingMode(config)
     merge_threshold = 0
     
     if merge_mode == 'closest':
@@ -246,7 +248,7 @@ def parseAmberRmsdMask(config):
     @default None if mergemode is not closest 
     """
     rmsd_mask = None
-    merge_mode = parseMergeMode(config)
+    merge_mode = parseResamplingMode(config)
     
     if merge_mode == 'closest':
         try:
@@ -261,7 +263,7 @@ def parseAmberRmsdFitMask(config):
     @return rmsd fit mask if merge mode closest
     """
     rmsd_fit_mask = None
-    merge_mode = parseMergeMode(config)
+    merge_mode = parseResamplingMode(config)
     
     if merge_mode == 'closest':
         try:
