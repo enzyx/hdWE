@@ -25,6 +25,7 @@ import lib.constants as constants
 import lib.resorting as resorting
 import lib.reweighting as reweighting
 import lib.cleanup as cleanup
+from lib import analysis_operations
 
 #### Parse command line #### 
 
@@ -76,13 +77,15 @@ COMPRESS_CLOSEST_MASK             = config_parser.parseCompressClosestMask(confi
 # hdWE Options
 STARTING_STRUCTURES               = config_parser.parseStartingStructures(config)
 MAX_ITERATIONS                    = config_parser.parseMaxIterations(config)
-INITIAL_TARGET_NUMBER_OF_SEGMENTS = int(config.get('hdWE','segments-per-bin'))
+INITIAL_TARGET_NUMBER_OF_SEGMENTS = config_parser.parserInitialNumberOfTargetSegments(config)
 INITIAL_BOUNDARIES                = config_parser.parseInitialBoundaries(config)
 INITIAL_SAMPLE_REGION             = config_parser.parseSampleRegion(config)
 STEADY_STATE                      = config_parser.parseSteadyState(config)
 # merging
 MERGE_MODE                        = config_parser.parseMergeMode(config)
 MERGE_THRESHOLD                   = config_parser.parseMergeThreshold(config)
+SPLIT_FORWARD_NUMBER_OF_CHILDREN  = config_parser.parseSplitForwardNumberOfChildren(config)
+SPLIT_FORWARD_COORDINATE_ID       = config_parser.parseSplitForwardCoordinateId(config)
 # reweighting
 REWEIGHTING_RANGE                 = config_parser.parseReweightingRange(config)
 REWEIGHTING_MAX_ITERATION         = config_parser.parseReweightingMaxIteration(config)
@@ -230,6 +233,11 @@ for iteration_counter in range(iterations[-1].getId() + 1, MAX_ITERATIONS + 1):
             this_bin.resampleSegments(MERGE_MODE, 
                                       MERGE_THRESHOLD, 
                                       rmsd_matrix = bins_rmsds[this_bin.getId()])
+    elif MERGE_MODE == 'split-forward':
+        this_bin.resample_segments(MERGE_MODE, MERGE_THRESHOLD)
+        analysis_operations.mergeModeSplitForward(iterations[-1],
+                                                  SPLIT_FORWARD_NUMBER_OF_CHILDREN, 
+                                                  SPLIT_FORWARD_COORDINATE_ID)
     else:
         # Parallel
         if NUMBER_OF_THREADS > 1:

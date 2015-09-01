@@ -177,11 +177,13 @@ class Bin(object):
             # Merge Mode 4: Do not merge any segments.
             elif MERGE_MODE == 'none':    
                 return
-                    
+            
+            elif MERGE_MODE == 'split-forward':
+                return
+            
             else:
                 print('Merge mode not found')
           
-            
             return
         
         # Not enough bins -> split

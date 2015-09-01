@@ -141,12 +141,12 @@ def parseMaxIterations(config):
 
 def parseMergeMode(config):
     """
-    @return {closest, random, weighted, marginonly}
+    @return {closest, random, weighted, marginonly, split-forward}
     """
     merge_mode = ""
     try:
         merge_mode = str(config.get('hdWE', 'merge-mode')).strip()
-        if merge_mode not in ['closest', 'random', 'weighted', 'none']:
+        if merge_mode not in ['closest', 'random', 'weighted', 'none', 'split-forward']:
             raise BaseException
     except:
         print("Error: Could not find valid merge mode in config file.")
@@ -176,9 +176,42 @@ def parseSegmentPerBin(config):
         segments_per_bin = int(config.get('hdWE','segments-per-bin'))
         return segments_per_bin
     except:
-        print("Error: Error: While processing configuration file entry 'segments-per-bin'.")
+        print("Error: While processing configuration file entry 'segments-per-bin'.")
         sys.exit(CONFIG_ERROR_CODE)
+
+def parserInitialNumberOfTargetSegments(config):
+    """
+    @return Target number of segments, a bin should have after its initial creation
+    """
+    try:
+        return config.getint('hdWE','segments-per-bin')
+    except:
+        print("Error: Need to specify 'segments-per-bin' in config file!")
+        sys.exit(CONFIG_ERROR_CODE)
+        
+def parseSplitForwardCoordinateId(config):
+    """
+    @return The coordinate along which the sampling should be increased by splitting
+    """
+    split_forward_coordinate_id = 0
+    try:
+        split_forward_coordinate_id = config.getint('hdWE','split-forward-coordinate')
+    except:
+        pass
+    return split_forward_coordinate_id
     
+def parseSplitForwardNumberOfChildren(config):
+    """
+    @return number of children a segment is split to, when it moves forward
+            in the desired coordinate
+    """
+    split_forward_number_of_children = 0
+    try:
+        split_forward_number_of_children = config.getint('hdWE','split-forward-children')
+    except:
+        pass
+    return split_forward_number_of_children
+
 ###################
 #      AMBER      #
 ###################
