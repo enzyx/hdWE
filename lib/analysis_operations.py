@@ -130,4 +130,4 @@ def mergeModeSplitForward(iteration, number_of_children, split_forward_coordinat
                                     iteration_id        = split_segment.getIterationId(),
                                     bin_id              = split_segment.getBinId(),
                                     segment_id          = this_bin.getNumberOfSegments())
-                this_bin.__addSegment(__segment)
+                this_bin.segments.append(__segment)
