@@ -283,7 +283,7 @@ for iteration_counter in range(iterations[-1].getId() + 1, MAX_ITERATIONS + 1):
     logger.log(iterations[-1], CONFIGFILE)
 
     # 9. compress files and delete unwanted files
-    print(" -Cleanup of MD files")    
+    print(" - Cleanup of MD files")    
     if len(iterations) > 2:
         cleaner.doCleanup(iterations[-3])
     
