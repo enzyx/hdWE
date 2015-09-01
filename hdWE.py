@@ -234,10 +234,11 @@ for iteration_counter in range(iterations[-1].getId() + 1, MAX_ITERATIONS + 1):
                                       MERGE_THRESHOLD, 
                                       rmsd_matrix = bins_rmsds[this_bin.getId()])
     elif MERGE_MODE == 'split-forward':
-        this_bin.resampleSegments(MERGE_MODE, MERGE_THRESHOLD)
+        for this_bin in iterations[-1]:
+            this_bin.resampleSegments(MERGE_MODE, MERGE_THRESHOLD)
         analysis_operations.mergeModeSplitForward(iterations[-1],
-                                                  SPLIT_FORWARD_NUMBER_OF_CHILDREN, 
-                                                  SPLIT_FORWARD_COORDINATE_ID)
+                                                      SPLIT_FORWARD_NUMBER_OF_CHILDREN, 
+                                                      SPLIT_FORWARD_COORDINATE_ID)
     else:
         # Parallel
         if NUMBER_OF_THREADS > 1:
