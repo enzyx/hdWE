@@ -170,16 +170,7 @@ else:
                                                       INITIAL_BOUNDARIES, 
                                                       INITIAL_SAMPLE_REGION,
                                                       md_module))
-    logger.log(iterations[0], CONFIGFILE)
-
-# apply steady state splitting: split only in start state
-if STEADY_STATE:
-    INITIAL_TARGET_NUMBER_OF_SEGMENTS = 1
-    iterations[-1].target_number_of_segments = 1
-    for this_bin in iterations[-1].bins:
-        if this_bin.getId() > 0:
-            this_bin.target_number_of_segments = 1   
-     
+    logger.log(iterations[0], CONFIGFILE)  
 
 # Create an instance of the resampling module
 resampler = resampling.Resampling(md_module, RESAMPLING_MODE, CLOSEST_MERGE_THRESHOLD, 

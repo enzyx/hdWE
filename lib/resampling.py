@@ -88,13 +88,13 @@ class Resampling(object):
             # Is in sample region or is bin empty?
             if len(this_bin.segments) == 0 or this_bin.sample_region == False:
                 continue
-            
-            # We do not merge but apply split forward mode!
-            self.splitForward(this_bin)
-            
+                        
             # Not enough segments -> split
             if this_bin.getNumberOfSegments() < this_bin.target_number_of_segments:
-                self.splitWeighted(this_bin)
+                if this_bin.getId() == 0:
+                    self.splitWeighted(this_bin)
+                else:
+                    self.splitForward(this_bin)
                 continue
     
     def resampleWeighted(self):
@@ -230,10 +230,18 @@ class Resampling(object):
                                          this_bin.getCoordinateIds()[self.SPLIT_FORWARD_COORDINATE_ID]:
                 # split this segment
                 split_indices[this_segment.getId()] = self.SPLIT_FORWARD_NUMBER_OF_CHILDREN
-                
+        
+        # Reduce the list
+        reduced_split_indices = []
         for segment_id, n_children in enumerate(split_indices):
-            if n_children == 0:
-                continue
+            if n_children > 0:
+                reduced_split_indices.append([segment_id, n_children])
+        
+        while len(reduced_split_indices) > 0 and this_bin.getNumberOfSegments < this_bin.target_number_of_segments:
+            rand_index = rnd.randint(0, len(reduced_split_indices)-1)
+            segment_id = reduced_split_indices[rand_index][0]
+            n_children = reduced_split_indices[rand_index][1]
+
             split_segment = this_bin.segments[segment_id]
             split_prob    = split_segment.getProbability()/float(n_children + 1)
             
@@ -247,6 +255,8 @@ class Resampling(object):
                                     bin_id              = split_segment.getBinId(),
                                     segment_id          = this_bin.getNumberOfSegments())
                 this_bin.addSegment(__segment)
+            
+            del(reduced_split_indices[rand_index])
     
     ########################
     #      Merge  modes    #
