@@ -90,7 +90,7 @@ class Resampling(object):
                 continue
                         
             # Not enough segments -> split
-            if this_bin.getNumberOfSegments() < this_bin.target_number_of_segments:
+            if this_bin.getNumberOfSegments() < this_bin.getTargetNumberOfSegments():
                 if this_bin.getId() == 0:
                     self.splitWeighted(this_bin)
                 else:
@@ -108,12 +108,12 @@ class Resampling(object):
                 continue
             
             # To many segments -> merge
-            if this_bin.getNumberOfSegments() > this_bin.target_number_of_segments:
+            if this_bin.getNumberOfSegments() > this_bin.getTargetNumberOfSegments():
                 self.mergeWeighted(this_bin)
                 continue
             
             # Not enough segments -> split
-            if this_bin.getNumberOfSegments() < this_bin.target_number_of_segments:
+            if this_bin.getNumberOfSegments() < this_bin.getTargetNumberOfSegments():
                 self.splitWeighted(this_bin)
                 continue
 
@@ -127,12 +127,12 @@ class Resampling(object):
                 continue
             
             # To many segments -> merge
-            if this_bin.getNumberOfSegments() > this_bin.target_number_of_segments:
+            if this_bin.getNumberOfSegments() > this_bin.getTargetNumberOfSegments():
                 self.mergeRandom(this_bin)
                 continue
             
             # Not enough segments -> split
-            if this_bin.getNumberOfSegments() < this_bin.target_number_of_segments:
+            if this_bin.getNumberOfSegments() < this_bin.getTargetNumberOfSegments():
                 self.splitWeighted(this_bin)
                 continue
 
@@ -148,7 +148,7 @@ class Resampling(object):
             # No merging
             
             # Not enough segments -> split
-            if this_bin.getNumberOfSegments() < this_bin.target_number_of_segments:
+            if this_bin.getNumberOfSegments() < this_bin.getTargetNumberOfSegments():
                 self.splitWeighted(this_bin)
                 continue
 
@@ -237,7 +237,7 @@ class Resampling(object):
             if n_children > 0:
                 reduced_split_indices.append([segment_id, n_children])
         
-        while len(reduced_split_indices) > 0 and this_bin.getNumberOfSegments < this_bin.target_number_of_segments:
+        while len(reduced_split_indices) > 0 and this_bin.getNumberOfSegments() < this_bin.getTargetNumberOfSegments():
             rand_index = rnd.randint(0, len(reduced_split_indices)-1)
             segment_id = reduced_split_indices[rand_index][0]
             n_children = reduced_split_indices[rand_index][1]
