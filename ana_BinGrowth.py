@@ -1,86 +1,49 @@
-#!/usr/bin/python2
+#!/usr/bin/env python2
 """
-Calculates the PMF along an arbitrary coordinate from 
-the data of a hdWE run.
+Show the number of segments per iteration.
 """
 from __future__ import print_function
+import numpy
 from lib.logger import Logger
-import sys
-import numpy as np                      ## numeric library
-from scipy.optimize import curve_fit    ## fitting library
-#import matplotlib.pyplot as plt         ## plot library
 import argparse
+import matplotlib.pyplot as plt
 
-parser = argparse.ArgumentParser(description=
-    'Bin Growth Analysis. ')
-parser.add_argument('-b', '--first_it', dest="first_iteration",
-                    required=False, type=int, default=0,
-                    help="First iteration to use for PMF calculation.")                    
-parser.add_argument('-e', '--last_it', dest="last_iteration",
-                    required=False, type=int, default=-1,
-                    help="Last iteration to to use for PMF calculation.")  
+###### Parse command line ###### 
+parser =argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+
+
 parser.add_argument('-l', '--log', type=str, dest="logdir", 
-                    required=False, default="logfile.log", metavar="FILE",
-                    help="The logdir for reading ")
+                    metavar="FILE", required=True,
+                    help="The log directory for reading")                  
+parser.add_argument('-b', '--first_it', dest="first_iteration",
+                    type=int, default=0,
+                    help="First iteration to use.")                    
+parser.add_argument('-e', '--last_it', dest="last_iteration",
+                    type=int, default=-1,
+                    help="Last iteration to use.")  
 parser.add_argument('-p', '--plot', dest="plot", 
                     required=False, default=False, action="store_true",
                     help="Plot the fit with mathplotlib")
-################################
 
-sys.stderr.write('\033[1mReading number of bins per iteration...\033[0m\n')
-
-# Initialize
 args = parser.parse_args()
-
-# Get the actual Iteration from logger module
 logger = Logger(args.logdir)
-iterations = logger.loadIterations(begin = args.first_iteration, 
-                                    end  = args.last_iteration)
-
-def logistic_curve(t, G, k):
-    f0 = 1.0      ## We no the start value is 1 bin
-    return G/( 1.0 + np.exp(-k*G*t)*(G/f0 - 1) )
+iterations = logger.loadIterations(args.first_iteration, args.last_iteration, verbose=True)
 
 xdata = []
 ydata = []
 
 for iteration in iterations:
+    print("Iteration: {:05d} #Segments: {: 6d}".format(iteration.getId(), iteration.getNumberOfSegments()))
     xdata.append(iteration.getId())
-    ydata.append(iteration.getNumberOfBins())
+    ydata.append(iteration.getNumberOfSegments())
 
-xdata = np.array(xdata)
-ydata = np.array(ydata)
-
-sys.stderr.write('\033[1m' + 'Fitting logistic function...' + '\033[0m\n')
-
-## Fit using startvalue p0 = [A0,B0,C0] and 
-## equal uncertainties for data (sigma = None)
-p0 = [1.5, 1.0]
-popt, pcov = curve_fit(logistic_curve, xdata, ydata, sigma=None, p0=p0, maxfev=10000)
-
-sys.stderr.write('\033[1m' + 'Fit results:' + '\033[0m\n')
-sys.stderr.write('\033[1m' + "G = {0:.0f} ".format(popt[0]) 
-                    + '\033[0m' + '(max bins)\n')
-sys.stderr.write('\033[1m' + "k = {0:.8f} ".format(popt[1]) 
-                    + '\033[0m' + '(proportionality constant)\n')
-
-## Plot if required
+# Plot if required
 if args.plot:
-    ## Generate list with x-points for fit plot
-    xfit = np.linspace(0, 200, 200)
-    sys.stderr.write('\033[1m' + 'Plotting data...' + '\033[0m\n')
-    plt.plot(xdata , ydata                    , 'rx', label = 'real')
-    plt.plot(xfit, logistic_curve(xfit, *popt), 'b-', label = 'fit')
+    xdata = numpy.array(xdata)
+    ydata = numpy.array(ydata)
+    plt.plot(xdata, ydata, label="#Segments per Iteration")
+    plt.ylabel("#Segments")
+    plt.xlabel("Iteration")
     plt.legend()
     plt.show()
-else:
-    sys.stderr.write('\033[1m' + 'Printing data...' + '\033[0m\n')
-    for i in range(len(xdata)):
-        print(xdata[i], ydata[i])
-
-
-#for iteration in iterations:
-#    print("{0: 5d} {1: 10d}".format(iteration.getId(),
-#                                    iteration.getNumberOfBins() ))
-
 
