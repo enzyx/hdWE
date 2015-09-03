@@ -299,8 +299,8 @@ class Iteration(object):
                                 # For some reason addProbability function does not work correctly here
                                 this_parent_segment.probability = this_parent_segment.getProbability() + probability
                         else:
-                            print('Warning: Probability flow in to outer region could not be reset to parent bin {}, \
-                            because parent bin is empty. Probability is deleted'.format(parent_bin = parent_bin_id))
+                            print('Warning: Probability flow {}in to outer region could not be reset to parent bin {}, \
+                            because parent bin is empty. Probability is deleted'.format(this_initial_segment.getProbability(), parent_bin_id))
                     this_bin.deleteAllSegments()
         return
         
