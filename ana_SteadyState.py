@@ -46,11 +46,8 @@ parser.add_argument('-N', '--pmf-bins', dest="pmf_bins",
                     type=int, default=100, metavar="INT",
                     help="Number of bins for the PMF.")
 parser.add_argument('--tau', dest="tau",
-                    type=float, default = 0, required=False,
-                    help="Segment MD propagation time tau used in hdWE simulations.")
-parser.add_argument('-p','--probability-start-state', dest="p",
                     type=float, default = 1.0, required=False,
-                    help="Equilibrium probability of the start state.")
+                    help="Segment MD propagation time tau used in hdWE simulations.")
 
 # Initialize
 args = parser.parse_args()
@@ -74,7 +71,7 @@ if found_target_state == False:
     target_state_id = 1e99
     print('Warning: Target state not found in given iterations')
         
-        
+       
 current_iteration = logger.loadIteration(first_iteration)
 
 # assign initial probabilities
@@ -138,15 +135,15 @@ for i in range(first_iteration + 1, last_iteration + 1):
     flux.append([])
     if current_iteration.getNumberOfBins() > target_state_id: 
         probability_from_start_state = 0.0
-        for this_segment in current_iteration.bins[target_state_id].segments:
+        for this_initial_segment in current_iteration.bins[target_state_id].initial_segments:
             # Only add probability to flux that comes from start state
-            if this_segment.getProbability()[0] > 0.0:
-                flux[-1].append(this_segment.getProbability()[0])
+            if this_initial_segment.getProbability()[0] > 0.0:
+                flux[-1].append(this_initial_segment.getProbability()[0])
             # shift probability to target state history
             this_segment.setProbability( np.array([0, sum(this_segment.getProbability())] ) )
         
     # Reset Outer Region Bins
-    current_iteration.resetOuterRegion(steady_state = True)
+    current_iteration.resetOuterRegion(steady_state = False)
 
     # Reaching the start state
     for this_bin in current_iteration:
@@ -180,13 +177,18 @@ for i in range(first_iteration + 1, last_iteration + 1):
 
 print '\n'
 print 'flux: ', flux
-
 for i in range(len(flux)):
     if flux[i] == []:
         flux[i] = [0.0]
     flux[i] = sum(flux[i])
-print 'mean flux:', np.mean(flux[args.first_ana_iteration:])
-    
+print 'mean flux: {:8.7e}'.format( np.mean(flux[args.first_ana_iteration:]) / args.tau )
+
+# print flux to file
+fout = open(args.output_file + '.flux', 'w')
+fout.write('# iteration   flux')
+for i in range(len(flux)):
+    fout.write('{:05d} {:8.7e}\n'.format(i, flux[i]))
+fout.close()   
 
 # calculate PMF
 histogram = f.weightedHistogram(pmf_segment_data[args.first_ana_iteration:], args.pmf_bins)
