@@ -5,8 +5,9 @@ import numpy as np
 from lib.logger import Logger
 import lib.functions_ana_general as f
 import lib.reweighting as reweighting
-import lib.constants as constants
-from math import log
+import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d import Axes3D
+from matplotlib import cm
 
 def isStartState(bin, start_state):
     if all(bin.getCoordinateIds() == start_state):
@@ -48,7 +49,9 @@ parser.add_argument('-N', '--pmf-bins', dest="pmf_bins",
 parser.add_argument('--tau', dest="tau",
                     type=float, default = 1.0, required=False,
                     help="Segment MD propagation time tau used in hdWE simulations.")
-
+parser.add_argument('-p', '--plot', dest="plot", 
+                    required=False, default=False, action="store_true",
+                    help="Plot probabilities from start state per bin and iteration")
 # Initialize
 args = parser.parse_args()
 first_iteration = 0
@@ -90,6 +93,7 @@ for this_bin in current_iteration.bins:
 
 flux = []
 pmf_segment_data = []
+from_start_state_probabilities = []
 
 reweighter = reweighting.Reweighting(reweighting_range=args.reweighting_range)
 reweighter.storeRateMatrix(current_iteration)
@@ -171,6 +175,31 @@ for i in range(first_iteration + 1, last_iteration + 1):
                 parent_seg_id = this_segment.getParentSegmentId()  
                 pmf_segment_data.append([ previous_iteration.bins[parent_bin_id].segments[parent_seg_id].getCoordinates()[0], 
                                           np.sum(this_segment.getProbability()) ])
+    
+    # Collect probability data for plotting
+    if i > args.first_ana_iteration and args.plot: 
+        iteration_bin_probs = [0.0] * (len(current_iteration.getBoundaries()[0]) + 1)
+        for this_bin in current_iteration:
+            if this_bin.getNumberOfInitialSegments() > 0:
+                iteration_bin_probs[this_bin.getCoordinateIds()[0]] += this_bin.getInitialProbability()[0]
+        iteration_bin_probs = np.apply_along_axis(np.log, 0, iteration_bin_probs)
+        from_start_state_probabilities.append(iteration_bin_probs)
+
+# Plot the probabilities from start state per bin
+if args.plot:
+    zdata = np.array(from_start_state_probabilities)
+    xdata = range(zdata.shape[0])
+    ydata = range(zdata.shape[1])
+    x, y  = np.meshgrid(ydata, xdata)
+    fig = plt.figure()
+    ax = fig.add_subplot(111, projection='3d')
+    ax.set_xlabel("Bin ID")
+    ax.set_ylabel("Iteration")
+    ax.set_zlabel("log(P(from start state))")
+    ax.plot_wireframe(x, y, zdata, label="Probability from start state per bin")
+    #ax.plot_surface(x, y, zdata, rstride=4, cstride=4, alpha=0.4)
+    ax.legend()
+    plt.show()
 
 print '\n'
 print 'flux: ', flux
