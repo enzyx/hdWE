@@ -119,10 +119,7 @@ for i in range(first_iteration + 1, last_iteration + 1):
             elif this_bin.getNumberOfSegments() > this_bin.getNumberOfInitialSegments():
                 split_dict = {}
                 for this_segment in this_bin:
-                    try:
-                        split_dict[this_segment.getParentNameString()] += 1
-                    except KeyError:
-                        split_dict[this_segment.getParentNameString()] = 1
+                    split_dict[this_segment.getParentNameString()] = split_dict.get(this_segment.getParentNameString() , 0) + 1
                 
                 for this_initial_segment in this_bin.initial_segments:
                     split_dict[this_initial_segment.getParentNameString()] = this_initial_segment.getProbability() / \
