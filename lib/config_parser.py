@@ -143,7 +143,7 @@ def parseResamplingMode(config):
     """
     @return {closest, random, weighted, no-merge, split-forward}
     """
-    valid_modi = ['closest', 'random', 'weighted', 'no-merge', 'split-forward']
+    valid_modi = ['closest', 'random', 'weighted', 'no-merge', 'split-forward', 'split-region']
     merge_mode = ""
     try:
         merge_mode = str(config.get('hdWE', 'resampling-mode')).strip()
@@ -191,16 +191,27 @@ def parserInitialNumberOfTargetSegments(config):
         print("Error: Need to specify 'segments-per-bin' in config file!")
         sys.exit(CONFIG_ERROR_CODE)
         
-def parseSplitForwardCoordinateId(config):
+def parsePrimaryCoordinate(config):
     """
     @return The coordinate along which the sampling should be increased by splitting
     """
-    split_forward_coordinate_id = 0
+    primary_coordinate = 0
     try:
-        split_forward_coordinate_id = config.getint('hdWE','split-forward-coordinate')
+        primary_coordinate = config.getint('hdWE','primary-coordinate')
     except:
         pass
-    return split_forward_coordinate_id
+    return primary_coordinate
+
+def parseSplitRegion(config):
+    """
+    @return The bin id region in the primary coordinate at which splitting is applied 
+    """
+    split_region = [0, 9e99]
+    try:
+        split_region = map(int, (config.get('hdWE','split-region')).strip().split())
+    except:
+        pass
+    return split_region
     
 def parseSplitForwardNumberOfChildren(config):
     """

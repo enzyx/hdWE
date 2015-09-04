@@ -10,8 +10,9 @@ class Resampling(object):
                  md_module, 
                  resampling_mode, 
                  closest_merge_threshold = 0.0,
-                 split_forward_coordinate_id = 0,
-                 split_forward_number_of_children = 1):
+                 primary_coordinate  = 0,
+                 split_forward_number_of_children = 1,
+                 split_region = [0, 9e99]):
         """
         Keep track of some resampling variables
         """
@@ -27,8 +28,11 @@ class Resampling(object):
         self.CLOSEST_MERGE_THRESHOLD          = closest_merge_threshold
         
         # Split forward mode
-        self.SPLIT_FORWARD_COORDINATE_ID      = split_forward_coordinate_id
+        self.PRIMARY_COORDINATE            = primary_coordinate
         self.SPLIT_FORWARD_NUMBER_OF_CHILDREN = split_forward_number_of_children
+        
+        # Split region
+        self.SPLIT_REGION                     = split_region
 
     def resample(self, iteration):
         """
@@ -43,7 +47,10 @@ class Resampling(object):
                             
         elif self.RESAMPLING_MODE == 'split-forward':
             self.resampleSplitForward()
-
+        
+        elif self.RESAMPLING_MODE == 'split-region':
+            self.resampleSplitRegion()
+    
         elif self.RESAMPLING_MODE == 'weighted':
             self.resampleWeighted()
         
@@ -95,6 +102,21 @@ class Resampling(object):
                     self.splitWeighted(this_bin)
                 else:
                     self.splitForward(this_bin)
+                continue
+    
+    def resampleSplitRegion(self):
+        """
+        This resampling mode only splits segments in a given region of bins.
+        """
+        for this_bin in self.iteration:
+            # Is in sample region or is bin empty?
+            if len(this_bin.segments) == 0 or this_bin.sample_region == False:
+                continue
+                        
+            # Not enough segments -> split
+            if this_bin.getNumberOfSegments() < this_bin.getTargetNumberOfSegments():
+                if self.SPLIT_REGION[0] <= this_bin.getCoordinateIds()[self.PRIMARY_COORDINATE] <= self.SPLIT_REGION[1]:
+                    self.splitWeighted(this_bin)
                 continue
     
     def resampleWeighted(self):
@@ -226,8 +248,8 @@ class Resampling(object):
         for this_segment in this_bin.segments:
             parent_bin_id = this_segment.getParentBinId()
             # Check whether this segment came from an earlier bin:
-            if self.iteration.bins[parent_bin_id].getCoordinateIds()[self.SPLIT_FORWARD_COORDINATE_ID] > \
-                                         this_bin.getCoordinateIds()[self.SPLIT_FORWARD_COORDINATE_ID]:
+            if self.iteration.bins[parent_bin_id].getCoordinateIds()[self.PRIMARY_COORDINATE] > \
+                                         this_bin.getCoordinateIds()[self.PRIMARY_COORDINATE]:
                 # split this segment
                 split_indices[this_segment.getId()] = self.SPLIT_FORWARD_NUMBER_OF_CHILDREN
         
