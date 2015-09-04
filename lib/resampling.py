@@ -117,6 +117,8 @@ class Resampling(object):
             if this_bin.getNumberOfSegments() < this_bin.getTargetNumberOfSegments():
                 if self.SPLIT_REGION[0] <= this_bin.getCoordinateIds()[self.PRIMARY_COORDINATE] <= self.SPLIT_REGION[1]:
                     self.splitWeighted(this_bin)
+                elif this_bin.getId() == 0:
+                    self.splitWeighted(this_bin)
                 continue
     
     def resampleWeighted(self):
