@@ -23,6 +23,8 @@ prev_data.add_argument('-s', '--segments', dest="print_segments", default=False,
                     help="Print segment info")
 prev_data.add_argument('-p', '--parent-segments', dest="parent_segments", default=False, action="store_true",
                     help="Print segment parent info")
+prev_data.add_argument('--show-inactive-bins', dest="show_inactive_bins", default=False, action="store_true",
+                    help="Show data also for inactive bins")
 
 args = parser.parse_args()
 logger = Logger(args.logdir)
@@ -40,16 +42,29 @@ def bin_compare(x, y):
 
 iteration.bins = sorted(iteration.bins, cmp = bin_compare)
 
+for this_bin in iteration:
+    probs = []
+    for this_segment in this_bin:
+        probs.append(this_segment.getProbability())
+    if len(probs)> 0:
+        this_bin.probability_range = 1.0 *max(probs) / min(probs)
+    else:
+        this_bin.probability_range = 0
+
+
 #######################################
 #      Print initial segments         #
 #######################################
 if args.initial_segments:
     for this_bin in iteration:
-        print(" Bin: {:<4d} Segments: {:<4d} p: {:<5.4e}  Coord ids: {} Active: {}".format(this_bin.getId(),
+        if args.show_inactive_bins == False and this_bin.getSampleRegion() == False:
+            continue
+        print(" Bin: {:<4d} Segments: {:<4d} p: {:<5.4e}  Coord ids: {} Active: {} Prob range: {:<3.2e}".format(this_bin.getId(),
                                                    this_bin.getNumberOfInitialSegments(),
                                                    this_bin.getInitialProbability(), 
                                                    this_bin.getCoordinateIds(),
-                                                   this_bin.getSampleRegion()))
+                                                   this_bin.getSampleRegion(),
+                                                   this_bin.probability_range))
         if args.print_segments:
             for segment in this_bin.initial_segments:
                     print("    Segment: {:<4d} p: {:<5.4e} Coords: {}".format(segment.getId(),
@@ -58,6 +73,8 @@ if args.initial_segments:
     sys.exit()
 #######################################
 for this_bin in iteration:
+    if args.show_inactive_bins == False and this_bin.getSampleRegion() == False:
+        continue
     print(" Bin: {:<4d} Segments: {:<4d} p: {:<5.4e}  Coord ids: {} Active: {}".format(this_bin.getId(),
                                                this_bin.getNumberOfSegments(),
                                                this_bin.getProbability(), 

@@ -9,8 +9,8 @@ import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 from matplotlib import cm
 
-def isStartState(bin, start_state):
-    if all(bin.getCoordinateIds() == start_state):
+def isStartState(_bin, start_state):
+    if all(_bin.getCoordinateIds() == start_state):
         return True
     else:
         return False
@@ -144,7 +144,7 @@ for i in range(first_iteration + 1, last_iteration + 1):
             this_segment.setProbability( np.array([0, sum(this_segment.getProbability())] ) )
         
     # Reset Outer Region Bins
-    current_iteration.resetOuterRegion(steady_state = False)
+    current_iteration.resetOuterRegion(steady_state = True)
 
     # Reaching the start state
     for this_bin in current_iteration:
@@ -165,6 +165,10 @@ for i in range(first_iteration + 1, last_iteration + 1):
         reweighter.storeRateMatrix(current_iteration)
         if current_iteration.getNumberOfBins() > 1:
             reweighter.reweightBinProbabilities(current_iteration)
+        factor = 1.0 / sum(current_iteration.bins[start_state_id].getProbability())
+        for this_bin in current_iteration.bins:
+            for this_segment in this_bin:
+                this_segment.multProbability(factor)            
             
     # keep track of PMF-relevant segment data
     if i > args.first_ana_iteration:
