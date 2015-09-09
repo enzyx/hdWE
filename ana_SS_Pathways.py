@@ -46,6 +46,9 @@ parser.add_argument('-t', '--target-bin', dest="target_bin", metavar="INT",
 
 # Initialize
 args              = parser.parse_args()
+rundir            = args.rundir.strip('/')
+logdir            = args.logdir.strip('/')
+target_bin        = args.target_bin
 logger = Logger(args.logdir)
 last_iteration_id = args.last_iteration_id
 if last_iteration_id < 0:
@@ -54,15 +57,15 @@ last_iteration = logger.loadIteration(last_iteration_id)
 pathways = []
 
 sys.stdout.write('\033[1mana_SS_Pathways\033[0m\n')
-sys.stdout.flush()
-sys.stdout.write('  Target bin: {} (Coordinate Ids: {})\n'.format(args.target_bin, 
-                                                last_iteration.bins[args.target_bin].getCoordinateIds()))
+sys.stdout.write('  Analyzing\n')
+sys.stdout.write('   - Target bin: {} (Coordinate Ids: {})\n'.format(target_bin, 
+                                                last_iteration.bins[target_bin].getCoordinateIds()))
 sys.stdout.flush()
 
 # Initialize pathways from segments in target bin
-for this_segment in last_iteration.bins[args.target_bin].segments:
+for this_segment in last_iteration.bins[target_bin].segments:
     pathways.append(Pathway(this_segment))
-sys.stdout.write('  Found {} pathways ending in target bin\n'.format(len(pathways)))
+sys.stdout.write('   - Found {} pathways ending in target bin in iteration {}\n'.format(len(pathways), last_iteration_id))
 sys.stdout.flush()
 
 # Reconstruct pathways from log 
@@ -70,8 +73,10 @@ for iteration_id in range(last_iteration_id, -1, -1):
     sys.stdout.write('  Backtracing pathways: Iteration {:05d}\r'.format(iteration_id))
     sys.stdout.flush()
     current_iteration     = logger.loadIteration(iteration_id)
-    current_segment_list  = open('{}/{}.segment_list'.format(args.rundir, 
-                                                     current_iteration.getNameString()),'r').readlines()
+    current_segment_list  = open('{rundir}/{iteration}.segment_list'.format(
+                                                     rundir    = rundir, 
+                                                     iteration = current_iteration.getNameString())
+                                                     ,'r').readlines()
     for pathway in pathways:
         segment_tmp          = current_iteration.bins[pathway.frames[0][1]].segments[pathway.frames[0][2]]
         segment_tmp_name_str = segment_tmp.getNameString()
@@ -85,32 +90,34 @@ for iteration_id in range(last_iteration_id, -1, -1):
 
 
 # Write cpptraj_in files into folder
-dirname = 'ana_Pathways_{rundir}_{target_bin:05d}/'.format(rundir = args.rundir, target_bin = args.target_bin)
+dirname = 'ana_Pathways_{rundir}_{target_bin:05d}/'.format(rundir = rundir, target_bin = target_bin)
 if os.path.exists(dirname):
     shutil.rmtree(dirname)
 os.mkdir(dirname)
 
 counter = 0
-cpptraj_script = open('{}cpptraj.sh'.format(dirname), 'w')  
+cpptraj_script = open('{dirname}/cpptraj.sh'.format(dirname = dirname), 'w')  
 for pathway in pathways:
     counter += 1
     cpptraj_in_filename = '{rundir}_{target_bin:05d}_{counter:05d}.cpptraj_in'.format(
-                                                                                rundir = args.rundir,
+                                                                                rundir = rundir,
                                                                                 counter = counter,
-                                                                                target_bin = args.target_bin )
+                                                                                target_bin = target_bin )
     
-    cpptraj_in = open('{}{}'.format(dirname, cpptraj_in_filename),'w')
+    cpptraj_in = open('{dirname}/{cpptrajin}'.format(dirname   = dirname,
+                                                     cpptrajin = cpptraj_in_filename)
+                                                     ,'w')
     for frame in pathway.frame_positions:
         # frame index in cpptraj starts from 1 ( = hdWE segment index + 1) 
-        cpptraj_in.write( 'trajin ../{rundir}/{it:05d}.nc {frame} {frame}\n'.format(rundir = args.rundir, 
+        cpptraj_in.write( 'trajin ../{rundir}/{it:05d}.nc {frame} {frame}\n'.format(rundir = rundir, 
                                                                                 it     = frame[0],
                                                                                 frame  = frame[1] + 1) )
         
     cpptraj_in.write('trajout {rundir}_{target_bin:05d}_{counter:05d}_pathway.nc netcdf'.format(
                                                                                 dirname = dirname,
-                                                                                rundir = args.rundir,
+                                                                                rundir = rundir,
                                                                                 counter = counter,
-                                                                                target_bin = args.target_bin ))
+                                                                                target_bin = target_bin ))
     cpptraj_in.close() 
 
 
@@ -126,12 +133,21 @@ for i in range(l):
         m[i,j] = calcIterationOfDivergence(pathways[i], pathways[j])
 numpy.savetxt('{}iteration_of_divergence.dat'.format(dirname), m, fmt = '%05d', 
               header = 'Iteration at which pathway x diverges from pathway y')
+for i in range(l):
+    m[i,i] = 99999
 
-sys.stdout.write('\n Completed.\n'.format(dirname))
-sys.stdout.write('  shared history written to {}iteration_of_divergence.dat\n'.format(dirname))
-sys.stdout.write('  cppraj_in files written to {}\n'.format(dirname))
-sys.stdout.write('  cpptraj script written to {}cpptraj.sh\n'.format(dirname))
-sys.stdout.write('  (for processing with cpptraj a stripped topology file might be necessary)\n')
+first_iteration_of_divergence = numpy.min(m)
+least_sharing_pathways        = numpy.unravel_index(numpy.argmin(m), m.shape)
+
+sys.stdout.write('\n  Completed.\n'.format(dirname))
+sys.stdout.write('   - pathways {p0} and {p1} share least common history, diverging in iteration {it:05d}\n'.format(
+                                                            p0 = least_sharing_pathways[0],
+                                                            p1 = least_sharing_pathways[1],
+                                                            it = first_iteration_of_divergence))
+sys.stdout.write('   - shared history information written to {}iteration_of_divergence.dat\n'.format(dirname))
+sys.stdout.write('   - cpptraj infiles written to {}*.cpptrajin\n'.format(dirname))
+sys.stdout.write('   - cpptraj script written to {}cpptraj.sh\n'.format(dirname))
+sys.stdout.write('     (for processing with cpptraj a stripped topology file might be necessary)\n')
 sys.stdout.flush()
 
 
