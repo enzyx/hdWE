@@ -143,7 +143,7 @@ def parseResamplingMode(config):
     """
     @return {closest, random, weighted, no-merge, split-forward}
     """
-    valid_modi = ['closest', 'random', 'weighted', 'no-merge', 'split-forward', 'split-region']
+    valid_modi = ['closest', 'random', 'weighted', 'no-merge', 'split-forward', 'split-forward-front', 'split-region']
     merge_mode = ""
     try:
         merge_mode = str(config.get('hdWE', 'resampling-mode')).strip()
@@ -212,6 +212,17 @@ def parseSplitRegion(config):
     except:
         pass
     return split_region
+
+def parseFrontInterval(config):
+    """
+    @return Bin range counting back from the first occupied in the front to define front region
+    """
+    front_interval = 9e99
+    try:
+        front_interval = config.getint('hdWE','front-interval')
+    except:
+        pass
+    return front_interval
     
 def parseSplitForwardNumberOfChildren(config):
     """

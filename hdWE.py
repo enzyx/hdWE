@@ -85,6 +85,7 @@ CLOSEST_MERGE_THRESHOLD           = config_parser.parseMergeThreshold(config)
 SPLIT_FORWARD_NUMBER_OF_CHILDREN  = config_parser.parseSplitForwardNumberOfChildren(config)
 PRIMARY_COORDINATE                = config_parser.parsePrimaryCoordinate(config)
 SPLIT_REGION                      = config_parser.parseSplitRegion(config)
+FRONT_INTERVAL                    = config_parser.parseFrontInterval(config)
 # reweighting
 REWEIGHTING_RANGE                 = config_parser.parseReweightingRange(config)
 REWEIGHTING_MAX_ITERATION         = config_parser.parseReweightingMaxIteration(config)
@@ -175,7 +176,7 @@ else:
 
 # Create an instance of the resampling module
 resampler = resampling.Resampling(md_module, RESAMPLING_MODE, CLOSEST_MERGE_THRESHOLD, 
-                                  PRIMARY_COORDINATE, SPLIT_FORWARD_NUMBER_OF_CHILDREN, SPLIT_REGION)
+                                  PRIMARY_COORDINATE, SPLIT_FORWARD_NUMBER_OF_CHILDREN, SPLIT_REGION, FRONT_INTERVAL)
 
 # Handle the deletion/compression of MD output files 
 cleaner = cleanup.Cleanup(md_module, NUMBER_OF_THREADS, COMPRESS_ITERATION, 

@@ -139,6 +139,9 @@ for i in range(l):
 first_iteration_of_divergence = numpy.min(m)
 least_sharing_pathways        = numpy.unravel_index(numpy.argmin(m), m.shape)
 
+for i in range(len(pathways[0].frames)):
+    print last_iteration.bins[pathways[0].frames[i][1]].coordinate_ids[0]
+
 sys.stdout.write('\n  Completed.\n'.format(dirname))
 sys.stdout.write('   - pathways {p0} and {p1} share least common history, diverging in iteration {it:05d}\n'.format(
                                                             p0 = least_sharing_pathways[0],

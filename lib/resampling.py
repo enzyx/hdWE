@@ -12,7 +12,8 @@ class Resampling(object):
                  closest_merge_threshold = 0.0,
                  primary_coordinate  = 0,
                  split_forward_number_of_children = 1,
-                 split_region = [0, 9e99]):
+                 split_region = [0, 9e99],
+                 front_interval = 9e99):
         """
         Keep track of some resampling variables
         """
@@ -27,9 +28,10 @@ class Resampling(object):
         # Closest mode
         self.CLOSEST_MERGE_THRESHOLD          = closest_merge_threshold
         
-        # Split forward mode
-        self.PRIMARY_COORDINATE            = primary_coordinate
+        # Split forward (front) mode
+        self.PRIMARY_COORDINATE               = primary_coordinate
         self.SPLIT_FORWARD_NUMBER_OF_CHILDREN = split_forward_number_of_children
+        self.FRONT_INTERVAL                   = front_interval
         
         # Split region
         self.SPLIT_REGION                     = split_region
@@ -47,6 +49,14 @@ class Resampling(object):
                             
         elif self.RESAMPLING_MODE == 'split-forward':
             self.resampleSplitForward()
+            
+        elif self.RESAMPLING_MODE == 'split-forward-front':
+            front_bin_coord_id = 9e99
+            for this_bin in iteration.bins:
+                if this_bin.getNumberOfSegments() > 0:
+                    if this_bin.getCoordinateIds()[self.PRIMARY_COORDINATE] < front_bin_coord_id:
+                        front_bin_coord_id = this_bin.getCoordinateIds()[self.PRIMARY_COORDINATE]
+            self.resampleSplitForwardFront(front_bin_coord_id)
         
         elif self.RESAMPLING_MODE == 'split-region':
             self.resampleSplitRegion()
@@ -103,6 +113,32 @@ class Resampling(object):
                 else:
                     self.splitForward(this_bin)
                 continue
+            
+    def resampleSplitForwardFront(self, front_bin_coord_id):
+        """
+        This resampling mode only splits segments when they move forward along 
+        a given coordinate. 
+        Segments in bins which are not in the front are merged until the corresponding bin ends up with
+        a max of 1 segment.
+        Front bins are defined by a range from the bin with the lowest coordinate id.        
+        """
+        for this_bin in self.iteration:
+            # Is in sample region or is bin empty?
+            if len(this_bin.segments) == 0 or this_bin.sample_region == False:
+                continue
+             
+            # Bin is in front region           
+            if this_bin.getCoordinateIds()[self.PRIMARY_COORDINATE] < front_bin_coord_id + self.FRONT_INTERVAL:
+                # Not enough segments -> split
+                if this_bin.getNumberOfSegments() < this_bin.getTargetNumberOfSegments():
+                    if this_bin.getId() == 0:
+                        self.splitWeighted(this_bin)
+                    else:
+                        self.splitForward(this_bin)
+                    continue
+            # Bin is not in front region
+            else:
+                self.mergeKeepRandomSegment(this_bin)
     
     def resampleSplitRegion(self):
         """
@@ -391,3 +427,26 @@ class Resampling(object):
         
             # Reorder segment ids after deletion 
             this_bin.fixSegmentIds()
+            
+    def mergeKeepRandomSegment(self, this_bin):
+        """
+        Choose a segment randomly. Distribute the 
+        probability of the deleted segments
+        equally amongst the remaining segments
+        """
+        extinction_probability = 0.0
+        for dummy in range(len(this_bin.segments) - 1):
+            # Get the extinction index
+            ext_index = rnd.randint(0, this_bin.getNumberOfSegments() - 1)
+            # Reassign the extinction probability / N_segments to the remaining segments
+            extinction_probability = this_bin.segments[ext_index].getProbability()
+            this_bin.merge_list.append([ext_index])
+            del this_bin.segments[ext_index]
+            for this_segment in this_bin.segments:
+                this_segment.addProbability(extinction_probability / this_bin.getNumberOfSegments())  
+            for this_segment in this_bin.segments:
+                this_bin.merge_list[-1].append(this_segment.getId())
+        
+            # Reorder segment ids after deletion 
+            this_bin.fixSegmentIds()
+        
