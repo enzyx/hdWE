@@ -124,7 +124,9 @@ class Resampling(object):
         """
         for this_bin in self.iteration:
             # Is in sample region or is bin empty?
-            if len(this_bin.segments) == 0 or this_bin.sample_region == False:
+            if len(this_bin.segments) == 0 and this_bin.getId() > 0:
+               continue
+            if this_bin.sample_region == False:
                 continue
              
             # Bin is in front region           
