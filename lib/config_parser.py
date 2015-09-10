@@ -32,6 +32,14 @@ def parseSampleRegion(config):
         
     return sample_region
 
+def parseStartBinCoordinateIds(config):
+    start_bin_coordinate_ids = []
+    config_string = config.get('hdWE', 'start-bin-coordinate-ids')
+    for value in config_string.split():
+        start_bin_coordinate_ids.append(int(value))
+    
+    return start_bin_coordinate_ids
+
 def parseStartingStructures(config):
     """
     can a list of filenames or a wildcard with *

@@ -132,13 +132,17 @@ class Resampling(object):
                 # Not enough segments -> split
                 if this_bin.getNumberOfSegments() < this_bin.getTargetNumberOfSegments():
                     if this_bin.getId() == 0:
-                        self.splitWeighted(this_bin)
+                        self.splitFromEnsemble(this_bin)
                     else:
                         self.splitForward(this_bin)
                     continue
             # Bin is not in front region
             else:
-                self.mergeKeepRandomSegment(this_bin)
+                if this_bin.getId() == 0 and this_bin.getNumberOfSegments() == 0:
+                    print('ASDFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF')
+                    self.splitFromEnsemble(this_bin, True)
+                else:
+                    self.mergeKeepRandomSegment(this_bin)
     
     def resampleSplitRegion(self):
         """
@@ -317,6 +321,27 @@ class Resampling(object):
                 this_bin.addSegment(__segment)
             
             del(reduced_split_indices[rand_index])
+            
+    def splitFromEnsemble(self, this_bin, generate_only_one_segment = False):
+        """
+        randomly add segments to a bin (usually starting bin with bin_id = 0)
+        from the starting structures
+        """
+        target_number_of_segments = this_bin.getTargetNumberOfSegments()
+        if generate_only_one_segment == True:
+            target_number_of_segments = 1
+        for dummy in range(target_number_of_segments - len(this_bin.segments)):
+            random_index = rnd.randint(0, self.iteration.number_starting_structures -1)
+            segment = Segment(probability         = 1.0,
+                              parent_iteration_id = 0,
+                              parent_bin_id       = 0,
+                              parent_segment_id   = random_index,
+                              iteration_id        = this_bin.getIterationId(),
+                              bin_id              = this_bin.getId(),
+                              segment_id          = this_bin.getNumberOfSegments())
+            this_bin.addSegment(segment)
+        
+
     
     ########################
     #      Merge  modes    #

@@ -74,63 +74,77 @@ def createInitialIteration(STARTING_STRUCTURES,
                            target_number_of_segments, 
                            initial_boundaries, 
                            initial_sample_region, 
-                           md_module):
+                           md_module,
+                           start_bin_coordinate_ids):
     """
     Creates the first iteration, with equally probable
     starting structures sorted into bins
     Copies the structure into the run folder
     """
-    n_segments = len(STARTING_STRUCTURES)
+
+    # randomize the order of entries in starting_structures in order to 
+    # make the random choice of first starting structures later straight-forward
+    from random import shuffle
+    shuffle(STARTING_STRUCTURES)
+
     # setup first iteration
     iteration0 = Iteration(iteration_id = 0, 
                            boundaries = initial_boundaries,
-                           sample_region = initial_sample_region)
+                           sample_region = initial_sample_region,
+                           n_starting_structures = 0)
 
     # create bins and segments for starting structures
     for starting_structure in STARTING_STRUCTURES:
         coordinates    = md_module.calcCoordinatesOfFile(starting_structure)
         coordinate_ids = bin_classifier.getCoordinateIds(coordinates, initial_boundaries)
         sample_region  = iteration0.isInSampleRegion(coordinate_ids)
+        # Check whether starting structure is in active start bin
         if not sample_region:
-            n_segments -= 1
             sys.stderr.write("\033[0;31m Warning: \033[0m Given structure is not "\
                              "in sampled region. Won't use file {}\n".format(starting_structure))
             continue
-
-        # find or create appropriate bin
-        this_bin = None
-        for scan_bin in iteration0:
-            # Note that coordinate Ids are numpy arrays
-            if (scan_bin.getCoordinateIds() == coordinate_ids).all():
-                this_bin = scan_bin
-        if this_bin == None:
+        if not all(coordinate_ids == start_bin_coordinate_ids):
+            sys.stderr.write("\033[0;31m Warning: \033[0m Given structure is not "\
+                             "in starting bin. Won't use file {}\n".format(starting_structure))
+            continue
+        
+        # Create start bin from the first structure in starting structures.
+        # If the loop arrives here, it is in the starting bin.
+        if len(iteration0.bins) == 0:
             bin_id = iteration0.generateBin(target_number_of_segments = target_number_of_segments,
                                             coordinate_ids            = coordinate_ids,
                                             sample_region             = sample_region)
-            this_bin = iteration0.bins[bin_id]
-
+            starting_bin = iteration0.bins[bin_id]
+            
+        # Create segment from starting structure
+        segment_id = starting_bin.generateSegment(probability         = 0.0,
+                                                  parent_iteration_id = 0,
+                                                  parent_bin_id       = starting_bin.getId(), 
+                                                  parent_segment_id   = starting_bin.getNumberOfSegments() )        
+        starting_segment = starting_bin.segments[segment_id]
+        starting_segment.setCoordinates(coordinates)
         
-        # create segment
-        segment_id = this_bin.generateSegment(probability     = 0.0,
-                                            parent_iteration_id = 0,
-                                            parent_bin_id       = this_bin.getId(), 
-                                            parent_segment_id   = this_bin.getNumberOfSegments() )
-        this_segment = this_bin.segments[segment_id]
-        this_segment.setCoordinates(coordinates)
-        namestring = this_segment.getNameString()
-               
         # copy structure into run dir
         shutil.copyfile(starting_structure, 
                         "{wd}/{jn}-run/{namestring}.{filetype}".format(\
                                                                         wd         = WORKDIR, 
                                                                         jn         = JOBNAME,
-                                                                        namestring = namestring,
+                                                                        namestring = starting_segment.getNameString(),
                                                                         filetype   = starting_structure.split('.')[-1]))           
 
+    iteration0.number_starting_structures = starting_bin.getNumberOfSegments()
+    # All appropriate starting structures have been copied into the rundir
+    # in iteration 0, bin 0 and segment id (in ascending order)
+    # Corresponding segments have been generated in the start bin.
+    # delete segments from bin in order to end up with target number of segments
+    # as the starting_structure list was randomized, simply all segments with 
+    # segment_id >= target number of segments can be deleted
+    del starting_bin.segments[target_number_of_segments:]
+      
     # set correct probabilities and copy to initial bins
-    for this_bin in iteration0:
-        for this_segment in this_bin:
-            this_segment.setProbability(1.0/n_segments)
-        this_bin.backupInitialSegments()
+    n_segments = starting_bin.getNumberOfSegments()
+    for this_segment in starting_bin.segments:
+        this_segment.setProbability(1.0/n_segments)
+    starting_bin.backupInitialSegments()
     
     return iteration0

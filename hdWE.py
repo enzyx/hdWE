@@ -79,6 +79,7 @@ INITIAL_TARGET_NUMBER_OF_SEGMENTS = config_parser.parserInitialNumberOfTargetSeg
 INITIAL_BOUNDARIES                = config_parser.parseInitialBoundaries(config)
 INITIAL_SAMPLE_REGION             = config_parser.parseSampleRegion(config)
 STEADY_STATE                      = config_parser.parseSteadyState(config)
+START_BIN_COORDINATE_IDS          = config_parser.parseStartBinCoordinateIds(config)
 # resampling
 RESAMPLING_MODE                   = config_parser.parseResamplingMode(config)
 CLOSEST_MERGE_THRESHOLD           = config_parser.parseMergeThreshold(config)
@@ -171,12 +172,14 @@ else:
                                                       INITIAL_TARGET_NUMBER_OF_SEGMENTS, 
                                                       INITIAL_BOUNDARIES, 
                                                       INITIAL_SAMPLE_REGION,
-                                                      md_module))
+                                                      md_module,
+                                                      START_BIN_COORDINATE_IDS))
     logger.log(iterations[0], CONFIGFILE)  
 
 # Create an instance of the resampling module
 resampler = resampling.Resampling(md_module, RESAMPLING_MODE, CLOSEST_MERGE_THRESHOLD, 
-                                  PRIMARY_COORDINATE, SPLIT_FORWARD_NUMBER_OF_CHILDREN, SPLIT_REGION, FRONT_INTERVAL)
+                                  PRIMARY_COORDINATE, SPLIT_FORWARD_NUMBER_OF_CHILDREN, 
+                                  SPLIT_REGION, FRONT_INTERVAL)
 
 # Handle the deletion/compression of MD output files 
 cleaner = cleanup.Cleanup(md_module, NUMBER_OF_THREADS, COMPRESS_ITERATION, 
@@ -201,7 +204,8 @@ for iteration_counter in range(iterations[-1].getId() + 1, MAX_ITERATIONS + 1):
     
     iterations.append(Iteration(iteration_counter, 
                                 iterations[-1].getBoundaries(), 
-                                iterations[-1].getSampleRegion()) ) 
+                                iterations[-1].getSampleRegion(),
+                                iterations[-1].getNumberOfStartingStructures() )) 
     resorting.copyBinStructureToLastIteration(iterations)
     resorting.resort(iterations, 
                      md_module,

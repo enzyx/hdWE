@@ -9,19 +9,20 @@ class Iteration(object):
     """
     Defines one iteration of the hdWE algorithm
     """
-    def __init__(self, iteration_id, boundaries, sample_region):
+    def __init__(self, iteration_id, boundaries, sample_region, n_starting_structures):
         """ 
         @param ref_coords the path to reference coordinates defining the bin
         @param trajectories single or list of trajectories to 
                init the bin
         """
         # points to the reference structure of this bin
-        self.iteration_id            = iteration_id    # int
-        self.boundaries              = boundaries 
-        self.sample_region           = sample_region
+        self.iteration_id               = iteration_id    # int
+        self.boundaries                 = boundaries 
+        self.sample_region              = sample_region
         # the array of segments
-        self.bins                    = []
-        self.probability_flow        = 0.0                      
+        self.bins                       = []
+        self.probability_flow           = 0.0
+        self.number_starting_structures = n_starting_structures                      
 
     def generateBin(self, target_number_of_segments, coordinate_ids,
                     sample_region):
@@ -81,6 +82,12 @@ class Iteration(object):
         Number of bins
         """
         return len(self.bins)
+    
+    def getNumberOfStartingStructures(self):
+        """
+        Number of starting structures
+        """
+        return self.number_starting_structures
     
     def getNumberOfActiveBins(self):
         """
