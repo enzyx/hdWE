@@ -56,6 +56,7 @@ class MD_module():
         self.rmsd_mask             = config_parser.parseAmberRmsdMask(config)
         self.rmsd_fit_mask         = config_parser.parseAmberRmsdFitMask(config)
         self.parallelization_mode  = config.get('amber','parallelization-mode')
+        self.tmp_dir               = config_parser.parseAmberTmpDirPath(config) 
         # Only search mpirun binary in config file if MPI switched on
         if self.parallelization_mode == 'mpi':
             self.mpirun                = config.get('amber', 'mpirun')
@@ -106,9 +107,9 @@ class MD_module():
             #amber_trajectory_path   = '/dev/null'
             #amber_outfile_path      = '/dev/null'
             #TODO: Strange bug on REX allows only info and traj to be /dev/null
-            amber_info_path         = '/tmp/{seg}_{id}.inf'.format(seg=segment.getNameString(), id=uuid.uuid1())
-            amber_outfile_path      = '/tmp/{seg}_{id}.out'.format(seg=segment.getNameString(), id=uuid.uuid1()) 
-            amber_trajectory_path   = '/tmp/{seg}_{id}.nc'.format( seg=segment.getNameString(), id=uuid.uuid1()) 
+            amber_info_path         = self.tmp_dir + '/{seg}_{id}.inf'.format(seg=segment.getNameString(), id=uuid.uuid1())
+            amber_outfile_path      = self.tmp_dir + '/{seg}_{id}.out'.format(seg=segment.getNameString(), id=uuid.uuid1()) 
+            amber_trajectory_path   = self.tmp_dir + '/{seg}_{id}.nc'.format( seg=segment.getNameString(), id=uuid.uuid1()) 
 
         #TODO dou ble gpu usage on one node, can maybe by done more elegantly?
 
@@ -285,8 +286,8 @@ class MD_module():
 
         else:
             basename = filename.split('/')[-1]
-            cpptraj_infile_path = "/tmp/{0}_{1}.cpptraj_in".format(basename, UUID)
-            cpptraj_outfile_path = "/tmp/{0}_{1}.cpptraj_out".format(basename, UUID)
+            cpptraj_infile_path =  self.tmp_dir + "/{0}_{1}.cpptraj_in".format(basename, UUID)
+            cpptraj_outfile_path = self.tmp_dir + "/{0}_{1}.cpptraj_out".format(basename, UUID)
             cpptraj_logfile_path = "/dev/null"
 
         
@@ -342,8 +343,8 @@ class MD_module():
             cpptraj_logfile_path = "{jn}-log/cpptraj_rmsds.log".format(jn=self.jobname)
 
         else:
-            cpptraj_infile_path  = "/tmp/{0}_{1}.cpptraj_rmds_in".format(segment_name_string, UUID)
-            cpptraj_outfile_path = "/tmp/{0}_{1}.cpptraj_rmds_out".format(segment_name_string, UUID)
+            cpptraj_infile_path  = self.tmp_dir + "/{0}_{1}.cpptraj_rmds_in".format(segment_name_string, UUID)
+            cpptraj_outfile_path = self.tmp_dir + "/{0}_{1}.cpptraj_rmds_out".format(segment_name_string, UUID)
             cpptraj_logfile_path = "/dev/null"
 
         
@@ -635,7 +636,7 @@ class MD_module():
         
         # write cppraj in file
         UUID                 = uuid.uuid1()
-        cpptraj_file_path    = "/tmp/{iterationId}_{uuid}.compress_cpptraj_in".format(iterationId=iteration.getNameString(), uuid=UUID)
+        cpptraj_file_path    = self.tmp_dir + "/{iterationId}_{uuid}.compress_cpptraj_in".format(iterationId=iteration.getNameString(), uuid=UUID)
         cpptraj_logfile_path = "/dev/null"
         cpptraj_file         = open(cpptraj_file_path, 'w')    
         for segment_name in segment_name_list:

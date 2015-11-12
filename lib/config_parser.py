@@ -303,6 +303,18 @@ def parseAmberRmsdFitMask(config):
             sys.exit(CONFIG_ERROR_CODE)
     return rmsd_fit_mask
 
+def parseAmberTmpDirPath(config):
+    """
+    @return  tmp directory path
+    @default /tmp 
+    """
+    tmp_dir = '/tmp'
+    try:
+        tmp_dir = config.get('amber', 'tmp-dir')
+    except:
+        pass
+    return tmp_dir
+
 def parseSteadyState(config):
     """
     @return parse steady state flag 
