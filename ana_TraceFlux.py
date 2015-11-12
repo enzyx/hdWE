@@ -117,12 +117,11 @@ for i in range(first_iteration + 1, last_iteration + 1):
                                 .segments[this_initial_segment.getParentSegmentId()].getProbability()
             this_initial_segment.setProbability(new_probability)
 
-
         if this_bin.sample_region == True:
             # No split and merge
             if this_bin.getNumberOfSegments() == this_bin.getNumberOfInitialSegments():
                 for this_segment in this_bin:
-                    this_segment.setProbability(this_bin.initial_segments[this_segment.getId()].getProbability())
+                    this_segment.setProbability(this_bin.initial_segments[this_segment.getId()].getProbability())                  
             
             # Split
             elif this_bin.getNumberOfSegments() > this_bin.getNumberOfInitialSegments():
@@ -139,12 +138,10 @@ for i in range(first_iteration + 1, last_iteration + 1):
             
                 for this_segment in this_bin:
                     this_segment.setProbability(split_dict[this_segment.getParentNameString()])
-        
-
             # Merge
             elif this_bin.getNumberOfSegments() < this_bin.getNumberOfInitialSegments():
                 # Skip merging if no merge_list exists, which means merge_mode was none
-                if len(this_bin.merge_list) > 1:
+                if len(this_bin.merge_list) >= 1:
                     probabilities = []
                     for this_initial_segment in this_bin.initial_segments:
                         probabilities.append(this_initial_segment.getProbability())
@@ -163,9 +160,9 @@ for i in range(first_iteration + 1, last_iteration + 1):
                     # set merged probabilities of the segments 
                     for segment_index in range(0,len(this_bin.segments)):
                         this_bin.segments[segment_index].setProbability(probabilities[segment_index])
-
+            
     # Reset Outer Region Bins
-    current_iteration.resetOuterRegion()
+    current_iteration.resetOuterRegion(steady_state=True)
 
     # STATES
     for this_bin in current_iteration:
