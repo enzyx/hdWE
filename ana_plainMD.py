@@ -4,7 +4,6 @@ import argparse
 import numpy
 import lib.constants as constants
 import scipy.stats
-import lib.functions_ana_general as functions_ana_general
 import lib.functions_ana_plainMD as functions_ana_plainMD
 from math import log
 #import scikits.bootstrap
@@ -53,11 +52,9 @@ args = parser.parse_args()
 coordinates_tmp = numpy.loadtxt(args.cpptraj_output, usecols=(1,) )
 if args.end_frame == -1:
     args.end_frame = len(coordinates_tmp) - 1
-coordinates = numpy.zeros([args.end_frame - args.begin_frame])
 coordinates = coordinates_tmp[args.begin_frame:args.end_frame]
 
 print(' Loaded frames: {:d}'.format(len(coordinates)))
-
 
 ######## PMF Calculation ######################################################
 print(' Calculating PMF.')
@@ -111,7 +108,6 @@ if not(args.state_A==None and args.state_B==None):
     
     residence_times_in_A = functions_ana_plainMD.residence_times_from_coordinates(coordinates, state_A)    
     residence_times_in_B = functions_ana_plainMD.residence_times_from_coordinates(coordinates, state_B)  
-    
    
     ####### Transition time distribution
     distr_header_line = 'Transition time in tau, Probability'
