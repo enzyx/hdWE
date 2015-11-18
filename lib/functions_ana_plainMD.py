@@ -7,29 +7,29 @@ def PMF(data, N_bins):
     Returns the PMF and probability distribution corresponding to data.
     The energy unit is according to constants.py
     """
-    #Calculate the weighted histogram and PMF     
-    #Setup variables
+    # Calculate the weighted histogram and PMF     
+    # Setup variables
     hist_min =  min(data)
     hist_max =  max(data)
     
     dcoord   =  1.0 * (hist_max - hist_min ) / N_bins
     hist     =  numpy.zeros([N_bins,3], float)
-    #Sort coords into histogramm
+    # Sort coords into histogramm
     for i in range(0,len(data)):
         index       = int( (data[i] - hist_min) / dcoord )
         #maximum coord entry shall be included in last bin:
         if index==N_bins:
             index = index - 1
         hist[index,2] = hist[index,2] + 1
-    #Assign the bin positions and calculate free energy:
+    # Assign the bin positions and calculate free energy:
     for i in range(0, N_bins):
-        hist[i,0] = hist_min + i * dcoord
-        if hist[i,2]>0:
+        hist[i,0] = hist_min + (i + 0.5) * dcoord
+        if hist[i,2] > 0:
             hist[i,1]  = - constants.kT * log(hist[i,2])
         else:
             hist[i,1]  = 'Inf'
     
-    #Shift minimum to zero        
+    # Shift minimum to zero        
     pmf_min = min(hist[:,1])
     for i in range(0, N_bins):
         hist[i,1] = hist[i,1] - pmf_min
