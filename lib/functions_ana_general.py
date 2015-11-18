@@ -73,7 +73,7 @@ def block_bootstrap(data, function, block_size, number_of_samples = 1000, alpha 
     """
     @return Performs a block bootstrap analysis on a time series of sampling data.
     The mean value of a given function of the sampling data and the corresponding confidence intervals are returned.
-    """ 
+    """
     from random import randint
     
     # generate a resampled dataset based on non-overlapping blocks
@@ -116,8 +116,10 @@ def cumulative_mean(data):
     @return cumulative mean of data
     """
     cumulative_mean = []
-    for i in range(len(data)):
-        cumulative_mean.append(numpy.mean(data[0:i+1]))
+    cumulative_sum = 0.0        
+    for i, value in enumerate(data):
+        cumulative_sum += value
+        cumulative_mean.append(cumulative_sum/float(i+1))
     return cumulative_mean
         
 def getStateFromCoordinate(segment, state_A, state_B):
