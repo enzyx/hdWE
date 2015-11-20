@@ -72,6 +72,7 @@ KEEP_COORDS_FREQUENCY             = config_parser.parseKeepCoordsFrequency(confi
 KEEP_COORDS_SEGMENTS              = config_parser.parseKeepCoordsSegments(config)
 COMPRESS_ITERATION                = config_parser.parseCompressIteration(config)
 COMPRESS_CLOSEST_MASK             = config_parser.parseCompressClosestMask(config)
+CALCULATE_VELOCITIES              = config_parser.parseCalculateVelocities(config) 
 # hdWE Options
 STARTING_STRUCTURES               = config_parser.parseStartingStructures(config)
 MAX_ITERATIONS                    = config_parser.parseMaxIterations(config)
@@ -246,7 +247,10 @@ for iteration_counter in range(iterations[-1].getId() + 1, MAX_ITERATIONS + 1):
     # 7. Calculate Segment Coordinates
     sys.stdout.write(' - Calculate Coordinates\n')
     sys.stdout.flush() 
-    md_module.calcCoordinates(iterations[-1])    
+    md_module.calcCoordinates(iterations[-1])
+    if CALCULATE_VELOCITIES:
+        sys.stdout.write(' - Calculate Velocities\n')
+        md_module.calcVelocity(iterations[-1])   
     
     # 8. log everything
     logger.log(iterations[-1], CONFIGFILE)

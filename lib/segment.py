@@ -12,6 +12,7 @@ class Segment(object):
         self.segment_id          = segment_id           # int
         self.iteration_id        = iteration_id         # int
         self.coordinates         = None                 # list of floats
+        self.velocities          = None                 # list of floats
 
     def __getNameString(self, iteration_id, bin_id, segment_id):
         """
@@ -83,6 +84,12 @@ class Segment(object):
     
     def setCoordinates(self, coordinates):
         self.coordinates = coordinates
+    
+    def setVelocities(self, velocities):
+        self.velocities = velocities
+    
+    def getVelocities(self):
+        return self.velocities
     
     def getCoordinateIds(self, boundaries):
         """

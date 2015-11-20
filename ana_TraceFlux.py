@@ -87,6 +87,8 @@ probability_state_B = []
 probability_from_A  = []
 probability_from_B  = []
 pmf_segment_data    = []
+pmf_segment_data_A  = []
+pmf_segment_data_B  = []
 
 reweighter = reweighting.Reweighting(reweighting_range=args.reweighting_range)
 reweighter.storeRateMatrix(current_iteration)
@@ -198,6 +200,11 @@ for i in range(first_iteration + 1, last_iteration + 1):
                 parent_seg_id = this_segment.getParentSegmentId()  
                 pmf_segment_data.append([ previous_iteration.bins[parent_bin_id].segments[parent_seg_id].getCoordinates()[0], 
                                           np.sum(this_segment.getProbability()) ])
+                # PMF from A, from B
+                pmf_segment_data_A.append([ previous_iteration.bins[parent_bin_id].segments[parent_seg_id].getCoordinates()[0], 
+                                          this_segment.getProbability()[0] ])
+                pmf_segment_data_B.append([ previous_iteration.bins[parent_bin_id].segments[parent_seg_id].getCoordinates()[0], 
+                                          this_segment.getProbability()[1] ])
     
     probability_from_A_iter = current_iteration.getProbability()[0]
     probability_from_B_iter = current_iteration.getProbability()[1]
@@ -260,24 +267,24 @@ for i in range(len(cum_flux_into_A)):
                          cum_probability_from_B[i]))
 fout.close()
 
-# Data autocorrelaction functions
-auto_flux_into_A         = f.autocorrelation_function(flux_into_A[b:e])
-auto_probability_state_A = f.autocorrelation_function(probability_state_A[b:e])
-auto_probability_from_A  = f.autocorrelation_function(probability_from_A[b:e])
-auto_flux_into_B         = f.autocorrelation_function(flux_into_B[b:e])
-auto_probability_state_B = f.autocorrelation_function(probability_state_B[b:e])
-auto_probability_from_B  = f.autocorrelation_function(probability_from_B[b:e])
+# Data autocorrelation functions
+# auto_flux_into_A         = f.autocorrelation_function(flux_into_A[b:e])
+# auto_probability_state_A = f.autocorrelation_function(probability_state_A[b:e])
+# auto_probability_from_A  = f.autocorrelation_function(probability_from_A[b:e])
+# auto_flux_into_B         = f.autocorrelation_function(flux_into_B[b:e])
+# auto_probability_state_B = f.autocorrelation_function(probability_state_B[b:e])
+# auto_probability_from_B  = f.autocorrelation_function(probability_from_B[b:e])
 
-fout = open(args.output_file + '.auto', 'w')
-for i in range(len(auto_flux_into_A)):
-    fout.write("{:8.7e}   {:8.7e}   {:8.7e}   {:8.7e}   {:8.7e}   {:8.7e}\n".format(
-                         auto_flux_into_A[i], 
-                         auto_probability_state_A[i], 
-                         auto_probability_from_A[i], 
-                         auto_flux_into_B[i], 
-                         auto_probability_state_B[i], 
-                         auto_probability_from_B[i]))
-fout.close()
+# fout = open(args.output_file + '.auto', 'w')
+# for i in range(len(auto_flux_into_A)):
+#     fout.write("{:8.7e}   {:8.7e}   {:8.7e}   {:8.7e}   {:8.7e}   {:8.7e}\n".format(
+#                          auto_flux_into_A[i], 
+#                          auto_probability_state_A[i], 
+#                          auto_probability_from_A[i], 
+#                          auto_flux_into_B[i], 
+#                          auto_probability_state_B[i], 
+#                          auto_probability_from_B[i]))
+# fout.close()
 
 # calculate PMF
 histogram = f.weightedHistogram(pmf_segment_data, args.pmf_bins)
@@ -290,6 +297,38 @@ for i in range(len(histogram)):
 pmf -= np.min(pmf)
 
 fout = open(args.output_file + '.pmf', 'w')
+fout.write('# coord   free energy   probability')
+for i in range(len(pmf)):
+    fout.write('{:8.7e} {:8.7e} {:8.7e}\n'.format(histogram[i,0], pmf[i], histogram[i,1]))
+fout.close()
+
+# calculate PMF from A 
+histogram = f.weightedHistogram(pmf_segment_data_A, args.pmf_bins)
+pmf = np.zeros(len(histogram), dtype=float)
+for i in range(len(histogram)):
+    if histogram[i,1] > 0.0:
+        pmf[i] = -constants.kT *  log(histogram[i,1])
+    else:
+        pmf[i] = 'Inf'
+pmf -= np.min(pmf)
+
+fout = open(args.output_file + '_A.pmf', 'w')
+fout.write('# coord   free energy   probability')
+for i in range(len(pmf)):
+    fout.write('{:8.7e} {:8.7e} {:8.7e}\n'.format(histogram[i,0], pmf[i], histogram[i,1]))
+fout.close()
+
+# calculate PMF from B
+histogram = f.weightedHistogram(pmf_segment_data_B, args.pmf_bins)
+pmf = np.zeros(len(histogram), dtype=float)
+for i in range(len(histogram)):
+    if histogram[i,1] > 0.0:
+        pmf[i] = -constants.kT *  log(histogram[i,1])
+    else:
+        pmf[i] = 'Inf'
+pmf -= np.min(pmf)
+
+fout = open(args.output_file + '_B.pmf', 'w')
 fout.write('# coord   free energy   probability')
 for i in range(len(pmf)):
     fout.write('{:8.7e} {:8.7e} {:8.7e}\n'.format(histogram[i,0], pmf[i], histogram[i,1]))

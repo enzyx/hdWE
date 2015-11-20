@@ -189,6 +189,16 @@ def parseSegmentPerBin(config):
         print("Error: While processing configuration file entry 'segments-per-bin'.")
         sys.exit(CONFIG_ERROR_CODE)
 
+def parseCalculateVelocities(config):
+    """
+    @return Boolean whether to calculate velocities for segments
+    """
+    try:
+        calculate_velocity = config.getboolean('hdWE','calculate-velocities')
+        return calculate_velocity
+    except:
+        return False
+
 def parserInitialNumberOfTargetSegments(config):
     """
     @return Target number of segments, a bin should have after its initial creation

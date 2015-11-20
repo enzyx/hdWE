@@ -20,6 +20,12 @@ if __name__ == "__main__":
     parentdir = os.path.dirname(dirname)
     sys.path.append(parentdir)
 
+# Only import parmed.amber when we need the velocities
+try:
+    import parmed.amber
+except:
+    pass
+
 class MD_module():
     # WORKDIR                     = ''
     # debug                       = False
@@ -86,7 +92,7 @@ class MD_module():
         for line in c_mask_file.readlines():
             self.COORDINATE_MASKS.append(line.strip())
         self.N_DIMENSIONS = len(self.COORDINATE_MASKS)
-        
+                
     def setIteration(self, iteration):
         self.iteration = iteration
     
@@ -322,6 +328,22 @@ class MD_module():
             os.remove(cpptraj_infile_path)
         
         return coordinates
+
+    def calcSegmentVelocities(self, segment):
+        segment_name_string = segment.getNameString()
+        
+        rst7_file = ("{jn}-run/{namestring}.rst7".format(jn=self.jobname,
+                        namestring = segment_name_string))
+
+        rst7 = parmed.amber.Rst7(rst7_file)
+        # Distance vector
+        distx  = rst7.coordinates[0][0] - rst7.coordinates[0][1]
+        distx /= numpy.linalg.norm(distx)
+        v1  = numpy.dot(rst7.velocities[0], -distx)
+        v2  = numpy.dot(rst7.velocities[1],  distx)
+        v   = v1 + v2
+        segment.setVelocities([v])
+        return v
     
     def getRmsdsToSegments(self, segments, target_number_of_segments=0):
         """
@@ -512,6 +534,22 @@ class MD_module():
                     this_segment.setCoordinates(coordinates[i])
                     i += 1
         return coordinates
+
+    def calcVelocity(self, iteration):
+        """
+        Calculate the relative velocities (at the moment only 
+        the 2 ions special case is supported)
+        """
+        self.setIteration(iteration)
+        if self.parallelization_mode == "serial":
+            # calculate and set coordinates
+            for this_bin in iteration:
+                for this_segment in this_bin:
+                    self.calcSegmentVelocities(this_segment)
+        
+        else:
+            sys.stderr.write("ERROR: Velocity calculation is only available in serial mode")
+            sys.exit(-1)
 
     def calcBinsRmsds(self, iteration):
         """
