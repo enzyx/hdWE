@@ -89,6 +89,11 @@ probability_from_B  = []
 pmf_segment_data    = []
 pmf_segment_data_A  = []
 pmf_segment_data_B  = []
+velocity_data          = {'A': [], 'B':[]}
+"""
+stores all velocity_data from A and from B:
+velocity_data['A'] is a list of datapoints [prob, coordinate, velocity]
+"""
 
 reweighter = reweighting.Reweighting(reweighting_range=args.reweighting_range)
 reweighter.storeRateMatrix(current_iteration)
@@ -225,7 +230,15 @@ for i in range(first_iteration + 1, last_iteration + 1):
     bin_prob_out.write('\n')
     bin_prob_out.flush()
     
-
+    for this_bin in current_iteration:
+        this_bin_prob = this_bin.getProbability()
+        for this_segment in this_bin:      
+            velocity_data['A'].append([this_segment.getProbability()[0], 
+                                    this_segment.getCoordinates()[0], 
+                                    this_segment.getVelocities[0]])
+            velocity_data['B'].append([this_segment.getProbability()[1], 
+                                    this_segment.getCoordinates()[0], 
+                                    this_segment.getVelocities[0]])
 
 bin_prob_out.close()
 
@@ -333,6 +346,31 @@ fout.write('# coord   free energy   probability')
 for i in range(len(pmf)):
     fout.write('{:8.7e} {:8.7e} {:8.7e}\n'.format(histogram[i,0], pmf[i], histogram[i,1]))
 fout.close()
+
+#### calculate velocity histograms ####
+histograms = []
+v_out = open('ana_TraceFlux.velo', 'w')
+v_out.write('#bin velocity histograms from state A for each bin and then from B for each bin\n')
+for state in ['A', 'B']:
+    velocity_data[state].sort(key=lambda x: x[1])
+    bin_boundaries = current_iteration.getBoundaries()[0]
+    
+    bin_velocities = []
+    bin_velocity_weights = []
+    this_upper_boundary = bin_boundaries.pop(0)
+    all_bin_velocities = [[]] # for each bin there's a list of [velocity, prob] entries for each segment
+    for velo_entry in velocity_data[state]:
+        if velo_entry[1] > this_upper_boundary:
+            this_upper_boundary = bin_boundaries[0]
+            all_bin_velocities.append([])
+        if velo_entry[1] < this_upper_boundary:
+            all_bin_velocities[-1].append([velo_entry[2], velo_entry[0]])
+    
+    for bin_velocities in all_bin_velocities:
+        bin_velocities = np.asarray(bin_velocities)
+        histograms.append(np.histogram(bin_velocities[:,0], bin_velocities[:,1]))
+np.save(v_out, np.transpose(histograms))
+v_out.close()
 
 # Output
 block_size = 10
