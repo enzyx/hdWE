@@ -44,7 +44,7 @@ def inState(coordinate, state):
     state[0] = lower_boundary
     state[1] = upper_boundary
     """
-    if (coordinate >= state[0]) and (coordinate < state[1]):
+    if (coordinate > state[0]) and (coordinate < state[1]):
         return True
     else:
         return False

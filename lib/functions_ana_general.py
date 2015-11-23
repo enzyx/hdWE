@@ -130,9 +130,9 @@ def getStateFromCoordinate(segment, state_A, state_B):
     state_per_dimension = []
     # lazy 1d implementation
     for coordinate in [segment.getCoordinates()[0]]:
-        if coordinate > state_A[0] and coordinate <= state_A[1]:
+        if coordinate > state_A[0] and coordinate < state_A[1]:
             state_per_dimension.append('A')
-        elif coordinate > state_B[0] and coordinate <= state_B[1]:
+        elif coordinate > state_B[0] and coordinate < state_B[1]:
             state_per_dimension.append('B')
         else:
             state_per_dimension.append('0')

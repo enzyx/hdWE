@@ -7,6 +7,7 @@ import lib.functions_ana_general as f
 import lib.reweighting as reweighting
 import lib.constants as constants
 from math import log
+import matplotlib.pyplot as plt
 
 ###### Parse command line ###### 
 parser = argparse.ArgumentParser(description=
@@ -45,6 +46,9 @@ parser.add_argument('-N', '--pmf-bins', dest="pmf_bins",
 parser.add_argument('-t', '--tau', dest="tau",
                     type=float, default = 0, required=False,
                     help="tau used in hdWE simulations.")
+parser.add_argument('--velocities', dest="velocities",
+                    action='store_true', required=False,
+                    help="check velocity distributions and print them.")
 
 # Initialize
 args = parser.parse_args()
@@ -94,6 +98,8 @@ velocity_data          = {'A': [], 'B':[]}
 stores all velocity_data from A and from B:
 velocity_data['A'] is a list of datapoints [prob, coordinate, velocity]
 """
+merge_counter = [0,0,0,0,0,0,0,0,0,0]
+split_counter = [0,0,0,0,0,0,0,0,0,0]
 
 reweighter = reweighting.Reweighting(reweighting_range=args.reweighting_range)
 reweighter.storeRateMatrix(current_iteration)
@@ -132,6 +138,7 @@ for i in range(first_iteration + 1, last_iteration + 1):
             
             # Split
             elif this_bin.getNumberOfSegments() > this_bin.getNumberOfInitialSegments():
+                split_counter[this_bin.getId()] += 1
                 split_dict = {}
                 for this_segment in this_bin:
                     try:
@@ -147,6 +154,7 @@ for i in range(first_iteration + 1, last_iteration + 1):
                     this_segment.setProbability(split_dict[this_segment.getParentNameString()])
             # Merge
             elif this_bin.getNumberOfSegments() < this_bin.getNumberOfInitialSegments():
+                merge_counter[this_bin.getId()] += 1
                 # Skip merging if no merge_list exists, which means merge_mode was none
                 if len(this_bin.merge_list) >= 1:
                     probabilities = []
@@ -202,7 +210,7 @@ for i in range(first_iteration + 1, last_iteration + 1):
                 #                          np.sum(this_segment.getProbability()) ])
                 # the before implementation took probabilities that corresponded to wrong coordinate values
                 parent_bin_id = this_segment.getParentBinId()
-                parent_seg_id = this_segment.getParentSegmentId()  
+                parent_seg_id = this_segment.getParentSegmentId()
                 pmf_segment_data.append([ previous_iteration.bins[parent_bin_id].segments[parent_seg_id].getCoordinates()[0], 
                                           np.sum(this_segment.getProbability()) ])
                 # PMF from A, from B
@@ -230,15 +238,16 @@ for i in range(first_iteration + 1, last_iteration + 1):
     bin_prob_out.write('\n')
     bin_prob_out.flush()
     
-    for this_bin in current_iteration:
-        this_bin_prob = this_bin.getProbability()
-        for this_segment in this_bin:      
-            velocity_data['A'].append([this_segment.getProbability()[0], 
-                                    this_segment.getCoordinates()[0], 
-                                    this_segment.getVelocities[0]])
-            velocity_data['B'].append([this_segment.getProbability()[1], 
-                                    this_segment.getCoordinates()[0], 
-                                    this_segment.getVelocities[0]])
+    # store velocities
+    if args.velocities:
+        for this_bin in current_iteration:
+            for this_segment in this_bin:      
+                velocity_data['A'].append([this_segment.getProbability()[0], 
+                                        this_segment.getCoordinates()[0], 
+                                        this_segment.getVelocities()[0]])
+                velocity_data['B'].append([this_segment.getProbability()[1], 
+                                        this_segment.getCoordinates()[0], 
+                                        this_segment.getVelocities()[0]])
 
 bin_prob_out.close()
 
@@ -247,6 +256,15 @@ bin_prob_out.close()
 ##########################
 b = args.first_ana_iteration - args.first_iteration
 e = args.last_iteration
+
+print "merge events:"
+for this_bin in current_iteration:
+    sys.stdout.write('{} '.format(merge_counter[this_bin.getId()]))
+sys.stdout.write('\n')
+print "split events:"
+for this_bin in current_iteration:
+    sys.stdout.write('{} '.format(split_counter[this_bin.getId()]))
+sys.stdout.write('\n')
 
 # Data time series
 fout = open(args.output_file + '.dat', 'w')
@@ -348,30 +366,89 @@ for i in range(len(pmf)):
 fout.close()
 
 #### calculate velocity histograms ####
-histograms = []
-v_out = open('ana_TraceFlux.velo', 'w')
-v_out.write('#bin velocity histograms from state A for each bin and then from B for each bin\n')
-for state in ['A', 'B']:
-    velocity_data[state].sort(key=lambda x: x[1])
+if args.velocities:
+    # save velocity data to file
+#     for state in ['A', 'B']:
+#         v_out = open('ana_trace_flux.velo.{}.dat'.format(state), 'w')
+#         v_out.write('#prob coord velocity\n')
+#         for velo_entry in velocity_data[state]:
+#             v_out.write('{} {} {}\n'.format(velo_entry[0], velo_entry[1], velo_entry[2]))
+#         v_out.close()
+    # print binned velocity histograms
+    print
+    # plotting parameters
+    colors={'A': 'green', 'B': 'blue'}
+    n_histo_bins = 50
+    v_range = 20
+    histograms = []
+    bins_to_plot = [0,1,2,3,4,5]
+    histograms = {'A': [], 'B': []}
+    
+    # bin-sorting paramters
     bin_boundaries = current_iteration.getBoundaries()[0]
-    
-    bin_velocities = []
-    bin_velocity_weights = []
-    this_upper_boundary = bin_boundaries.pop(0)
-    all_bin_velocities = [[]] # for each bin there's a list of [velocity, prob] entries for each segment
-    for velo_entry in velocity_data[state]:
-        if velo_entry[1] > this_upper_boundary:
-            this_upper_boundary = bin_boundaries[0]
-            all_bin_velocities.append([])
-        if velo_entry[1] < this_upper_boundary:
-            all_bin_velocities[-1].append([velo_entry[2], velo_entry[0]])
-    
-    for bin_velocities in all_bin_velocities:
-        bin_velocities = np.asarray(bin_velocities)
-        histograms.append(np.histogram(bin_velocities[:,0], bin_velocities[:,1]))
-np.save(v_out, np.transpose(histograms))
-v_out.close()
+    N_BINS = len(bin_boundaries) + 1
+    binned_velocity_data = {}
+    for state in ['A', 'B']:
+        binned_velocity_data.update({state: []})
+        for i in range(N_BINS):
+            binned_velocity_data[state].append([])
+        velocity_data[state].sort(key=lambda x: x[1])
+        for velo_entry in velocity_data[state]:
+            coord = velo_entry[1]
+            for cbin_id, bin_boundary in enumerate(bin_boundaries):
+                if coord < bin_boundary:
+                    binned_velocity_data[state][cbin_id].append([velo_entry[2], velo_entry[0]]) # append velocity and probabililty
+                    break
+            # if it was higher than any boundary put into last bin
+            if coord > bin_boundaries[-1]:
+                binned_velocity_data[state][-1].append([velo_entry[2], velo_entry[0]])
 
+    # create histograms
+    for cbin_id in bins_to_plot:
+        for state in ['A', 'B']:
+            velo_data = np.asarray(binned_velocity_data[state][cbin_id])
+            hist, bins = np.histogram(velo_data[:,0], 
+                                      bins=n_histo_bins, 
+                                      weights = velo_data[:,1],
+                                      density = True)
+            width = 0.7 * (bins[1] - bins[0])
+            centers = (bins[:-1] + bins[1:]) / 2
+            histograms[state].append((hist, centers))
+            print len(hist)
+    
+    # save histograms
+    hist_to_save = [np.asarray(histograms['A'][0][1])]
+    for i in range(len(bins_to_plot)):
+        for state in ['A', 'B']:
+            hist_to_save.append(np.asarray(histograms[state][i][0]))
+    np.savetxt('ana_trace_flux.velo.histograms.dat', np.transpose(hist_to_save))
+
+    # plotting
+    for cbin_id in bins_to_plot:
+        plt.clf()
+        for state in ['A', 'B']:
+            hist, centers = histograms[state][cbin_id]
+#             n2, bins2, patches2 = plt.hist(velo_data[:,0], 
+#                                            n_histo_bins, 
+#                                            range=[-v_range,v_range],
+#                                            normed=1, 
+#                                            facecolor=colors[state],
+#                                            weights = velo_data[:,1],
+#                                            alpha=0.5, 
+#                                            label='{}-bin{}'.format(state, cbin_id))
+            plt.bar(centers, 
+                    hist, 
+                    align ='center', 
+                    width = width,
+                    alpha = 0.5,
+                    color = colors[state],
+                    label = '{}-bin{}'.format(state, cbin_id))
+        plt.legend()
+        plt.savefig('ana_trace_flux.velo.bin{}.pdf'.format(cbin_id))  
+#     plt.legend()
+#     plt.savefig('ana_trace_flux.velocities.pdf')   
+#     plt.show()
+    sys.exit()
 # Output
 block_size = 10
 
