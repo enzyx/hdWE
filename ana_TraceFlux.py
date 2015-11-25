@@ -109,9 +109,9 @@ bin_prob_out = open('ana_trace_flux.binprobs.dat', 'w')
 for i in range(first_iteration + 1, last_iteration + 1):
     previous_iteration = current_iteration
     current_iteration = logger.loadIteration(i)
-    sys.stdout.write('Iteration: {:05d}, Active Bins: {:05d}, Total Prob.: {:1.8f}\r'.
+    sys.stderr.write('Iteration: {:05d}, Active Bins: {:05d}, Total Prob.: {:1.8f}\r'.
                      format(i, current_iteration.getNumberOfActiveBins(), sum(previous_iteration.getProbability())))
-    sys.stdout.flush()
+    sys.stderr.flush()
         
     # Initialize data
     flux_into_A_iter         = 0.0 
@@ -299,23 +299,23 @@ for i in range(len(cum_flux_into_A)):
 fout.close()
 
 # Data autocorrelation functions
-# auto_flux_into_A         = f.autocorrelation_function(flux_into_A[b:e])
-# auto_probability_state_A = f.autocorrelation_function(probability_state_A[b:e])
-# auto_probability_from_A  = f.autocorrelation_function(probability_from_A[b:e])
-# auto_flux_into_B         = f.autocorrelation_function(flux_into_B[b:e])
-# auto_probability_state_B = f.autocorrelation_function(probability_state_B[b:e])
-# auto_probability_from_B  = f.autocorrelation_function(probability_from_B[b:e])
+auto_flux_into_A         = f.autocorrelation_function(flux_into_A[b:e])
+auto_probability_state_A = f.autocorrelation_function(probability_state_A[b:e])
+auto_probability_from_A  = f.autocorrelation_function(probability_from_A[b:e])
+auto_flux_into_B         = f.autocorrelation_function(flux_into_B[b:e])
+auto_probability_state_B = f.autocorrelation_function(probability_state_B[b:e])
+auto_probability_from_B  = f.autocorrelation_function(probability_from_B[b:e])
 
-# fout = open(args.output_file + '.auto', 'w')
-# for i in range(len(auto_flux_into_A)):
-#     fout.write("{:8.7e}   {:8.7e}   {:8.7e}   {:8.7e}   {:8.7e}   {:8.7e}\n".format(
-#                          auto_flux_into_A[i], 
-#                          auto_probability_state_A[i], 
-#                          auto_probability_from_A[i], 
-#                          auto_flux_into_B[i], 
-#                          auto_probability_state_B[i], 
-#                          auto_probability_from_B[i]))
-# fout.close()
+fout = open(args.output_file + '.auto', 'w')
+for i in range(len(auto_flux_into_A)):
+    fout.write("{:8.7e}   {:8.7e}   {:8.7e}   {:8.7e}   {:8.7e}   {:8.7e}\n".format(
+                         auto_flux_into_A[i], 
+                         auto_probability_state_A[i], 
+                         auto_probability_from_A[i], 
+                         auto_flux_into_B[i], 
+                         auto_probability_state_B[i], 
+                         auto_probability_from_B[i]))
+fout.close()
 
 # calculate PMF
 histogram = f.weightedHistogram(pmf_segment_data, args.pmf_bins)
@@ -450,7 +450,7 @@ if args.velocities:
 #     plt.show()
     sys.exit()
 # Output
-block_size = 10
+block_size = 100
 
 ############################
 #      Pretty print        #
