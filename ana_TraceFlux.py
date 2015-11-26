@@ -123,9 +123,9 @@ bin_prob_out = open('ana_trace_flux.binprobs.dat', 'w')
 for i in range(first_iteration + 1, last_iteration + 1):
     previous_iteration = current_iteration
     current_iteration = logger.loadIteration(i)
-    sys.stdout.write('Iteration: {:05d}, Active Bins: {:05d}, Total Prob.: {:1.8f}\r'.
+    sys.stderr.write('Iteration: {:05d}, Active Bins: {:05d}, Total Prob.: {:1.8f}\r'.
                      format(i, current_iteration.getNumberOfActiveBins(), sum(previous_iteration.getProbability())))
-    sys.stdout.flush()
+    sys.stderr.flush()
         
     # Initialize data
     flux_into_A_iter         = 0.0 
