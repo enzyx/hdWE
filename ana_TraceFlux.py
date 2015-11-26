@@ -6,8 +6,9 @@ from lib.logger import Logger
 import lib.functions_ana_general as f
 import lib.reweighting as reweighting
 import lib.constants as constants
-from math import log
+import math
 import matplotlib.pyplot as plt
+import scipy.integrate
 
 ###### Parse command line ###### 
 parser = argparse.ArgumentParser(description=
@@ -49,6 +50,19 @@ parser.add_argument('-t', '--tau', dest="tau",
 parser.add_argument('--velocities', dest="velocities",
                     action='store_true', required=False,
                     help="check velocity distributions and print them.")
+parser.add_argument('--auto', dest="auto",
+                    action='store_true', required=False,
+                    help="save autocorrelaction function.")
+parser.add_argument('-k', dest="k",
+                    required=False, default = 0,type=float,
+                    help="Force constant for analytical calculation of probabilities of the states for the two particle test system.")
+parser.add_argument('-bs', dest="bs",
+                    required=True,type=int,
+                    help="bootstrap block size.")
+parser.add_argument('--rates-only', dest="rates_only",
+                    action='store_true', required=False,
+                    help="only calculate rates for output")
+
 
 # Initialize
 args = parser.parse_args()
@@ -98,8 +112,8 @@ velocity_data          = {'A': [], 'B':[]}
 stores all velocity_data from A and from B:
 velocity_data['A'] is a list of datapoints [prob, coordinate, velocity]
 """
-merge_counter = [0,0,0,0,0,0,0,0,0,0]
-split_counter = [0,0,0,0,0,0,0,0,0,0]
+#merge_counter = [0,0,0,0,0,0,0,0,0,0]
+#split_counter = [0,0,0,0,0,0,0,0,0,0]
 
 reweighter = reweighting.Reweighting(reweighting_range=args.reweighting_range)
 reweighter.storeRateMatrix(current_iteration)
@@ -138,7 +152,7 @@ for i in range(first_iteration + 1, last_iteration + 1):
             
             # Split
             elif this_bin.getNumberOfSegments() > this_bin.getNumberOfInitialSegments():
-                split_counter[this_bin.getId()] += 1
+                #split_counter[this_bin.getId()] += 1
                 split_dict = {}
                 for this_segment in this_bin:
                     try:
@@ -154,7 +168,7 @@ for i in range(first_iteration + 1, last_iteration + 1):
                     this_segment.setProbability(split_dict[this_segment.getParentNameString()])
             # Merge
             elif this_bin.getNumberOfSegments() < this_bin.getNumberOfInitialSegments():
-                merge_counter[this_bin.getId()] += 1
+                #merge_counter[this_bin.getId()] += 1
                 # Skip merging if no merge_list exists, which means merge_mode was none
                 if len(this_bin.merge_list) >= 1:
                     probabilities = []
@@ -255,16 +269,16 @@ bin_prob_out.close()
 ######### OUTPUT #########
 ##########################
 b = args.first_ana_iteration - args.first_iteration
-e = args.last_iteration
+e = last_iteration
 
-print "merge events:"
-for this_bin in current_iteration:
-    sys.stdout.write('{} '.format(merge_counter[this_bin.getId()]))
-sys.stdout.write('\n')
-print "split events:"
-for this_bin in current_iteration:
-    sys.stdout.write('{} '.format(split_counter[this_bin.getId()]))
-sys.stdout.write('\n')
+#print "merge events:"
+#for this_bin in current_iteration:
+#    sys.stdout.write('{} '.format(merge_counter[this_bin.getId()]))
+#sys.stdout.write('\n')
+#print "split events:"
+#for this_bin in current_iteration:
+#    sys.stdout.write('{} '.format(split_counter[this_bin.getId()]))
+#sys.stdout.write('\n')
 
 # Data time series
 fout = open(args.output_file + '.dat', 'w')
@@ -299,30 +313,31 @@ for i in range(len(cum_flux_into_A)):
 fout.close()
 
 # Data autocorrelation functions
-# auto_flux_into_A         = f.autocorrelation_function(flux_into_A[b:e])
-# auto_probability_state_A = f.autocorrelation_function(probability_state_A[b:e])
-# auto_probability_from_A  = f.autocorrelation_function(probability_from_A[b:e])
-# auto_flux_into_B         = f.autocorrelation_function(flux_into_B[b:e])
-# auto_probability_state_B = f.autocorrelation_function(probability_state_B[b:e])
-# auto_probability_from_B  = f.autocorrelation_function(probability_from_B[b:e])
-
-# fout = open(args.output_file + '.auto', 'w')
-# for i in range(len(auto_flux_into_A)):
-#     fout.write("{:8.7e}   {:8.7e}   {:8.7e}   {:8.7e}   {:8.7e}   {:8.7e}\n".format(
-#                          auto_flux_into_A[i], 
-#                          auto_probability_state_A[i], 
-#                          auto_probability_from_A[i], 
-#                          auto_flux_into_B[i], 
-#                          auto_probability_state_B[i], 
-#                          auto_probability_from_B[i]))
-# fout.close()
+if args.auto:
+    auto_flux_into_A         = f.autocorrelation_function(flux_into_A[b:e])
+    auto_probability_state_A = f.autocorrelation_function(probability_state_A[b:e])
+    auto_probability_from_A  = f.autocorrelation_function(probability_from_A[b:e])
+    auto_flux_into_B         = f.autocorrelation_function(flux_into_B[b:e])
+    auto_probability_state_B = f.autocorrelation_function(probability_state_B[b:e])
+    auto_probability_from_B  = f.autocorrelation_function(probability_from_B[b:e])
+    
+    fout = open(args.output_file + '.auto', 'w')
+    for i in range(len(auto_flux_into_A)):
+        fout.write("{:8.7e}   {:8.7e}   {:8.7e}   {:8.7e}   {:8.7e}   {:8.7e}\n".format(
+                             auto_flux_into_A[i], 
+                             auto_probability_state_A[i], 
+                             auto_probability_from_A[i], 
+                             auto_flux_into_B[i], 
+                             auto_probability_state_B[i], 
+                             auto_probability_from_B[i]))
+    fout.close()
 
 # calculate PMF
 histogram = f.weightedHistogram(pmf_segment_data, args.pmf_bins)
 pmf = np.zeros(len(histogram), dtype=float)
 for i in range(len(histogram)):
     if histogram[i,1] > 0.0:
-        pmf[i] = -constants.kT *  log(histogram[i,1])
+        pmf[i] = -constants.kT *  math.log(histogram[i,1])
     else:
         pmf[i] = 'Inf'
 pmf -= np.min(pmf)
@@ -338,7 +353,7 @@ histogram = f.weightedHistogram(pmf_segment_data_A, args.pmf_bins)
 pmf = np.zeros(len(histogram), dtype=float)
 for i in range(len(histogram)):
     if histogram[i,1] > 0.0:
-        pmf[i] = -constants.kT *  log(histogram[i,1])
+        pmf[i] = -constants.kT *  math.log(histogram[i,1])
     else:
         pmf[i] = 'Inf'
 pmf -= np.min(pmf)
@@ -354,7 +369,7 @@ histogram = f.weightedHistogram(pmf_segment_data_B, args.pmf_bins)
 pmf = np.zeros(len(histogram), dtype=float)
 for i in range(len(histogram)):
     if histogram[i,1] > 0.0:
-        pmf[i] = -constants.kT *  log(histogram[i,1])
+        pmf[i] = -constants.kT *  math.log(histogram[i,1])
     else:
         pmf[i] = 'Inf'
 pmf -= np.min(pmf)
@@ -449,54 +464,95 @@ if args.velocities:
 #     plt.savefig('ana_trace_flux.velocities.pdf')   
 #     plt.show()
     sys.exit()
-# Output
-block_size = 10
 
+#Analytical calculation of probabilites for the two particle system
+if args.k >0:
+    def PMF(k, R):
+        r_0 = 15
+        return  k*(R-r_0)**4 - 2*k* (R-r_0)**2 - 2*constants.kT *math.log(R)
+    def pPMF(k,R):
+        return math.exp( - PMF(k,R)/constants.kT)
+    
+    def pState(k, a,b):
+        return scipy.integrate.quad(lambda r:pPMF(k,r), a, b)[0]
+    
+    probability_state_A_analytical = pState(args.k, state_A[0], state_A[1]) / pState(args.k, 1e-3, 1e3 )
+    probability_state_B_analytical = pState(args.k, state_B[0], state_B[1]) / pState(args.k, 1e-3, 1e3 )
+
+# Output
+block_size = 50
+
+def rate(datapoints):
+    """
+    calculates rate from mean(fluxes)/mean(probabilities)
+    """
+    return np.mean(datapoints[:,0]) / np.mean(datapoints[:,1])
 ############################
 #      Pretty print        #
 ############################
 print("States:  A=[{},{}]  B=[{},{}]".format(state_A[0], state_A[1], state_B[0], state_B[1]))
 # State A 
-print
 print(" State A -> B:")
-block_bootstrap_flux_into_B =  f.block_bootstrap(flux_into_B[b:e], np.mean, block_size)
-print("    Flux(A->B):  {:5.4e}  CI: [{:5.4e}, {:5.4e}]".format(block_bootstrap_flux_into_B[0], 
-                                                               block_bootstrap_flux_into_B[1][0],
-                                                               block_bootstrap_flux_into_B[1][1]))
-block_bootstrap_prop_A = f.block_bootstrap(probability_state_A[b:e], np.mean, block_size)
-print("    P(A):        {:5.4e}  CI: [{:5.4e}, {:5.4e}]".format(block_bootstrap_prop_A[0],
-                                                               block_bootstrap_prop_A[1][0],
-                                                               block_bootstrap_prop_A[1][1]))
-block_bootstrap_prop_from_A = f.block_bootstrap(probability_from_A[b:e], np.mean, block_size)
-print("    P(from A):   {:5.4e}  CI: [{:5.4e}, {:5.4e}]".format(block_bootstrap_prop_from_A[0],
-                                                               block_bootstrap_prop_from_A[1][0],
-                                                               block_bootstrap_prop_from_A[1][1]))
-if args.tau > 0:
-    print("    k(A->B):     {:5.4e} 1/s".format((np.mean(flux_into_B[b:e])  / np.mean(probability_state_A[b:e]))/args.tau))
-else:
-    print("    k(A->B):     {:5.4e}".format(np.mean(flux_into_B[b:e])  / np.mean(probability_state_A[b:e])))
-print("    1/(MFPT):    {:5.4e}".format(np.mean(flux_into_B[b:e])  / np.mean(probability_from_A[b:e])))
+if args.rates_only == False:
+    block_bootstrap_flux_into_B =  f.block_bootstrap(flux_into_B[b:e], np.mean, block_size)
+    print("    Flux(A->B):  {:5.4e}  CI: [{:5.4e}, {:5.4e}]".format(block_bootstrap_flux_into_B[0], 
+                                                                   block_bootstrap_flux_into_B[1][0],
+                                                                   block_bootstrap_flux_into_B[1][1]))
+    block_bootstrap_prop_A = f.block_bootstrap(probability_state_A[b:e], np.mean, block_size)
+    print("    P(A):        {:5.4e}  CI: [{:5.4e}, {:5.4e}]".format(block_bootstrap_prop_A[0],
+                                                                   block_bootstrap_prop_A[1][0],
+                                                                   block_bootstrap_prop_A[1][1]))
+    block_bootstrap_prop_from_A = f.block_bootstrap(probability_from_A[b:e], np.mean, block_size)
+    print("    P(from A):   {:5.4e}  CI: [{:5.4e}, {:5.4e}]".format(block_bootstrap_prop_from_A[0],
+                                                                   block_bootstrap_prop_from_A[1][0],
+                                                                   block_bootstrap_prop_from_A[1][1]))
+
+    if args.k >0:
+        print("    P(A) analytical: {:5.4e}".format(probability_state_A_analytical))
+
+flux_prob_pair = []
+for i in range(b,e):
+    flux_prob_pair.append([flux_into_B[i], probability_state_A[i]])
+flux_prob_pair = np.array(flux_prob_pair)
+
+#print flux_prob_pair[0:10], np.mean(flux_prob_pair[0:10,0])
+#print flux_into_B[b:b+10], probability_state_A[b:b+10], np.mean(flux_into_B[b:b+10]), np.mean(probability_state_A[b:b+10])
+#print np.array(flux_prob_pair)
+block_bootstrap_rate_into_A = f.block_bootstrap(flux_prob_pair, rate, block_size)
+print("    k {:5.4e} {:5.4e} {:5.4e}".format(block_bootstrap_rate_into_A[0], 
+                                                           block_bootstrap_rate_into_A[1][0],
+                                                           block_bootstrap_rate_into_A[1][1]))    
+
+#print("    1/(MFPT):    {:5.4e}".format(np.mean(flux_into_B[b:e])  / np.mean(probability_from_A[b:e])))
 
 # State B
-print
 print(" State B -> A:")
-block_bootstrap_flux_into_A =  f.block_bootstrap(flux_into_A[b:e], np.mean, block_size)
-print("    Flux(B->A):  {:5.4e}  CI: [{:5.4e}, {:5.4e}]".format(block_bootstrap_flux_into_A[0], 
-                                                               block_bootstrap_flux_into_A[1][0],
-                                                               block_bootstrap_flux_into_A[1][1]))
-block_bootstrap_prop_B = f.block_bootstrap(probability_state_B[b:e], np.mean, block_size)
-print("    P(B):        {:5.4e}  CI: [{:5.4e}, {:5.4e}]".format(block_bootstrap_prop_B[0],
-                                                               block_bootstrap_prop_B[1][0],
-                                                               block_bootstrap_prop_B[1][1]))
-block_bootstrap_prop_from_B = f.block_bootstrap(probability_from_B[b:e], np.mean, block_size)
-print("    P(from B):   {:5.4e}  CI: [{:5.4e}, {:5.4e}]".format(block_bootstrap_prop_from_B[0],
-                                                               block_bootstrap_prop_from_B[1][0],
-                                                               block_bootstrap_prop_from_B[1][1]))
-if args.tau > 0:
-    print("    k(B->A):     {:5.4e} 1/s".format((np.mean(flux_into_A[b:e])  / np.mean(probability_state_B[b:e]))/args.tau))
-else:
-    print("    k(B->A):     {:5.4e}".format(np.mean(flux_into_A[b:e])  / np.mean(probability_state_B[b:e])))
-print("    1/(MFPT):    {:5.4e}".format(np.mean(flux_into_A[b:e])  / np.mean(probability_from_B[b:e])))
+if args.rates_only == False:
+    block_bootstrap_flux_into_A =  f.block_bootstrap(flux_into_A[b:e], np.mean, block_size)
+    print("    Flux(B->A):  {:5.4e}  CI: [{:5.4e}, {:5.4e}]".format(block_bootstrap_flux_into_A[0], 
+                                                                   block_bootstrap_flux_into_A[1][0],
+                                                                   block_bootstrap_flux_into_A[1][1]))
+    block_bootstrap_prop_B = f.block_bootstrap(probability_state_B[b:e], np.mean, block_size)
+    print("    P(B):        {:5.4e}  CI: [{:5.4e}, {:5.4e}]".format(block_bootstrap_prop_B[0],
+                                                                   block_bootstrap_prop_B[1][0],
+                                                                   block_bootstrap_prop_B[1][1]))
+    block_bootstrap_prop_from_B = f.block_bootstrap(probability_from_B[b:e], np.mean, block_size)
+    print("    P(from B):   {:5.4e}  CI: [{:5.4e}, {:5.4e}]".format(block_bootstrap_prop_from_B[0],
+                                                                   block_bootstrap_prop_from_B[1][0],
+                                                                   block_bootstrap_prop_from_B[1][1]))
+    if args.k >0:
+        print("    P(B) analytical: {:5.4e}".format(probability_state_B_analytical))
+        
+flux_prob_pair = []
+for i in range(b,e):
+    flux_prob_pair.append([flux_into_A[i], probability_state_B[i]])
+flux_prob_pair = np.array(flux_prob_pair)
+
+block_bootstrap_rate_into_B = f.block_bootstrap(flux_prob_pair, rate, block_size)
+print("    k {:5.4e} {:5.4e} {:5.4e}".format(block_bootstrap_rate_into_B[0], 
+                                                           block_bootstrap_rate_into_B[1][0],
+                                                           block_bootstrap_rate_into_B[1][1]))  
+#print("    1/(MFPT):    {:5.4e}".format(np.mean(flux_into_A[b:e])  / np.mean(probability_from_B[b:e])))
 
 ########################################
 
