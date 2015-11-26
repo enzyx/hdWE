@@ -480,7 +480,7 @@ if args.k >0:
     probability_state_B_analytical = pState(args.k, state_B[0], state_B[1]) / pState(args.k, 1e-3, 1e3 )
 
 # Output
-block_size = 50
+block_size = args.bs
 
 def rate(datapoints):
     """
