@@ -21,7 +21,7 @@ parser.add_argument('-i', '--cpptraj_output', dest="cpptraj_output",
                     type=str, 
                     help="File containing cpptraj output.")
 parser.add_argument('--output-pmf', dest="pmf_output", 
-                    required=False, type=str, default='plainMD.pmf',
+                    required=False, type=str, default="",
                     help="PMF output filename")  
 parser.add_argument('--output-transition-time-distribution-into-A', dest="distr_into_A_output", 
                     required=False, type=str, default='plainMD.trans_time_distr_into_A',
@@ -57,11 +57,12 @@ coordinates = coordinates_tmp[args.begin_frame:args.end_frame]
 print(' Loaded frames: {:d}'.format(len(coordinates)))
 
 ######## PMF Calculation ######################################################
-print(' Calculating PMF.')
-#Calculate the weighted histogram and PMF
-pmf = functions_ana_plainMD.PMF(coordinates, args.number_of_bins)
-pmf_header_line = 'Coordinate Value, Free energy, Probability'
-numpy.savetxt(args.pmf_output, pmf, header = pmf_header_line)
+if args.pmf_output != "":
+    print(' Calculating PMF.')
+    #Calculate the weighted histogram and PMF
+    pmf = functions_ana_plainMD.PMF(coordinates, args.number_of_bins)
+    pmf_header_line = 'Coordinate Value, Free energy, Probability'
+    numpy.savetxt(args.pmf_output, pmf, header = pmf_header_line)
 
 ######## Rate Calculation #####################################################
 if not(args.state_A==None and args.state_B==None):
