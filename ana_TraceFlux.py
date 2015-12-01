@@ -112,8 +112,6 @@ velocity_data          = {'A': [], 'B':[]}
 stores all velocity_data from A and from B:
 velocity_data['A'] is a list of datapoints [prob, coordinate, velocity]
 """
-#merge_counter = [0,0,0,0,0,0,0,0,0,0]
-#split_counter = [0,0,0,0,0,0,0,0,0,0]
 
 reweighter = reweighting.Reweighting(reweighting_range=args.reweighting_range)
 reweighter.storeRateMatrix(current_iteration)
@@ -152,7 +150,6 @@ for i in range(first_iteration + 1, last_iteration + 1):
             
             # Split
             elif this_bin.getNumberOfSegments() > this_bin.getNumberOfInitialSegments():
-                #split_counter[this_bin.getId()] += 1
                 split_dict = {}
                 for this_segment in this_bin:
                     try:
@@ -168,7 +165,6 @@ for i in range(first_iteration + 1, last_iteration + 1):
                     this_segment.setProbability(split_dict[this_segment.getParentNameString()])
             # Merge
             elif this_bin.getNumberOfSegments() < this_bin.getNumberOfInitialSegments():
-                #merge_counter[this_bin.getId()] += 1
                 # Skip merging if no merge_list exists, which means merge_mode was none
                 if len(this_bin.merge_list) >= 1:
                     probabilities = []
@@ -270,15 +266,6 @@ bin_prob_out.close()
 ##########################
 b = args.first_ana_iteration - args.first_iteration
 e = last_iteration
-
-#print "merge events:"
-#for this_bin in current_iteration:
-#    sys.stdout.write('{} '.format(merge_counter[this_bin.getId()]))
-#sys.stdout.write('\n')
-#print "split events:"
-#for this_bin in current_iteration:
-#    sys.stdout.write('{} '.format(split_counter[this_bin.getId()]))
-#sys.stdout.write('\n')
 
 # Data time series
 fout = open(args.output_file + '.dat', 'w')
@@ -393,10 +380,9 @@ if args.velocities:
     print
     # plotting parameters
     colors={'A': 'green', 'B': 'blue'}
-    n_histo_bins = 50
-    v_range = 20
+    n_histo_bins = 100
+    v_range = 30
     histograms = []
-    bins_to_plot = [0,1,2,3,4,5]
     histograms = {'A': [], 'B': []}
     
     # bin-sorting paramters
@@ -419,27 +405,30 @@ if args.velocities:
                 binned_velocity_data[state][-1].append([velo_entry[2], velo_entry[0]])
 
     # create histograms
-    for cbin_id in bins_to_plot:
+    for cbin_id in range(N_BINS):
         for state in ['A', 'B']:
             velo_data = np.asarray(binned_velocity_data[state][cbin_id])
+            # foolproof for empty bins
+            if len(velo_data) == 0:
+                velo_data = np.asarray([[0.0, 0.0]])
             hist, bins = np.histogram(velo_data[:,0], 
                                       bins=n_histo_bins, 
+                                      range = (-v_range, v_range),
                                       weights = velo_data[:,1],
                                       density = True)
-            width = 0.7 * (bins[1] - bins[0])
+            width = 1.0 * (bins[1] - bins[0])
             centers = (bins[:-1] + bins[1:]) / 2
             histograms[state].append((hist, centers))
-            print len(hist)
     
     # save histograms
     hist_to_save = [np.asarray(histograms['A'][0][1])]
-    for i in range(len(bins_to_plot)):
+    for i in range(N_BINS):
         for state in ['A', 'B']:
             hist_to_save.append(np.asarray(histograms[state][i][0]))
     np.savetxt('ana_trace_flux.velo.histograms.dat', np.transpose(hist_to_save))
 
     # plotting
-    for cbin_id in bins_to_plot:
+    for cbin_id in range(N_BINS):
         plt.clf()
         for state in ['A', 'B']:
             hist, centers = histograms[state][cbin_id]
