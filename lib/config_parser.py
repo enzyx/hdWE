@@ -258,6 +258,34 @@ def parseSplitForwardNumberOfChildren(config):
 #      AMBER      #
 ###################
 
+def parseLangevinBinary(config):
+    """
+    @return  path to amber binary (sander, pmemd, pmemd.cuda)
+    @default pmemd (Which is expected to be in $PATH
+    """
+    langevin_binary = "bbk.py"
+    try:
+        langevin_binary = config.get('langevin','langevin-binary')
+    except:
+        pass
+    return langevin_binary
+
+def parseLangevinTmpDirPath(config):
+    """
+    @return  tmp directory path
+    @default /tmp 
+    """
+    tmp_dir = '/tmp'
+    try:
+        tmp_dir = config.get('langevin', 'tmp-dir')
+    except:
+        pass
+    return tmp_dir
+
+###################
+#      AMBER      #
+###################
+
 def parseCpptrajBinary(config):
     """
     @return  path to cpptraj binary

@@ -97,6 +97,8 @@ if "amber" in config.sections():
     MD_PACKAGE = "amber"
 elif "gromacs" in config.sections():
     MD_PACKAGE = "gromacs"
+elif "langevin" in config.sections():
+    MD_PACKAGE = "langevin"
 else:
     raise Exception("No MD package (amber/gromacs) section in configuration file")
 
@@ -132,6 +134,9 @@ logger = Logger(LOGDIR)
 # Check MD suite
 if(MD_PACKAGE == "amber"):
     from lib.amber_module import MD_module
+    md_module = MD_module(CONFIGFILE, DEBUG)
+if(MD_PACKAGE == "langevin"):
+    from lib.langevin_module import MD_module
     md_module = MD_module(CONFIGFILE, DEBUG)
 if(MD_PACKAGE == "gromacs"):
     print("Sorry, support for gromacs is not implemented yet.")
