@@ -41,6 +41,9 @@ parser.add_argument('--state-B', dest="state_B",
 parser.add_argument('--N-tau-per-WE-iteration', dest="N_tau_per_it",
                     required=False, type=int, default = 0,
                     help="Number of calculated taus per WE iteration for cumulative plot comparable to WE run.") 
+parser.add_argument('-c', '--input-column', dest="use_column",
+                    required=False, type=int, default=1,
+                    help="The column with coordinate data in input file.")
 
 ######## Initialize ###########################################################
 
@@ -49,7 +52,7 @@ print('\033[1mAnalyzing plain MD trajectory\033[0m')
 args = parser.parse_args()
 
 # Load coordinates
-coordinates_tmp = numpy.loadtxt(args.cpptraj_output, usecols=(1,) )
+coordinates_tmp = numpy.loadtxt(args.cpptraj_output, usecols=(args.use_column,) )
 if args.end_frame == -1:
     args.end_frame = len(coordinates_tmp) - 1
 coordinates = coordinates_tmp[args.begin_frame:args.end_frame]
