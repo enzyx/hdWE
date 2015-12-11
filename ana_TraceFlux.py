@@ -50,9 +50,10 @@ parser.add_argument('-t', '--tau', dest="tau",
 parser.add_argument('--velocities', dest="velocities",
                     action='store_true', required=False,
                     help="check velocity distributions and print them.")
-parser.add_argument('--auto', dest="auto",
-                    action='store_true', required=False,
-                    help="save autocorrelaction function.")
+parser.add_argument('--auto', dest="auto", default=False, 
+                    const=1, nargs='?', required=False, type=int,
+                    help="save autocorrelaction function. "\
+                         "given value is frequency of data usage to speed up N^2 calculations")
 parser.add_argument('-k', dest="k",
                     required=False, default = 0,type=float,
                     help="Force constant for analytical calculation of probabilities of the states for the two particle test system.")
@@ -264,10 +265,12 @@ bin_prob_out.close()
 ##########################
 ######### OUTPUT #########
 ##########################
+sys.stderr.write('\n')
 b = args.first_ana_iteration - args.first_iteration
 e = last_iteration
 
 # Data time series
+sys.stderr.write('- writing time series to .dat\n')
 fout = open(args.output_file + '.dat', 'w')
 fout.write("# F->A           P_A            P->A            F->B            P_B             P->B \n")
 for i in range(len(flux_into_A)):
@@ -281,6 +284,7 @@ for i in range(len(flux_into_A)):
 fout.close()
 
 # Cumulative mean of the time series
+sys.stderr.write('- calculating cumulative means\n')
 cum_flux_into_A         = f.cumulative_mean(flux_into_A[b:e])
 cum_probability_state_A = f.cumulative_mean(probability_state_A[b:e])
 cum_probability_from_A  = f.cumulative_mean(probability_from_A[b:e])
@@ -301,12 +305,14 @@ fout.close()
 
 # Data autocorrelation functions
 if args.auto:
-    auto_flux_into_A         = f.autocorrelation_function(flux_into_A[b:e])
-    auto_probability_state_A = f.autocorrelation_function(probability_state_A[b:e])
-    auto_probability_from_A  = f.autocorrelation_function(probability_from_A[b:e])
-    auto_flux_into_B         = f.autocorrelation_function(flux_into_B[b:e])
-    auto_probability_state_B = f.autocorrelation_function(probability_state_B[b:e])
-    auto_probability_from_B  = f.autocorrelation_function(probability_from_B[b:e])
+    a_every = args.auto
+    sys.stderr.write('- calculating autocorrelations\n')
+    auto_flux_into_A         = f.autocorrelation_function(flux_into_A[b:e:a_every])
+    auto_probability_state_A = f.autocorrelation_function(probability_state_A[b:e:a_every])
+    auto_probability_from_A  = f.autocorrelation_function(probability_from_A[b:e:a_every])
+    auto_flux_into_B         = f.autocorrelation_function(flux_into_B[b:e:a_every])
+    auto_probability_state_B = f.autocorrelation_function(probability_state_B[b:e:a_every])
+    auto_probability_from_B  = f.autocorrelation_function(probability_from_B[b:e:a_every])
     
     fout = open(args.output_file + '.auto', 'w')
     for i in range(len(auto_flux_into_A)):
@@ -320,6 +326,7 @@ if args.auto:
     fout.close()
 
 # calculate PMF
+sys.stderr.write('- calculating PMFs\n')
 histogram = f.weightedHistogram(pmf_segment_data, args.pmf_bins)
 pmf = np.zeros(len(histogram), dtype=float)
 for i in range(len(histogram)):
@@ -369,6 +376,7 @@ fout.close()
 
 #### calculate velocity histograms ####
 if args.velocities:
+    sys.stderr.write('- calculating velocity histograms\n')    
     # save velocity data to file
 #     for state in ['A', 'B']:
 #         v_out = open('ana_trace_flux.velo.{}.dat'.format(state), 'w')
@@ -377,7 +385,6 @@ if args.velocities:
 #             v_out.write('{} {} {}\n'.format(velo_entry[0], velo_entry[1], velo_entry[2]))
 #         v_out.close()
     # print binned velocity histograms
-    print
     # plotting parameters
     colors={'A': 'green', 'B': 'blue'}
     n_histo_bins = 100
@@ -452,7 +459,6 @@ if args.velocities:
 #     plt.legend()
 #     plt.savefig('ana_trace_flux.velocities.pdf')   
 #     plt.show()
-    sys.exit()
 
 #Analytical calculation of probabilites for the two particle system
 if args.k >0:
