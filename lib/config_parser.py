@@ -255,20 +255,21 @@ def parseSplitForwardNumberOfChildren(config):
     return split_forward_number_of_children
 
 ###################
-#      AMBER      #
+#    LANGEVIN     #
 ###################
 
-def parseLangevinBinary(config):
+def parseLangevinClassFile(config):
     """
-    @return  path to amber binary (sander, pmemd, pmemd.cuda)
-    @default pmemd (Which is expected to be in $PATH
+    @return  path to langevin class file
+    @default local bbk.py
     """
-    langevin_binary = "bbk.py"
+    langevin_class_file = "bbk.py"
     try:
-        langevin_binary = config.get('langevin','langevin-binary')
+        #langevin_class_file = config.get('langevin','langevin-class-file')
+        langevin_class_file = config.get('langevin','class-file')
     except:
         pass
-    return langevin_binary
+    return langevin_class_file
 
 def parseLangevinTmpDirPath(config):
     """

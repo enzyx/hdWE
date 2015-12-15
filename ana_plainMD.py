@@ -44,6 +44,9 @@ parser.add_argument('--N-tau-per-WE-iteration', dest="N_tau_per_it",
 parser.add_argument('-c', '--input-column', dest="use_column",
                     required=False, type=int, default=1,
                     help="The column with coordinate data in input file.")
+parser.add_argument('--passage-times', nargs='?', default=False, const='fpt.dat', 
+                    dest='write_mfpt', metavar='FILE',
+                    help="Drop first passage times to (this) file.")
 
 ######## Initialize ###########################################################
 
@@ -111,6 +114,20 @@ if not(args.state_A==None and args.state_B==None):
     
     residence_times_in_A = functions_ana_plainMD.residence_times_from_coordinates(coordinates, state_A)    
     residence_times_in_B = functions_ana_plainMD.residence_times_from_coordinates(coordinates, state_B)  
+   
+   
+    # write first passage times to file
+    if args.write_mfpt:
+        fpt_into_A = numpy.array(first_passage_times_into_A)
+        fpt_into_B = numpy.array(first_passage_times_into_B)
+        # get them to equal size
+        while len(fpt_into_A) < len(fpt_into_B):
+            fpt_into_B = fpt_into_B[:-1]
+        while len(fpt_into_A) > len(fpt_into_B):
+            fpt_into_A = fpt_into_A[:-1]            
+        mfpt = numpy.transpose(numpy.matrix([fpt_into_A, fpt_into_B]))
+        #print (mfpt)
+        numpy.savetxt(args.write_mfpt, mfpt)
    
     ####### Transition time distribution
     distr_header_line = 'Transition time in tau, Probability'
