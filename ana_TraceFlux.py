@@ -60,6 +60,9 @@ parser.add_argument('-k', dest="k",
 parser.add_argument('-bs', dest="bs",
                     required=True,type=int,
                     help="bootstrap block size.")
+parser.add_argument('--bs-samples', dest="bs_samples",
+                    required=False,type=int, default=10000,
+                    help="number of bootstrap samples.")
 parser.add_argument('--rates-only', dest="rates_only",
                     action='store_true', required=False,
                     help="only calculate rates for output")
@@ -119,6 +122,7 @@ reweighter.storeRateMatrix(current_iteration)
 
 bin_prob_out = open('ana_trace_flux.binprobs.dat', 'w')
 # Iteration Loop
+merge_counter = 0
 for i in range(first_iteration + 1, last_iteration + 1):
     previous_iteration = current_iteration
     current_iteration = logger.loadIteration(i)
@@ -335,7 +339,7 @@ for i in range(len(histogram)):
     else:
         pmf[i] = 'Inf'
 pmf -= np.min(pmf)
-
+  
 fout = open(args.output_file + '.pmf', 'w')
 fout.write('# coord   free energy   probability')
 for i in range(len(pmf)):
@@ -489,15 +493,24 @@ print("States:  A=[{},{}]  B=[{},{}]".format(state_A[0], state_A[1], state_B[0],
 # State A 
 print(" State A -> B:")
 if args.rates_only == False:
-    block_bootstrap_flux_into_B =  f.block_bootstrap(flux_into_B[b:e], np.mean, block_size)
+    block_bootstrap_flux_into_B =  f.block_bootstrap(flux_into_B[b:e], 
+                                                     np.mean, 
+                                                     block_size, 
+                                                     number_of_samples = args.bs_samples)
     print("    Flux(A->B):  {:5.4e}  CI: [{:5.4e}, {:5.4e}]".format(block_bootstrap_flux_into_B[0], 
                                                                    block_bootstrap_flux_into_B[1][0],
                                                                    block_bootstrap_flux_into_B[1][1]))
-    block_bootstrap_prop_A = f.block_bootstrap(probability_state_A[b:e], np.mean, block_size)
+    block_bootstrap_prop_A = f.block_bootstrap(probability_state_A[b:e], 
+                                               np.mean, 
+                                               block_size, 
+                                               number_of_samples = args.bs_samples)
     print("    P(A):        {:5.4e}  CI: [{:5.4e}, {:5.4e}]".format(block_bootstrap_prop_A[0],
                                                                    block_bootstrap_prop_A[1][0],
                                                                    block_bootstrap_prop_A[1][1]))
-    block_bootstrap_prop_from_A = f.block_bootstrap(probability_from_A[b:e], np.mean, block_size)
+    block_bootstrap_prop_from_A = f.block_bootstrap(probability_from_A[b:e], 
+                                                    np.mean, 
+                                                    block_size, 
+                                                    number_of_samples = args.bs_samples)
     print("    P(from A):   {:5.4e}  CI: [{:5.4e}, {:5.4e}]".format(block_bootstrap_prop_from_A[0],
                                                                    block_bootstrap_prop_from_A[1][0],
                                                                    block_bootstrap_prop_from_A[1][1]))
@@ -513,25 +526,37 @@ flux_prob_pair = np.array(flux_prob_pair)
 #print flux_prob_pair[0:10], np.mean(flux_prob_pair[0:10,0])
 #print flux_into_B[b:b+10], probability_state_A[b:b+10], np.mean(flux_into_B[b:b+10]), np.mean(probability_state_A[b:b+10])
 #print np.array(flux_prob_pair)
-block_bootstrap_rate_into_A = f.block_bootstrap(flux_prob_pair, rate, block_size)
+block_bootstrap_rate_into_A = f.block_bootstrap(flux_prob_pair, 
+                                                rate, 
+                                                block_size, 
+                                                number_of_samples = args.bs_samples)
 print("    k {:5.4e} {:5.4e} {:5.4e}".format(block_bootstrap_rate_into_A[0], 
-                                                           block_bootstrap_rate_into_A[1][0],
-                                                           block_bootstrap_rate_into_A[1][1]))    
+                                             block_bootstrap_rate_into_A[1][0],
+                                             block_bootstrap_rate_into_A[1][1]))    
 
 #print("    1/(MFPT):    {:5.4e}".format(np.mean(flux_into_B[b:e])  / np.mean(probability_from_A[b:e])))
 
 # State B
 print(" State B -> A:")
 if args.rates_only == False:
-    block_bootstrap_flux_into_A =  f.block_bootstrap(flux_into_A[b:e], np.mean, block_size)
+    block_bootstrap_flux_into_A =  f.block_bootstrap(flux_into_A[b:e], 
+                                                     np.mean, 
+                                                     block_size, 
+                                                     number_of_samples = args.bs_samples)
     print("    Flux(B->A):  {:5.4e}  CI: [{:5.4e}, {:5.4e}]".format(block_bootstrap_flux_into_A[0], 
                                                                    block_bootstrap_flux_into_A[1][0],
                                                                    block_bootstrap_flux_into_A[1][1]))
-    block_bootstrap_prop_B = f.block_bootstrap(probability_state_B[b:e], np.mean, block_size)
+    block_bootstrap_prop_B = f.block_bootstrap(probability_state_B[b:e], 
+                                               np.mean, 
+                                               block_size, 
+                                               number_of_samples = args.bs_samples)
     print("    P(B):        {:5.4e}  CI: [{:5.4e}, {:5.4e}]".format(block_bootstrap_prop_B[0],
                                                                    block_bootstrap_prop_B[1][0],
                                                                    block_bootstrap_prop_B[1][1]))
-    block_bootstrap_prop_from_B = f.block_bootstrap(probability_from_B[b:e], np.mean, block_size)
+    block_bootstrap_prop_from_B = f.block_bootstrap(probability_from_B[b:e], 
+                                                    np.mean, 
+                                                    block_size, 
+                                                    number_of_samples = args.bs_samples)
     print("    P(from B):   {:5.4e}  CI: [{:5.4e}, {:5.4e}]".format(block_bootstrap_prop_from_B[0],
                                                                    block_bootstrap_prop_from_B[1][0],
                                                                    block_bootstrap_prop_from_B[1][1]))
@@ -543,7 +568,10 @@ for i in range(b,e):
     flux_prob_pair.append([flux_into_A[i], probability_state_B[i]])
 flux_prob_pair = np.array(flux_prob_pair)
 
-block_bootstrap_rate_into_B = f.block_bootstrap(flux_prob_pair, rate, block_size)
+block_bootstrap_rate_into_B = f.block_bootstrap(flux_prob_pair, 
+                                                rate, 
+                                                block_size,
+                                                number_of_samples = args.bs_samples)
 print("    k {:5.4e} {:5.4e} {:5.4e}".format(block_bootstrap_rate_into_B[0], 
                                                            block_bootstrap_rate_into_B[1][0],
                                                            block_bootstrap_rate_into_B[1][1]))  
