@@ -185,8 +185,9 @@ class MD_module():
             sys.stderr.write('Error: No parallelization implemented. Use serial mode.')
             sys.exit(-1)
     
-    def distance(self, x):
-        return numpy.sqrt(x[0]**2 + x[1]**2 + x[2]**2)
+    def coordinate(self, x):
+        #return numpy.sqrt(x[0]**2 + x[1]**2 + x[2]**2)
+        return x[0]
     
     def calcSegmentCoordinates(self, segment):
         """
@@ -207,7 +208,7 @@ class MD_module():
         @return list of float coordinates 
         """
         x = numpy.loadtxt(filename)
-        coordinates = [self.distance(x[1])]
+        coordinates = [self.coordinate(x[1])]
         return coordinates
         
     
