@@ -121,9 +121,7 @@ class MD_module():
             x_next = self.langevin.next(x_prev, x_curr)
             if i % self.langevin.nstxout == 0:
                 x_coords.append(x_curr)
-            if i % self.langevin.nstdout == 0:
-                dists.append(self.langevin.getNorm(x_curr))
-        
+                    
         # save final coordinates
         np.savetxt(langevin_end_coords_path, self.langevin.getState(x_prev, x_curr))
                 
