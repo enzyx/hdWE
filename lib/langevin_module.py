@@ -44,10 +44,10 @@ class MD_module():
         sys.path.append(os.path.dirname(self.langevin_class_file))
         try:
             from bbk import Langevin
-            self.langevin = Langevin(self.langevin_infile)
         except:
             sys.stderr.write('Could not load Langevin integrator.\n')
             sys.exit(-1)
+        self.langevin = Langevin(self.langevin_infile)
     
     def loadConfigFile(self, CONFIGFILE):
         #read in configuration file
