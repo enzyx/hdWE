@@ -174,7 +174,7 @@ for iteration_loop in iterations:
     segment_datas.append([])
     this_bin = iteration_loop.bins[args.bin_id]
     sys.stdout.write(' Calculating coordinates for iteration '\
-                     '{it_id:05d}/{first_it:05d}-{last_it:05d}'\
+                     '{it_id:08d}/{first_it:08d}-{last_it:08d}'\
                      '\r'.format(it_id     = iteration_loop.getId(),
                                  first_it  = first_it_id,
                                  last_it   = last_it_id))

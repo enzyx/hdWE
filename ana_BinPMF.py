@@ -175,7 +175,7 @@ for iteration_id in range(args.first_iteration + 1, args.last_iteration+1):
     else:
         bins_to_scan = iteration.bins
     sys.stdout.write(' Reading coordinates for segments of iteration '\
-                     '{it_id:05d}/{first_it:05d}-{last_it:05d}'\
+                     '{it_id:08d}/{first_it:05d}-{last_it:05d}'\
                      '\r'.format(it_id     = iteration_id,
                                  first_it  = args.first_iteration,
                                  last_it   = args.last_iteration))

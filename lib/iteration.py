@@ -55,9 +55,10 @@ class Iteration(object):
         return self.sample_region
         
     def getNameString(self):
-        """Returns iteration index as a string
         """
-        name_string = str(self.iteration_id).zfill(5)
+        @returns iteration index as a string
+        """
+        name_string = "{:08d}".format(self.iteration_id)
         return name_string
 
     def getProbability(self):

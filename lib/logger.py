@@ -8,11 +8,11 @@ import lib.iteration as iteration
 
 class Logger():
     # Global class variables for log filename formatting
-    ITERATION_FNAME_FORMAT   = "{dir}/{id:05d}.iter"
+    ITERATION_FNAME_FORMAT   = "{dir}/{id:08d}.iter"
     ITERATION_FNAME_WILDCARD = "{dir}/*.iter"
-    ITERATION_FNAME_REGEXP   = ".*?(\d{5})\.iter"
-    CONFIG_FNAME_FORMAT      = "{dir}/{id:05d}.conf"
-    CONFIG_FNAME_REGEXP      = ".*?(\d{5})\.conf"
+    ITERATION_FNAME_REGEXP   = ".*?(\d{8})\.iter"
+    CONFIG_FNAME_FORMAT      = "{dir}/{id:08d}.conf"
+    CONFIG_FNAME_REGEXP      = ".*?(\d{8})\.conf"
     
     def __init__(self, LOGDIR):
         """
@@ -140,7 +140,7 @@ class Logger():
                 iterations.append(iteration)
                 iteration_id += 1
                 if verbose:
-                    sys.stderr.write("\rReading iteration: {:05d}".format(iteration_id))
+                    sys.stderr.write("\rReading iteration: {:08d}".format(iteration_id))
             if verbose:
                     sys.stderr.write("\r                               \r")
                     sys.stderr.flush()
@@ -148,14 +148,14 @@ class Logger():
         # no iterations were read in
         if len(iterations) == 0:
             raise Exception("Could not read any iteration files "\
-                            "for desired range {b:05d}-{e:05d}!".format(b = begin,
+                            "for desired range {b:08d}-{e:08d}!".format(b = begin,
                                                                         e = end))          
         # or the range is known but not all files present 
         if end > -1: 
             if len(iterations) != end - begin + 1:
                 raise Exception("Could not read all iteration files "\
-                                "for desired range {b:05d}-{e:05d}!\n"\
-                                "           Found iterations {first_found:05d}-{last_found:05d} "\
+                                "for desired range {b:08d}-{e:08d}!\n"\
+                                "           Found iterations {first_found:08d}-{last_found:08d} "\
                                 "of desired range.".format(b = begin,
                                                            e = end,
                                                            first_found = iterations[0].getId(),

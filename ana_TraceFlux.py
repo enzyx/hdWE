@@ -126,7 +126,7 @@ merge_counter = 0
 for i in range(first_iteration + 1, last_iteration + 1):
     previous_iteration = current_iteration
     current_iteration = logger.loadIteration(i)
-    sys.stderr.write('Iteration: {:05d}, Active Bins: {:05d}, Total Prob.: {:1.8f}\r'.
+    sys.stderr.write('Iteration: {:08d}, Active Bins: {:05d}, Total Prob.: {:1.8f}\r'.
                      format(i, current_iteration.getNumberOfActiveBins(), sum(previous_iteration.getProbability())))
     sys.stderr.flush()
         

@@ -174,7 +174,7 @@ print("average trajectory length: {avg}".format(avg=avg))
 
 out = open("trajectory_lengths.dat", "w")
 for index,traj in enumerate(trajectories):
-    out.write("{idx:05d}   {length}\n".format(idx = index, length = len(traj)))
+    out.write("{idx:08d}   {length}\n".format(idx = index, length = len(traj)))
 out.close()
 
     

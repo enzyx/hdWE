@@ -70,7 +70,7 @@ sys.stdout.flush()
 
 # Reconstruct pathways from log 
 for iteration_id in range(last_iteration_id, -1, -1):
-    sys.stdout.write('  Backtracing pathways: Iteration {:05d}\r'.format(iteration_id))
+    sys.stdout.write('  Backtracing pathways: Iteration {:08d}\r'.format(iteration_id))
     sys.stdout.flush()
     current_iteration     = logger.loadIteration(iteration_id)
     current_segment_list  = open('{rundir}/{iteration}.segment_list'.format(
@@ -109,7 +109,7 @@ for pathway in pathways:
                                                      ,'w')
     for frame in pathway.frame_positions:
         # frame index in cpptraj starts from 1 ( = hdWE segment index + 1) 
-        cpptraj_in.write( 'trajin ../{rundir}/{it:05d}.nc {frame} {frame}\n'.format(rundir = rundir, 
+        cpptraj_in.write( 'trajin ../{rundir}/{it:08d}.nc {frame} {frame}\n'.format(rundir = rundir, 
                                                                                 it     = frame[0],
                                                                                 frame  = frame[1] + 1) )
         
@@ -143,7 +143,7 @@ for i in range(len(pathways[0].frames)):
     print last_iteration.bins[pathways[0].frames[i][1]].coordinate_ids[0]
 
 sys.stdout.write('\n  Completed.\n'.format(dirname))
-sys.stdout.write('   - pathways {p0} and {p1} share least common history, diverging in iteration {it:05d}\n'.format(
+sys.stdout.write('   - pathways {p0} and {p1} share least common history, diverging in iteration {it:08d}\n'.format(
                                                             p0 = least_sharing_pathways[0],
                                                             p1 = least_sharing_pathways[1],
                                                             it = first_iteration_of_divergence))

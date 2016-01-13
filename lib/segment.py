@@ -18,7 +18,7 @@ class Segment(object):
         """
         @return Formated segment file name string
         """
-        return "{iteration:05d}_{_bin:05d}_{segment:05d}"\
+        return "{iteration:08d}_{_bin:05d}_{segment:05d}"\
                 .format(iteration=iteration_id,
                        _bin=bin_id,
                        segment=segment_id)

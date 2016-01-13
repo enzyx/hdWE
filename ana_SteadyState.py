@@ -102,7 +102,7 @@ reweighter.storeRateMatrix(current_iteration)
 for i in range(first_iteration + 1, last_iteration + 1):
     previous_iteration = current_iteration
     current_iteration = logger.loadIteration(i)
-    sys.stdout.write('Iteration: {:05d}, Active Bins: {:05d}, Total Prob.: {}\r'.
+    sys.stdout.write('Iteration: {:08d}, Active Bins: {:05d}, Total Prob.: {}\r'.
                      format(i, current_iteration.getNumberOfActiveBins(), previous_iteration.getProbability()))
     sys.stdout.flush()
 
@@ -217,7 +217,7 @@ print 'mean flux: {:8.7e}'.format( np.mean(flux[args.first_ana_iteration:]) / ar
 fout = open(args.output_file + '.flux', 'w')
 fout.write('# iteration   flux')
 for i in range(len(flux)):
-    fout.write('{:05d} {:8.7e}\n'.format(i, flux[i]))
+    fout.write('{:08d} {:8.7e}\n'.format(i, flux[i]))
 fout.close()   
 
 # calculate PMF

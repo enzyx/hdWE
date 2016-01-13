@@ -32,7 +32,7 @@ class Cleanup(object):
         if  self.keep_coords_frequency == 0 or iteration.getId() % self.keep_coords_frequency != 0:
             self.md_module.removeCoordinateFiles(iteration, self.compress_iteration, self.keep_coords_segments)
         if self.debug:
-            print("Cleanup process done (iteration {:05d})".format(iteration.getId()))
+            print("Cleanup process done (iteration {})".format(iteration.getNameString()))
 
     def doCleanup(self, iteration):
         if self.is_threaded:

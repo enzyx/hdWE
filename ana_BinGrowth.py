@@ -40,7 +40,7 @@ def showSegmentsPerIteration():
     ydata = []
     
     for iteration in iterations:
-        print("Iteration: {:05d} #Segments: {: 6d}".format(iteration.getId(), iteration.getNumberOfSegments()))
+        print("Iteration: {} #Segments: {: 6d}".format(iteration.getNameString(), iteration.getNumberOfSegments()))
         xdata.append(iteration.getId())
         ydata.append(iteration.getNumberOfSegments())
     

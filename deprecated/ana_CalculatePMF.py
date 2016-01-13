@@ -156,7 +156,7 @@ for i in range(first_it_id, last_it_id + 1):
         continue
     
     sys.stdout.write(' Reading coordinates for iteration '\
-                     '{it_id:05d}/{first_it:05d}-{last_it:05d}\r'.format(it_id     = i,
+                     '{it_id:08d}/{first_it:08d}-{last_it:08d}\r'.format(it_id     = i,
                                                            first_it  = first_it_id,
                                                            last_it   = last_it_id))
     sys.stdout.flush()

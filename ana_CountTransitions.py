@@ -47,7 +47,7 @@ class SegmentData(object):
         """
         @return the indices in a string following the scheme iteration_bin_segment
         """
-        return "{0:05d}_{1:05d}_{2:05d}".format(self.iteration_index,
+        return "{0:08d}_{1:05d}_{2:05d}".format(self.iteration_index,
                                                 self.bin_index,
                                                 self.segment_index)
         
@@ -131,7 +131,7 @@ def getParentSegment(segment, iterations):
         if iteration.getId() > p_iter:
             break
     if not found_parent:
-        #sys.stderr.write("failed to find parent {i:05d}_{b:05d}_{s:05d} for segment {sn}\n".format(i=segment.getParentIterationId(),
+        #sys.stderr.write("failed to find parent {i:08d}_{b:05d}_{s:05d} for segment {sn}\n".format(i=segment.getParentIterationId(),
         #                                                                                         b=segment.getParentBinId(),
         #                                                                                         s=segment.getParentSegmentId(),
         #                                                                                         sn=segment.getNameString()))
@@ -228,7 +228,7 @@ for iteration_loop in iterations:
     for bin_loop in iteration_loop:
         iter_data.bins.append(BinData(bin_loop.getId()))
         sys.stdout.write(' Calculating coordinates for iteration '\
-                         '{it_id:05d}/{first_it:05d}-{last_it:05d}, '\
+                         '{it_id:08d}/{first_it:08d}-{last_it:08d}, '\
                          'Bin {bin_id:05d}/{bin_total:05d}\r'.format(it_id     = iteration_loop.getId(),
                                                                first_it  = first_it_id,
                                                                last_it   = last_it_id,
@@ -292,7 +292,7 @@ for iteration in iterations[2:]:
                                                                                      coord=segment.getCoordinates()))
     # iteration id is the one before because initial_segments are considered.
     # so a transition happened at the iteration before
-    sys.stdout.write("{it:05d}:\t-> {plh:6f}({lhc:3d})\t|\t<- {phl:6f}({hlc:3d})\n".format(it  =iteration.getId()-1,
+    sys.stdout.write("{it:08d}:\t-> {plh:6f}({lhc:3d})\t|\t<- {phl:6f}({hlc:3d})\n".format(it  =iteration.getId()-1,
                                                                           plh =low_to_high,
                                                                           lhc =low_to_high_counter,
                                                                           phl =high_to_low,

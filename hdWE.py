@@ -196,7 +196,7 @@ cleaner = cleanup.Cleanup(md_module, NUMBER_OF_THREADS, COMPRESS_ITERATION,
 #         Main Loop         #
 #############################
 for iteration_counter in range(iterations[-1].getId() + 1, MAX_ITERATIONS + 1):
-    sys.stdout.write('\033[1m\nhdWE\033[0m Job: {jn} Status: Iteration {it:05d}\n'.format(jn = JOBNAME, it = iteration_counter))
+    sys.stdout.write('\033[1m\nhdWE\033[0m Job: {jn} Status: Iteration {it:08d}\n'.format(jn = JOBNAME, it = iteration_counter))
     sys.stdout.flush()
 
 

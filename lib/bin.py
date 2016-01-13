@@ -107,7 +107,7 @@ class Bin(object):
         """
         @return bin index as a string
         """
-        name_string = str(self.bin_id).zfill(5)
+        name_string = "{:05d}".format(self.bin_id)
         return name_string
     
     def getSampleRegion(self):
