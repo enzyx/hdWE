@@ -6,6 +6,7 @@ import lib.constants as constants
 import scipy.stats
 import lib.functions_ana_plainMD as functions_ana_plainMD
 from math import log
+from lib import functions_ana_general
 #import scikits.bootstrap
 
 # Parse command line
@@ -115,6 +116,12 @@ if not(args.state_A==None and args.state_B==None):
     residence_times_in_A = functions_ana_plainMD.residence_times_from_coordinates(coordinates, state_A)    
     residence_times_in_B = functions_ana_plainMD.residence_times_from_coordinates(coordinates, state_B)  
    
+   # Cumulative rates
+    residence_times_in_A_cum = 1./numpy.array(functions_ana_general.cumulative_mean(residence_times_in_A))
+    residence_times_in_B_cum = 1./numpy.array(functions_ana_general.cumulative_mean(residence_times_in_B))
+    numpy.savetxt('ana_plainMD.A.cum', residence_times_in_A_cum)
+    numpy.savetxt('ana_plainMD.B.cum', residence_times_in_B_cum)
+
    
     # write first passage times to file
     if args.write_mfpt:
@@ -145,24 +152,32 @@ if not(args.state_A==None and args.state_B==None):
 #                  
     ####### 95% Confidence intervals
     # First Passage Times                 
-    meanCI_first_passage_times_into_B = scipy.stats.bayes_mvs(first_passage_times_into_B, 0.95)[0]
-    meanCI_first_passage_times_into_A = scipy.stats.bayes_mvs(first_passage_times_into_A, 0.95)[0]
+    #meanCI_first_passage_times_into_B = scipy.stats.bayes_mvs(first_passage_times_into_B, 0.95)[0]
+    #meanCI_first_passage_times_into_A = scipy.stats.bayes_mvs(first_passage_times_into_A, 0.95)[0]
     # Transition Times
-    meanCI_transition_times_into_B    = scipy.stats.bayes_mvs(transition_times_into_B, 0.95)[0]
-    meanCI_transition_times_into_A    = scipy.stats.bayes_mvs(transition_times_into_A, 0.95)[0]
+    #meanCI_transition_times_into_B    = scipy.stats.bayes_mvs(transition_times_into_B, 0.95)[0]
+    #meanCI_transition_times_into_A    = scipy.stats.bayes_mvs(transition_times_into_A, 0.95)[0]
     # Residence Times
     # Workaround because of bootstrap memory error for large coordinate sets:
     #sumCI_residence_times_in_A          = [numpy.sum(residence_times_in_A)]
     #sumCI_residence_times_in_A.append(scikits.bootstrap.ci(residence_times_in_A, numpy.sum, alpha = 0.05))
-    sumCI_residence_times_in_A        = scipy.stats.bayes_mvs(residence_times_in_A, 0.95)[0]
-    sumCI_residence_times_in_A        = (sumCI_residence_times_in_A[0] * len(residence_times_in_A), (sumCI_residence_times_in_A[1][0] * len(residence_times_in_A),sumCI_residence_times_in_A[1][1] * len(residence_times_in_A)))
+    #sumCI_residence_times_in_A        = scipy.stats.bayes_mvs(residence_times_in_A, 0.95)[0]
+    #sumCI_residence_times_in_A        = (sumCI_residence_times_in_A[0] * len(residence_times_in_A), (sumCI_residence_times_in_A[1][0] * len(residence_times_in_A),sumCI_residence_times_in_A[1][1] * len(residence_times_in_A)))
+    # with our bootstrapping
+    sumCI_residence_times_in_A         = functions_ana_general.block_bootstrap(residence_times_in_A, numpy.sum, 1, number_of_samples = 10000, alpha = 0.05)
     #sumCI_residence_times_in_B          = [numpy.sum(residence_times_in_B)]
     #sumCI_residence_times_in_B.append(scikits.bootstrap.ci(residence_times_in_B, numpy.sum, alpha = 0.05))
-    sumCI_residence_times_in_B        = scipy.stats.bayes_mvs(residence_times_in_B, 0.95)[0]
-    sumCI_residence_times_in_B        = (sumCI_residence_times_in_B[0] * len(residence_times_in_B), (sumCI_residence_times_in_B[1][0] * len(residence_times_in_B),sumCI_residence_times_in_B[1][1] * len(residence_times_in_B)))
+    #sumCI_residence_times_in_B        = scipy.stats.bayes_mvs(residence_times_in_B, 0.95)[0]
+    #sumCI_residence_times_in_B        = (sumCI_residence_times_in_B[0] * len(residence_times_in_B), (sumCI_residence_times_in_B[1][0] * len(residence_times_in_B),sumCI_residence_times_in_B[1][1] * len(residence_times_in_B)))
+    # with our bootstrapping
+    sumCI_residence_times_in_B         = functions_ana_general.block_bootstrap(residence_times_in_B, numpy.sum, 1, number_of_samples = 10000, alpha = 0.05)
     # Rates
-    meanCI_rates_into_B               = ( functions_ana_plainMD.rate(N_transitions_into_B, sumCI_residence_times_in_A[0]), ( functions_ana_plainMD.rate(N_transitions_into_B, sumCI_residence_times_in_A[1][1]), functions_ana_plainMD.rate(N_transitions_into_B, sumCI_residence_times_in_A[1][0]) )) 
-    meanCI_rates_into_A               = ( functions_ana_plainMD.rate(N_transitions_into_A, sumCI_residence_times_in_B[0]), ( functions_ana_plainMD.rate(N_transitions_into_A, sumCI_residence_times_in_B[1][1]), functions_ana_plainMD.rate(N_transitions_into_A, sumCI_residence_times_in_B[1][0]) )) 
+    meanCI_rates_into_B               = ( functions_ana_plainMD.rate(N_transitions_into_B, sumCI_residence_times_in_A[0]), 
+                                          ( functions_ana_plainMD.rate(N_transitions_into_B, sumCI_residence_times_in_A[1][1]), 
+                                            functions_ana_plainMD.rate(N_transitions_into_B, sumCI_residence_times_in_A[1][0]) )) 
+    meanCI_rates_into_A               = ( functions_ana_plainMD.rate(N_transitions_into_A, sumCI_residence_times_in_B[0]), 
+                                          ( functions_ana_plainMD.rate(N_transitions_into_A, sumCI_residence_times_in_B[1][1]), 
+                                            functions_ana_plainMD.rate(N_transitions_into_A, sumCI_residence_times_in_B[1][0]) )) 
 
     ####### Compare free energy difference between states
     # from PMF
@@ -177,14 +192,14 @@ if not(args.state_A==None and args.state_B==None):
     print('')
     print(' State A ---> State B')
     print('    Number of transitions:      {:9d}'.format(N_transitions_into_B))
-    print('    Mean First Passage time:    {mean:5.3e}   CI: {lCI:5.3e} to {uCI:5.3e}'.format(
-          mean = meanCI_first_passage_times_into_B[0],
-          lCI  = meanCI_first_passage_times_into_B[1][0],
-          uCI  = meanCI_first_passage_times_into_B[1][1]))
-    print('    Mean Transition time:       {mean:5.3e}   CI: {lCI:5.3e} to {uCI:5.3e}'.format(
-          mean = meanCI_transition_times_into_B[0],
-          lCI  = meanCI_transition_times_into_B[1][0],
-          uCI  = meanCI_transition_times_into_B[1][1]))
+#     print('    Mean First Passage time:    {mean:5.3e}   CI: {lCI:5.3e} to {uCI:5.3e}'.format(
+#           mean = meanCI_first_passage_times_into_B[0],
+#           lCI  = meanCI_first_passage_times_into_B[1][0],
+#           uCI  = meanCI_first_passage_times_into_B[1][1]))
+#     print('    Mean Transition time:       {mean:5.3e}   CI: {lCI:5.3e} to {uCI:5.3e}'.format(
+#           mean = meanCI_transition_times_into_B[0],
+#           lCI  = meanCI_transition_times_into_B[1][0],
+#           uCI  = meanCI_transition_times_into_B[1][1]))
     print('')
     print('    Total Residence time in A:  {mean:5.3e}   CI: {lCI:5.3e} to {uCI:5.3e}'.format(
           mean = sumCI_residence_times_in_A[0],
@@ -199,14 +214,14 @@ if not(args.state_A==None and args.state_B==None):
     print('')       
     print(' State B ---> State A')
     print('    Number of transitions:      {:9d}'.format(N_transitions_into_A))
-    print('    Mean First passage time:    {mean:5.3e}   CI: {lCI:5.3e} to {uCI:5.3e}'.format(
-          mean = meanCI_first_passage_times_into_A[0],
-          lCI  = meanCI_first_passage_times_into_A[1][0],
-          uCI  = meanCI_first_passage_times_into_A[1][1]))
-    print('    Mean Transition time:       {mean:5.3e}   CI: {lCI:5.3e} to {uCI:5.3e}'.format(
-          mean = meanCI_transition_times_into_A[0],
-          lCI  = meanCI_transition_times_into_A[1][0],
-          uCI  = meanCI_transition_times_into_A[1][1]))
+#     print('    Mean First passage time:    {mean:5.3e}   CI: {lCI:5.3e} to {uCI:5.3e}'.format(
+#           mean = meanCI_first_passage_times_into_A[0],
+#           lCI  = meanCI_first_passage_times_into_A[1][0],
+#           uCI  = meanCI_first_passage_times_into_A[1][1]))
+#     print('    Mean Transition time:       {mean:5.3e}   CI: {lCI:5.3e} to {uCI:5.3e}'.format(
+#           mean = meanCI_transition_times_into_A[0],
+#           lCI  = meanCI_transition_times_into_A[1][0],
+#           uCI  = meanCI_transition_times_into_A[1][1]))
     print('')
     print('    Total Residence Time in A:  {mean:5.3e}   CI: {lCI:5.3e} to {uCI:5.3e}'.format(
           mean = sumCI_residence_times_in_B[0],
