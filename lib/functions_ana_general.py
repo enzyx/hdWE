@@ -103,7 +103,7 @@ def block_bootstrap(data, function, block_size, number_of_samples = 10000, alpha
     # Evaluate function on the resampled datasets
     function_values = []
     for i in range(0, number_of_samples):
-        sys.stderr.write('\r Progress: [{: 6d}/{}]\r'.format(i, number_of_samples))
+        sys.stderr.write('\r Bootstrap Progress: [{: 6d}/{}]\r'.format(i, number_of_samples))
         data_resampled = resample(data, block_size)
         function_values.append( function(data_resampled) )
     
@@ -145,5 +145,12 @@ def getStateFromCoordinate(segment, state_A, state_B):
                 break 
     return this_state   
     
-    
-    
+def subSummarize(list, sublength):
+    """
+    @return list of sum of each sublength elements
+    """
+    length = int(len(list)/sublength)
+    short_list = numpy.zeros(length)
+    for i in range(length):
+        short_list[i] = numpy.sum(list[i*length:(i+1)*length])
+    return short_list

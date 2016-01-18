@@ -58,38 +58,33 @@ def rate(N_transitions_into_target_state, total_residence_time_in_start_state):
 
 
 def transitions_from_coordinates(coordinates, start_state, end_state):
-    first_passage_times    = []
-    transition_times       = []
-    in_transition          = False
-    first_passage_time_tmp = 0
-    transition_time_tmp = 0
+    """
+    @ return list with length transitions 
+    that holds the residence times before this transition
+    """
+    transitions   = [] # list of with residence times prior to each transition
+    in_transition = False
     
     for coord in coordinates:
         if in_transition == False:
             # if in start state, start with transition time counting
             if inState(coord, start_state):
-                in_transition          = True
-                first_passage_time_tmp = 1
+                in_transition  = True
+                residence_time = 1
                 
         if in_transition == True:
-            if not inState(coord, start_state):
-                transition_time_tmp += 1
-            else:
-                transition_time_tmp = 0
             # if in transition, save transition time if arrived in end state,
             # otherwise add frame to transition time 
-            # and keep track of new possible transition starting points
             if inState(coord, end_state):
-                first_passage_times.append(first_passage_time_tmp)
+                transitions.append(residence_time)
                 in_transition    = False
-                transition_times.append(transition_time_tmp)
-            else:
-                first_passage_time_tmp += 1
+            if inState(coord, start_state):
+                residence_time += 1
 
-    if len(first_passage_times) == 0:
+    if len(transitions) == 0:
         print(' No transitions found.')
       
-    return first_passage_times, transition_times
+    return transitions
     
 def residence_times_from_coordinates(coordinates, state):
 
