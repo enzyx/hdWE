@@ -91,9 +91,6 @@ if not(args.state_A==None and args.state_B==None):
     rates_into_B_cum = 1./numpy.array(functions_ana_general.cumulative_mean(transitions_into_B))
     numpy.savetxt('ana_plainMD.A.cum', rates_into_A_cum)
     numpy.savetxt('ana_plainMD.B.cum', rates_into_B_cum)
-    
-    print (1./numpy.mean(transitions_into_A))
-    print (1./numpy.mean(transitions_into_B))
                    
     # error with our bootstrapping
     def gustav_hilfsfunktion(inlist):
