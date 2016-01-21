@@ -77,15 +77,17 @@ def block_bootstrap(data, function, block_size, number_of_samples = 10000, alpha
     """
     from random import randint
     # generate a resampled dataset based on non-overlapping blocks
-    resampled = numpy.zeros([len(data),2])
-    
     def resample(data, block_size):
         number_of_blocks = int (len(data) / block_size )
+        data_resampled = []
         for j in range(0,number_of_blocks):
             random_block_index = randint(0, number_of_blocks - 1)
             data_block_tmp = data[block_size * random_block_index:block_size * (random_block_index + 1) ]
-            resampled[j:j+block_size] = data_block_tmp
-        return numpy.array(resampled)
+            if data_resampled == []:
+                data_resampled = data_block_tmp
+            else:
+                data_resampled = numpy.append(data_resampled, data_block_tmp, axis = 0)
+        return data_resampled
 
     # calculate the alpha percentiles for lower and upper boundaries
     def percentile(data, alpha):
