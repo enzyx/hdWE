@@ -83,20 +83,32 @@ if not(args.state_A==None and args.state_B==None):
 
     transitions_into_B =  functions_ana_plainMD.transitions_from_coordinates(coordinates_tmp, state_A, state_B)
     transitions_into_A =  functions_ana_plainMD.transitions_from_coordinates(coordinates_tmp, state_B, state_A)
+    fpt_into_B         = functions_ana_plainMD.mfpt_from_coordinates(coordinates_tmp, state_A, state_B)
+    fpt_into_A         = functions_ana_plainMD.mfpt_from_coordinates(coordinates_tmp, state_B, state_A)
     N_transitions_into_B = len(transitions_into_B)    
     N_transitions_into_A = len(transitions_into_A)         
    
     # Cumulative rates
+    rates_into_B_cum = 1./numpy.array(functions_ana_general.cumulative_mean(transitions_into_B))    
     rates_into_A_cum = 1./numpy.array(functions_ana_general.cumulative_mean(transitions_into_A))
-    rates_into_B_cum = 1./numpy.array(functions_ana_general.cumulative_mean(transitions_into_B))
-    numpy.savetxt('ana_plainMD.A.cum', rates_into_A_cum)
+    fpt_into_B_cum   = 1./numpy.array(functions_ana_general.cumulative_mean(fpt_into_B))    
+    fpt_into_A_cum   = 1./numpy.array(functions_ana_general.cumulative_mean(fpt_into_A))
+      
     numpy.savetxt('ana_plainMD.B.cum', rates_into_B_cum)
+    numpy.savetxt('ana_plainMD.A.cum', rates_into_A_cum)
+    numpy.savetxt('ana_plainMD.mfpt_into_B.cum', fpt_into_B_cum)
+    numpy.savetxt('ana_plainMD.mfpt_into_A.cum', fpt_into_A_cum)
+    
                    
     # error with our bootstrapping
     def gustav_hilfsfunktion(inlist):
         return 1./numpy.mean(inlist)
     rates_into_A = functions_ana_general.block_bootstrap(transitions_into_A, gustav_hilfsfunktion, 1, number_of_samples=10000, alpha=0.05)
     rates_into_B = functions_ana_general.block_bootstrap(transitions_into_B, gustav_hilfsfunktion, 1, number_of_samples=10000, alpha=0.05)
+    mfpt_into_A  = functions_ana_general.block_bootstrap(fpt_into_A, gustav_hilfsfunktion, 1, number_of_samples=10000, alpha=0.05)
+    mfpt_into_B  = functions_ana_general.block_bootstrap(fpt_into_B, gustav_hilfsfunktion, 1, number_of_samples=10000, alpha=0.05)
+
+
 
     ####### Output
     print('')
@@ -108,6 +120,11 @@ if not(args.state_A==None and args.state_B==None):
           mean = rates_into_A[0],
           lCI  = rates_into_A[1][0],
           uCI  = rates_into_A[1][1]))
+    print('    MFPT Rate:                  {mean:5.3e}   CI: {lCI:5.3e} to {uCI:5.3e}'.format(
+          #mean = meanCI_rates_into_B[0],
+          mean = mfpt_into_A[0],
+          lCI  = mfpt_into_A[1][0],
+          uCI  = mfpt_into_A[1][1]))
 
     print('')       
     print(' State B ---> State A')
@@ -117,6 +134,11 @@ if not(args.state_A==None and args.state_B==None):
           mean = rates_into_B[0],
           lCI  = rates_into_B[1][0],
           uCI  = rates_into_B[1][1]))
+    print('    MFPT Rate:                  {mean:5.3e}   CI: {lCI:5.3e} to {uCI:5.3e}'.format(
+          #mean = meanCI_rates_into_B[0],
+          mean = mfpt_into_B[0],
+          lCI  = mfpt_into_B[1][0],
+          uCI  = mfpt_into_B[1][1]))
 
     print('')
         

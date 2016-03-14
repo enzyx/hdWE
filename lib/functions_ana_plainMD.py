@@ -85,7 +85,35 @@ def transitions_from_coordinates(coordinates, start_state, end_state):
         print(' No transitions found.')
       
     return transitions
+
+def mfpt_from_coordinates(coordinates, start_state, end_state):
+    first_passage_times    = []
+    in_transition          = False
+    first_passage_time_tmp = 0
     
+    for coord in coordinates:
+        if in_transition == False:
+            # if in start state, start with transition time counting
+            if inState(coord, start_state):
+                in_transition          = True
+                first_passage_time_tmp = 1
+                
+        if in_transition == True:
+            # if in transition, save transition time if arrived in end state,
+            # otherwise add frame to transition time 
+            # and keep track of new possible transition starting points
+            if inState(coord, end_state):
+                first_passage_times.append(first_passage_time_tmp)
+                in_transition    = False
+            else:
+                first_passage_time_tmp += 1
+
+    if len(first_passage_times) == 0:
+        print(' No transitions found.')
+      
+    return first_passage_times
+
+  
 def residence_times_from_coordinates(coordinates, state):
 
     residence_times        = []
