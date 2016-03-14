@@ -536,9 +536,9 @@ block_bootstrap_rate_into_B = f.block_bootstrap(flux_prob_pair,
                                                 rate, 
                                                 block_size, 
                                                 number_of_samples = args.bs_samples)
-sys.stdout.write("    k {:5.4e} {:5.4e} {:5.4e}\n".format(block_bootstrap_rate_into_A[0], 
-                                             block_bootstrap_rate_into_A[1][0],
-                                             block_bootstrap_rate_into_A[1][1]))    
+sys.stdout.write("    k {:5.4e} {:5.4e} {:5.4e}\n".format(block_bootstrap_rate_into_B[0], 
+                                             block_bootstrap_rate_into_B[1][0],
+                                             block_bootstrap_rate_into_B[1][1]))    
 sys.stdout.flush()
 
 # MFPT rate
@@ -591,13 +591,13 @@ for i in range(b,e):
     flux_prob_pair.append([flux_into_A[i], probability_state_B[i]])
 flux_prob_pair = np.array(flux_prob_pair)
 
-block_bootstrap_rate_into_B = f.block_bootstrap(flux_prob_pair, 
+block_bootstrap_rate_into_A = f.block_bootstrap(flux_prob_pair, 
                                                 rate, 
                                                 block_size,
                                                 number_of_samples = args.bs_samples)
-sys.stdout.write("    k {:5.4e} {:5.4e} {:5.4e}\n".format(block_bootstrap_rate_into_B[0], 
-                                                           block_bootstrap_rate_into_B[1][0],
-                                                           block_bootstrap_rate_into_B[1][1]))
+sys.stdout.write("    k {:5.4e} {:5.4e} {:5.4e}\n".format(block_bootstrap_rate_into_A[0], 
+                                                           block_bootstrap_rate_into_A[1][0],
+                                                           block_bootstrap_rate_into_A[1][1]))
 
 # MFPT rate
 flux_histprob_pair = []
