@@ -346,37 +346,37 @@ for i in range(len(pmf)):
     fout.write('{:8.7e} {:8.7e} {:8.7e}\n'.format(histogram[i,0], pmf[i], histogram[i,1]))
 fout.close()
 
-## calculate PMF from A 
-#histogram = f.weightedHistogram(pmf_segment_data_A, args.pmf_bins)
-#pmf = np.zeros(len(histogram), dtype=float)
-#for i in range(len(histogram)):
-#    if histogram[i,1] > 0.0:
-#        pmf[i] = -constants.kT *  math.log(histogram[i,1])
-#    else:
-#        pmf[i] = 'Inf'
-#pmf -= np.min(pmf)
-#
-#fout = open(args.output_file + '_A.pmf', 'w')
-#fout.write('# coord   free energy   probability')
-#for i in range(len(pmf)):
-#    fout.write('{:8.7e} {:8.7e} {:8.7e}\n'.format(histogram[i,0], pmf[i], histogram[i,1]))
-#fout.close()
-#
-## calculate PMF from B
-#histogram = f.weightedHistogram(pmf_segment_data_B, args.pmf_bins)
-#pmf = np.zeros(len(histogram), dtype=float)
-#for i in range(len(histogram)):
-#    if histogram[i,1] > 0.0:
-#        pmf[i] = -constants.kT *  math.log(histogram[i,1])
-#    else:
-#        pmf[i] = 'Inf'
-#pmf -= np.min(pmf)
-#
-#fout = open(args.output_file + '_B.pmf', 'w')
-#fout.write('# coord   free energy   probability')
-#for i in range(len(pmf)):
-#    fout.write('{:8.7e} {:8.7e} {:8.7e}\n'.format(histogram[i,0], pmf[i], histogram[i,1]))
-#fout.close()
+# calculate PMF from A 
+histogram = f.weightedHistogram(pmf_segment_data_A, args.pmf_bins)
+pmf = np.zeros(len(histogram), dtype=float)
+for i in range(len(histogram)):
+    if histogram[i,1] > 0.0:
+        pmf[i] = -constants.kT *  math.log(histogram[i,1])
+    else:
+        pmf[i] = 'Inf'
+pmf -= np.min(pmf)
+
+fout = open(args.output_file + '_A.pmf', 'w')
+fout.write('# coord   free energy   probability')
+for i in range(len(pmf)):
+    fout.write('{:8.7e} {:8.7e} {:8.7e}\n'.format(histogram[i,0], pmf[i], histogram[i,1]))
+fout.close()
+
+# calculate PMF from B
+histogram = f.weightedHistogram(pmf_segment_data_B, args.pmf_bins)
+pmf = np.zeros(len(histogram), dtype=float)
+for i in range(len(histogram)):
+    if histogram[i,1] > 0.0:
+        pmf[i] = -constants.kT *  math.log(histogram[i,1])
+    else:
+        pmf[i] = 'Inf'
+pmf -= np.min(pmf)
+
+fout = open(args.output_file + '_B.pmf', 'w')
+fout.write('# coord   free energy   probability')
+for i in range(len(pmf)):
+    fout.write('{:8.7e} {:8.7e} {:8.7e}\n'.format(histogram[i,0], pmf[i], histogram[i,1]))
+fout.close()
 
 #### calculate velocity histograms ####
 if args.velocities:
@@ -532,7 +532,7 @@ flux_prob_pair = np.array(flux_prob_pair)
 #print flux_prob_pair[0:10], np.mean(flux_prob_pair[0:10,0])
 #print flux_into_B[b:b+10], probability_state_A[b:b+10], np.mean(flux_into_B[b:b+10]), np.mean(probability_state_A[b:b+10])
 #print np.array(flux_prob_pair)
-block_bootstrap_rate_into_A = f.block_bootstrap(flux_prob_pair, 
+block_bootstrap_rate_into_B = f.block_bootstrap(flux_prob_pair, 
                                                 rate, 
                                                 block_size, 
                                                 number_of_samples = args.bs_samples)
@@ -541,7 +541,20 @@ sys.stdout.write("    k {:5.4e} {:5.4e} {:5.4e}\n".format(block_bootstrap_rate_i
                                              block_bootstrap_rate_into_A[1][1]))    
 sys.stdout.flush()
 
-#sys.stdout.write("    1/(MFPT):    {:5.4e}\n".format(np.mean(flux_into_B[b:e])  / np.mean(probability_from_A[b:e])))
+# MFPT rate
+flux_histprob_pair = []
+for i in range(b,e):
+    flux_histprob_pair.append([flux_into_B[i], probability_from_A[i]])
+flux_histprob_pair = np.array(flux_histprob_pair)
+
+block_bootstrap_mfpt_into_B = f.block_bootstrap(flux_histprob_pair, 
+                                                rate, 
+                                                block_size, 
+                                                number_of_samples = args.bs_samples)
+print("1/(MFPT) {:5.4e} {:5.4e} {:5.4e}".format(block_bootstrap_mfpt_into_B[0], 
+                                             block_bootstrap_mfpt_into_B[1][0],
+                                             block_bootstrap_mfpt_into_B[1][1]))
+
 
 # State B
 sys.stdout.write(" State B -> A:\n")
@@ -584,8 +597,21 @@ block_bootstrap_rate_into_B = f.block_bootstrap(flux_prob_pair,
                                                 number_of_samples = args.bs_samples)
 sys.stdout.write("    k {:5.4e} {:5.4e} {:5.4e}\n".format(block_bootstrap_rate_into_B[0], 
                                                            block_bootstrap_rate_into_B[1][0],
-                                                           block_bootstrap_rate_into_B[1][1]))  
-#sys.stdout.write("    1/(MFPT):    {:5.4e}\n".format(np.mean(flux_into_A[b:e])  / np.mean(probability_from_B[b:e])))
+                                                           block_bootstrap_rate_into_B[1][1]))
+
+# MFPT rate
+flux_histprob_pair = []
+for i in range(b,e):
+    flux_histprob_pair.append([flux_into_A[i], probability_from_B[i]])
+flux_histprob_pair = np.array(flux_histprob_pair)
+
+block_bootstrap_mfpt_into_A = f.block_bootstrap(flux_histprob_pair, 
+                                                rate, 
+                                                block_size, 
+                                                number_of_samples = args.bs_samples)
+print("1/(MFPT) {:5.4e} {:5.4e} {:5.4e}".format(block_bootstrap_mfpt_into_A[0], 
+                                             block_bootstrap_mfpt_into_A[1][0],
+                                             block_bootstrap_mfpt_into_A[1][1]))  
 
 ########################################
 
