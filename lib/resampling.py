@@ -239,7 +239,7 @@ class Resampling(object):
         # Regardless of current particle count, always split overweight 
         # segments and merge underweight particles.
         # Then and only then adjust for correct particle count
-        for this_bin in self.iteration():
+        for this_bin in self.iteration:
             if len(this_bin.segments) == 0 or this_bin.sample_region == False:
                 continue
             
