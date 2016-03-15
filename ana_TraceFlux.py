@@ -490,6 +490,16 @@ def rate(datapoints):
 #      Pretty print        #
 ############################
 sys.stderr.write('- calculating rates with errors\n')
+# write rates right away:
+qrfile = open('ana_trace_flux.quickrates', 'w')
+qrfile.write('   A->B: \n')
+qrfile.write('         k      = {:5.4e}\n'.format(rate(np.array(zip(flux_into_B[b:e],probability_state_A[b:e])))))
+qrfile.write('         1/MFPT = {:5.4e}\n'.format(rate(np.array(zip(flux_into_B[b:e],probability_from_A[b:e])))))
+qrfile.write('   B->A: \n')
+qrfile.write('         k      = {:5.4e}\n'.format(rate(np.array(zip(flux_into_A[b:e],probability_state_B[b:e])))))
+qrfile.write('         1/MFPT = {:5.4e}\n'.format(rate(np.array(zip(flux_into_A[b:e],probability_from_B[b:e])))))
+qrfile.close()
+
 sys.stdout.write("States:  A=[{},{}]  B=[{},{}]\n".format(state_A[0], state_A[1], state_B[0], state_B[1]))
 # State A 
 sys.stdout.write(" State A -> B:\n")
@@ -536,7 +546,7 @@ block_bootstrap_rate_into_B = f.block_bootstrap(flux_prob_pair,
                                                 rate, 
                                                 block_size, 
                                                 number_of_samples = args.bs_samples)
-sys.stdout.write("    k {:5.4e} {:5.4e} {:5.4e}\n".format(block_bootstrap_rate_into_B[0], 
+sys.stdout.write("    k        {:5.4e} {:5.4e} {:5.4e}\n".format(block_bootstrap_rate_into_B[0], 
                                              block_bootstrap_rate_into_B[1][0],
                                              block_bootstrap_rate_into_B[1][1]))    
 sys.stdout.flush()
@@ -551,7 +561,7 @@ block_bootstrap_mfpt_into_B = f.block_bootstrap(flux_histprob_pair,
                                                 rate, 
                                                 block_size, 
                                                 number_of_samples = args.bs_samples)
-print("1/(MFPT) {:5.4e} {:5.4e} {:5.4e}".format(block_bootstrap_mfpt_into_B[0], 
+print("    1/(MFPT) {:5.4e} {:5.4e} {:5.4e}".format(block_bootstrap_mfpt_into_B[0], 
                                              block_bootstrap_mfpt_into_B[1][0],
                                              block_bootstrap_mfpt_into_B[1][1]))
 
@@ -595,7 +605,7 @@ block_bootstrap_rate_into_A = f.block_bootstrap(flux_prob_pair,
                                                 rate, 
                                                 block_size,
                                                 number_of_samples = args.bs_samples)
-sys.stdout.write("    k {:5.4e} {:5.4e} {:5.4e}\n".format(block_bootstrap_rate_into_A[0], 
+sys.stdout.write("    k        {:5.4e} {:5.4e} {:5.4e}\n".format(block_bootstrap_rate_into_A[0], 
                                                            block_bootstrap_rate_into_A[1][0],
                                                            block_bootstrap_rate_into_A[1][1]))
 
@@ -609,7 +619,7 @@ block_bootstrap_mfpt_into_A = f.block_bootstrap(flux_histprob_pair,
                                                 rate, 
                                                 block_size, 
                                                 number_of_samples = args.bs_samples)
-print("1/(MFPT) {:5.4e} {:5.4e} {:5.4e}".format(block_bootstrap_mfpt_into_A[0], 
+print("    1/(MFPT) {:5.4e} {:5.4e} {:5.4e}".format(block_bootstrap_mfpt_into_A[0], 
                                              block_bootstrap_mfpt_into_A[1][0],
                                              block_bootstrap_mfpt_into_A[1][1]))  
 
