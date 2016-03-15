@@ -151,17 +151,17 @@ def parseResamplingMode(config):
     """
     @return {closest, random, weighted, no-merge, split-forward}
     """
-    valid_modi = ['closest', 'random', 'weighted', 'no-merge', 'split-forward', 'split-forward-front', 'split-region']
-    merge_mode = ""
+    valid_modi = ['closest', 'random', 'weighted', 'no-merge', 'split-forward', 'split-forward-front', 'split-region', 'westpa']
+    resampling_mode = ""
     try:
-        merge_mode = str(config.get('hdWE', 'resampling-mode')).strip()
-        if merge_mode not in valid_modi:
+        resampling_mode = str(config.get('hdWE', 'resampling-mode')).strip()
+        if resampling_mode not in valid_modi:
             raise BaseException
     except:
         print("Error: Could not find valid resampling mode in config file.")
         print("valid modi are: " + str(valid_modi))
         sys.exit(CONFIG_ERROR_CODE)
-    return merge_mode
+    return resampling_mode
 
 def parseMergeThreshold(config):
     """

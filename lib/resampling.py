@@ -13,7 +13,10 @@ class Resampling(object):
                  primary_coordinate  = 0,
                  split_forward_number_of_children = 1,
                  split_region = [0, 9e99],
-                 front_interval = 9e99):
+                 front_interval = 9e99,
+                 west_weight_split_threshold=2.0,
+                 west_weight_merge_cutoff=1.0,
+                 west_do_adjust_counts=True):
         """
         Keep track of some resampling variables
         """
@@ -35,6 +38,12 @@ class Resampling(object):
         
         # Split region
         self.SPLIT_REGION                     = split_region
+        
+        # westpa constants, default values are taken 
+        # from the WESTPA code. 
+        self.WESTPA_WEIGHT_SPLIT_THRESHOLD    = west_weight_split_threshold
+        self.WESTPA_DO_ADJUST_COUNTS          = west_do_adjust_counts
+        self.WESTPA_WEIGHT_MERGE_CUTOFF       = west_weight_merge_cutoff
 
     def resample(self, iteration):
         """
@@ -69,6 +78,9 @@ class Resampling(object):
         
         elif self.RESAMPLING_MODE == 'no-merge':
             self.resampleNoMerge()
+        
+        elif self.RESAMPLING_MODE == 'westpa':
+            self.resampleWestpa()
     
     ##########################################
     #    Implementation of resampling modes  #
@@ -125,7 +137,7 @@ class Resampling(object):
         for this_bin in self.iteration:
             # Is in sample region or is bin empty?
             if len(this_bin.segments) == 0 and this_bin.getId() > 0:
-               continue
+                continue
             if this_bin.sample_region == False:
                 continue
              
@@ -141,7 +153,7 @@ class Resampling(object):
             # Bin is not in front region
             else:
                 if this_bin.getId() == 0 and this_bin.getNumberOfSegments() == 0:
-                    print('ASDFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF')
+                    print('Bin is not in front region!')
                     self.splitFromEnsemble(this_bin, True)
                 else:
                     self.mergeKeepRandomSegment(this_bin)
@@ -217,6 +229,118 @@ class Resampling(object):
             if this_bin.getNumberOfSegments() < this_bin.getTargetNumberOfSegments():
                 self.splitWeighted(this_bin)
                 continue
+    
+    def resampleWestpa(self):
+        '''
+        Resampling mode as implemented in the WESTPA code.
+        Comments are sometimes take from the original implementation.
+        '''       
+        # Regardless of current particle count, always split overweight 
+        # segments and merge underweight particles.
+        # Then and only then adjust for correct particle count
+        for this_bin in self.iteration():
+            if len(this_bin.segments) == 0 or this_bin.sample_region == False:
+                continue
+            
+            self._westpaSplitByWeight(this_bin)
+            self._westpaMergeByWeight(this_bin)
+            if self.WESTPA_DO_ADJUST_COUNTS:
+                self._westpaAdjustCount(this_bin)
+
+    def _westpaSplitByWeight(self, this_bin):
+        '''Split overweight particles'''
+        weights      = this_bin.getProbability()
+        target_count = this_bin.getTargetNumberOfSegments()
+        ideal_weight = weights / target_count
+        
+        to_split     = []
+        for segment in this_bin:
+            if segment.getProbability() > self.WESTPA_WEIGHT_SPLIT_THRESHOLD * ideal_weight:
+                to_split.append(segment)
+        
+        for segment in to_split:
+            m = int(numpy.ceil(segment.getProbability()/ideal_weight))
+            self._westpaSplitWalker(segment, m, this_bin)
+
+    def _westpaSplitWalker(self, segment, m, this_bin):
+        '''Split the walker ``segment`` (in ``bin``) into ``m`` walkers'''
+        split_prob = segment.getProbability()/float(m)
+        this_bin.segments[segment.getId()].setProbability(split_prob)
+        
+        for dummy in range(1, m):
+            __segment = Segment(probability         = split_prob,
+                                parent_iteration_id = segment.getParentIterationId(),
+                                parent_bin_id       = segment.getParentBinId(),
+                                parent_segment_id   = segment.getParentSegmentId(),
+                                iteration_id        = segment.getIterationId(),
+                                bin_id              = segment.getBinId(),
+                                segment_id          = this_bin.getNumberOfSegments())
+            this_bin.addSegment(__segment)
+    
+    def _westpaMergeByWeight(self, this_bin):
+        '''Merge underweight particles'''
+        weight       = this_bin.getProbability()
+        target_count = this_bin.getTargetNumberOfSegments()
+        ideal_weight = weight / target_count
+
+        while True:
+            # Sorted segments weights
+            sorted_segs = sorted(this_bin.segments[:], key=lambda seg: seg.getProbability())
+            this_bin.fixSegmentIds()
+            
+            to_merge = []
+            cumul_weight = 0.0
+            for segment in sorted_segs:
+                cumul_weight += segment.getProbability()
+                if cumul_weight <= ideal_weight * self.WESTPA_WEIGHT_MERGE_CUTOFF:
+                    to_merge.append(segment)
+            
+            if len(to_merge) < 2:
+                return
+            
+            self._westpaMergeWalkers(to_merge, None, this_bin)
+    
+    def _westpaMergeWalkers(self, segments, cumul_weight, this_bin):
+        """
+        Merge the given ``segments`` in ``bin``, previously sorted by weight, 
+        into one conglomerate segment. ``cumul_weight`` is the cumulative sum of the weights 
+        of the ``segments``; this may be None to calculate here.
+        """
+        if cumul_weight is None:
+            cumul_weight = numpy.add.accumulate([segment.getProbability() for segment in segments])
+        # Total probability
+        tot_weight = cumul_weight[-1]
+        # Get index of the surviving segment
+        iparent     = numpy.digitize((rnd.uniform(0, tot_weight),), cumul_weight)[0]
+        psegment    = segments[iparent]
+        del segments[iparent]
+        iextinction = [segment.getId() for segment in segments]
+        # Assign all probability to surviving segment
+        psegment.setProbability(tot_weight)
+                
+        iextinction.sort(reverse=True)
+        for index in iextinction:
+            # We need the actual index of the segment
+            this_bin.merge_list.append([index, this_bin.segments.index(psegment)])
+            del this_bin.segments[index]
+        
+        this_bin.fixSegmentIds()
+    
+    def _westpaAdjustCount(self, this_bin):
+        while this_bin.getNumberOfSegments() < this_bin.getTargetNumberOfSegments():
+            # Always split the highest probability walker into two
+            split_segment = max(this_bin.segments, key=lambda segment: segment.getProbability())
+            self._westpaSplitWalker(split_segment, 2, this_bin)
+        
+        while this_bin.getNumberOfSegments() > this_bin.getTargetNumberOfSegments():
+            # Create a copy of references
+            segs = this_bin.segments[:]
+            seg1 = min(segs, key=lambda segment: segment.getProbability())
+            del segs[seg1.getId()]
+            seg2 = min(segs, key=lambda segment: segment.getProbability())
+            self._westpaMergeWalkers([seg1, seg2], None, this_bin)
+            
+        
 
 ######################################################
 #   PARALLELIZATION CODE FOR RESAMPLING. 
@@ -428,7 +552,6 @@ class Resampling(object):
             del this_bin.segments[ext_index]
             for this_segment in this_bin.segments:
                 this_segment.addProbability(extinction_probability / this_bin.getNumberOfSegments())  
-            for this_segment in this_bin.segments:
                 this_bin.merge_list[-1].append(this_segment.getId())
             # Reorder segment ids after deletion 
             this_bin.fixSegmentIds()
