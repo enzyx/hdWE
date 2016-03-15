@@ -1,6 +1,7 @@
 from lib.segment import Segment
 import numpy
 import random as rnd
+from resampling_events import Merge,Split
 
 class Resampling(object):
     """
@@ -259,11 +260,13 @@ class Resampling(object):
                 to_split.append(segment)
         
         for segment in to_split:
-            m = int(numpy.ceil(segment.getProbability()/ideal_weight))
+            m = int(numpy.ceil(segment.getProbability() / ideal_weight))
             self._westpaSplitWalker(segment, m, this_bin)
 
     def _westpaSplitWalker(self, segment, m, this_bin):
-        '''Split the walker ``segment`` (in ``bin``) into ``m`` walkers'''
+        '''Split the walker ``segment`` (in ``bin``) into ``m`` walkers
+           Segment has therefore m-1 children
+        '''
         split_prob = segment.getProbability()/float(m)
         this_bin.segments[segment.getId()].setProbability(split_prob)
         
@@ -276,6 +279,9 @@ class Resampling(object):
                                 bin_id              = segment.getBinId(),
                                 segment_id          = this_bin.getNumberOfSegments())
             this_bin.addSegment(__segment)
+        
+        # Save history
+        this_bin.resampling_history.append(Split(segment.getId(), m))
     
     def _westpaMergeByWeight(self, this_bin):
         '''Merge underweight particles'''
@@ -286,14 +292,14 @@ class Resampling(object):
         while True:
             # Sorted segments weights
             sorted_segs = sorted(this_bin.segments[:], key=lambda seg: seg.getProbability())
-            this_bin.fixSegmentIds()
-            
+                        
             to_merge = []
             cumul_weight = 0.0
             for segment in sorted_segs:
                 cumul_weight += segment.getProbability()
                 if cumul_weight <= ideal_weight * self.WESTPA_WEIGHT_MERGE_CUTOFF:
                     to_merge.append(segment)
+                else: break
             
             if len(to_merge) < 2:
                 return
@@ -317,28 +323,28 @@ class Resampling(object):
         iextinction = [segment.getId() for segment in segments]
         # Assign all probability to surviving segment
         psegment.setProbability(tot_weight)
-                
+        
         iextinction.sort(reverse=True)
         for index in iextinction:
-            # We need the actual index of the segment
-            this_bin.merge_list.append([index, this_bin.segments.index(psegment)])
             del this_bin.segments[index]
-        
         this_bin.fixSegmentIds()
+        
+        # Save history
+        this_bin.resampling_history.append(Merge(psegment.getId(), iextinction))
+        
     
     def _westpaAdjustCount(self, this_bin):
+        # Split
         while this_bin.getNumberOfSegments() < this_bin.getTargetNumberOfSegments():
             # Always split the highest probability walker into two
             split_segment = max(this_bin.segments, key=lambda segment: segment.getProbability())
             self._westpaSplitWalker(split_segment, 2, this_bin)
         
+        # Merge
         while this_bin.getNumberOfSegments() > this_bin.getTargetNumberOfSegments():
             # Create a copy of references
-            segs = this_bin.segments[:]
-            seg1 = min(segs, key=lambda segment: segment.getProbability())
-            del segs[seg1.getId()]
-            seg2 = min(segs, key=lambda segment: segment.getProbability())
-            self._westpaMergeWalkers([seg1, seg2], None, this_bin)
+            sorted_segs = sorted(this_bin.segments[:], key=lambda seg: seg.getProbability())
+            self._westpaMergeWalkers(sorted_segs[:2], None, this_bin)
             
         
 

@@ -1,9 +1,7 @@
 #!/usr/bin/python3
 from __future__ import print_function
 from lib.segment import Segment
-import random as rnd
 import copy
-import numpy
 
 
 class Bin(object):
@@ -37,7 +35,7 @@ class Bin(object):
         # List in which the single steps of merging are stored
         # First entry is the extinction index
         # The following entries are the destination indices before index fixing
-        self.merge_list                = []
+        self.resampling_history        = []
         # If merge_mode = closest, list with the rmsd between the merged structures 
         # is stored for later analysis. The order corresponds to the merge events as in merge_list.
         self.merge_rmsd_list           = []
