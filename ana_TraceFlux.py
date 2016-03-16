@@ -3,12 +3,14 @@ import argparse
 import sys
 import numpy as np
 from lib.logger import Logger
+from lib.segment import Segment
 import lib.functions_ana_general as f
 import lib.reweighting as reweighting
 import lib.constants as constants
 import math
 import matplotlib.pyplot as plt
 import scipy.integrate
+from copy import deepcopy
 
 ###### Parse command line ###### 
 parser = argparse.ArgumentParser(description=
@@ -139,7 +141,6 @@ for i in range(first_iteration + 1, last_iteration + 1):
     probability_from_B_iter  = 0.0  
            
     for this_bin in current_iteration:
-                    
         # assign new probability to initial segments
         for this_initial_segment in this_bin.initial_segments:
             new_probability = previous_iteration\
@@ -147,49 +148,43 @@ for i in range(first_iteration + 1, last_iteration + 1):
                                 .segments[this_initial_segment.getParentSegmentId()].getProbability()
             this_initial_segment.setProbability(new_probability)
 
+        # Copy initial segments to segments to reperform 
+        # the resampling step
+        this_bin.segments = deepcopy(this_bin.initial_segments)
+        
+        # Redo the resampling step based on the history
         if this_bin.sample_region == True:
-            # No split and merge
-            if this_bin.getNumberOfSegments() == this_bin.getNumberOfInitialSegments():
-                for this_segment in this_bin:
-                    this_segment.setProbability(this_bin.initial_segments[this_segment.getId()].getProbability())                  
-            
-            # Split
-            elif this_bin.getNumberOfSegments() > this_bin.getNumberOfInitialSegments():
-                split_dict = {}
-                for this_segment in this_bin:
-                    try:
-                        split_dict[this_segment.getParentNameString()] += 1
-                    except KeyError:
-                        split_dict[this_segment.getParentNameString()] = 1
+            for event in this_bin.resampling_history:
+                # Merging
+                if event.getType() == 'Merge':
+                    survivor    = event.surviving_segments
+                    iextinction = event.deleted_segments_ids
+                    
+                    for index in iextinction:
+                        this_bin.segments[survivor].addProbability(this_bin.segments[index].getProbability())
+                    iextinction.sort(reverse=True)
+                    for index in iextinction:
+                        del this_bin.segments[index]
+                    this_bin.fixSegmentIds()
                 
-                for this_initial_segment in this_bin.initial_segments:
-                    split_dict[this_initial_segment.getParentNameString()] = this_initial_segment.getProbability() / \
-                                                    split_dict[this_initial_segment.getParentNameString()]
-            
-                for this_segment in this_bin:
-                    this_segment.setProbability(split_dict[this_segment.getParentNameString()])
-            # Merge
-            elif this_bin.getNumberOfSegments() < this_bin.getNumberOfInitialSegments():
-                # Skip merging if no merge_list exists, which means merge_mode was none
-                if len(this_bin.merge_list) >= 1:
-                    probabilities = []
-                    for this_initial_segment in this_bin.initial_segments:
-                        probabilities.append(this_initial_segment.getProbability())
-                    
-                    # strange behavior with list?  
-                    probabilities = np.array(probabilities)
-                    # reconstruct probabilities from merge list
-                    for merge_entry in this_bin.merge_list:
-                        # get merged probability
-                        merged_probability = probabilities[merge_entry[0]]
-                        merged_probability  = 1.0 * merged_probability / (len(merge_entry) - 1 )
-                        for target_segment in merge_entry[1:]:
-                            probabilities[target_segment] += np.array(merged_probability)                 
-                        probabilities = np.delete(probabilities, merge_entry[0],0)
-                    
-                    # set merged probabilities of the segments 
-                    for segment_index in range(0,len(this_bin.segments)):
-                        this_bin.segments[segment_index].setProbability(probabilities[segment_index])
+                # Splitting       
+                if event.getType() == 'Split':
+                    parent_id      = event.parent_segment_id
+                    m              = event.m
+                    parent_segment = this_bin.segments[parent_id] 
+                                
+                    split_prob = parent_segment.getProbability()/float(m)
+                    parent_segment.setProbability(split_prob)
+        
+                    for dummy in range(1, m):
+                        __segment = Segment(probability         = split_prob,
+                                    parent_iteration_id = parent_segment.getParentIterationId(),
+                                    parent_bin_id       = parent_segment.getParentBinId(),
+                                    parent_segment_id   = parent_segment.getParentSegmentId(),
+                                    iteration_id        = parent_segment.getIterationId(),
+                                    bin_id              = parent_segment.getBinId(),
+                                    segment_id          = this_bin.getNumberOfSegments())
+                        this_bin.addSegment(__segment)
             
     # Reset Outer Region Bins
     current_iteration.resetOuterRegion(steady_state=True)

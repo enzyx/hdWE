@@ -7,9 +7,9 @@ class Merge(object):
     deleted_segments: List of segment_ids which are 
                       deleted probability
     """
-    def __init__(self, surviving_segment, deleted_segments):
-        self.surviving_segment = surviving_segment
-        self.deleted_segments  = deleted_segments
+    def __init__(self, surviving_segment_id, deleted_segments_ids):
+        self.surviving_segment_id  = surviving_segment_id
+        self.deleted_segments_ids  = deleted_segments_ids
     
     def getType(self):
         return type(self).__name__
@@ -21,9 +21,9 @@ class Split(object):
     parent_segment: segment_id of the split segment
     m: Number of segment which result from splitting
     """
-    def __init__(self, parent_segment, m):
-        self.parent_segment  = parent_segment
-        self.m               = m
+    def __init__(self, parent_segment_id, m):
+        self.parent_segment_id  = parent_segment_id
+        self.m                  = m
     
     def getType(self):
         return type(self).__name__
