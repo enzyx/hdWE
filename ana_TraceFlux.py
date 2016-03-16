@@ -146,46 +146,35 @@ for i in range(first_iteration + 1, last_iteration + 1):
             new_probability = previous_iteration\
                                 .bins[this_initial_segment.getParentBinId()]\
                                 .segments[this_initial_segment.getParentSegmentId()].getProbability()
-            this_initial_segment.setProbability(new_probability)
+            this_initial_segment.setProbability(np.copy(new_probability))
 
-        # Copy initial segments to segments to reperform 
-        # the resampling step
-        this_bin.segments = deepcopy(this_bin.initial_segments)
-        
-        # Redo the resampling step based on the history
+        # Create a copy of probabilities
+        probabilities = [np.copy(segment.getProbability()) for segment in this_bin.initial_segments]
+        # Propagate the probabilities based on the resampling history
         if this_bin.sample_region == True:
             for event in this_bin.resampling_history:
                 # Merging
                 if event.getType() == 'Merge':
-                    survivor    = event.surviving_segments
+                    survivor    = event.surviving_segment_id
                     iextinction = event.deleted_segments_ids
-                    
-                    for index in iextinction:
-                        this_bin.segments[survivor].addProbability(this_bin.segments[index].getProbability())
+                    print current_iteration.getId(), survivor, iextinction
                     iextinction.sort(reverse=True)
                     for index in iextinction:
-                        del this_bin.segments[index]
-                    this_bin.fixSegmentIds()
+                        probabilities[survivor] += probabilities[index]
+                        del probabilities[index]
                 
                 # Splitting       
                 if event.getType() == 'Split':
-                    parent_id      = event.parent_segment_id
-                    m              = event.m
-                    parent_segment = this_bin.segments[parent_id] 
-                                
-                    split_prob = parent_segment.getProbability()/float(m)
-                    parent_segment.setProbability(split_prob)
-        
-                    for dummy in range(1, m):
-                        __segment = Segment(probability         = split_prob,
-                                    parent_iteration_id = parent_segment.getParentIterationId(),
-                                    parent_bin_id       = parent_segment.getParentBinId(),
-                                    parent_segment_id   = parent_segment.getParentSegmentId(),
-                                    iteration_id        = parent_segment.getIterationId(),
-                                    bin_id              = parent_segment.getBinId(),
-                                    segment_id          = this_bin.getNumberOfSegments())
-                        this_bin.addSegment(__segment)
-            
+                    parent_id         = event.parent_segment_id
+                    m                 = event.m
+                    probabilities[parent_id] /= float(m)
+                    for i in range(1,m):
+                        probabilities.append(np.copy(probabilities[parent_id]))
+                    
+            # Redistribute the probabilities
+            for index, probability in enumerate(probabilities):
+                this_bin.segments[index].setProbability(np.copy(probability))
+                        
     # Reset Outer Region Bins
     current_iteration.resetOuterRegion(steady_state=True)
 

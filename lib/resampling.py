@@ -330,7 +330,7 @@ class Resampling(object):
         this_bin.fixSegmentIds()
         
         # Save history
-        this_bin.resampling_history.append(Merge(psegment.getId(), iextinction))
+        this_bin.resampling_history.append(Merge(iparent, iextinction))
         
     
     def _westpaAdjustCount(self, this_bin):

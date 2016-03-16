@@ -145,7 +145,7 @@ def getStateFromCoordinate(segment, state_A, state_B):
             if state != this_state:
                 this_state = '0'
                 break 
-    return this_state   
+    return this_state
     
 def subSummarize(list, sublength):
     """
