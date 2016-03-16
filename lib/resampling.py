@@ -320,8 +320,11 @@ class Resampling(object):
         iparent     = numpy.digitize((rnd.uniform(0, tot_weight),), cumul_weight)[0]
         psegment    = segments[iparent]
         del segments[iparent]
-        parent_segment_id = segments[iparent].getId()
         iextinction = [segment.getId() for segment in segments]
+        
+        # Save history original segment ids
+        this_bin.resampling_history.append(Merge(psegment.getId(), iextinction))
+        
         # Assign all probability to surviving segment
         psegment.setProbability(tot_weight)
         
@@ -329,9 +332,7 @@ class Resampling(object):
         for index in iextinction:
             del this_bin.segments[index]
         this_bin.fixSegmentIds()
-        
-        # Save history
-        this_bin.resampling_history.append(Merge(parent_segment_id, iextinction))
+
         
     
     def _westpaAdjustCount(self, this_bin):

@@ -157,10 +157,11 @@ for i in range(first_iteration + 1, last_iteration + 1):
                 if event.getType() == 'Merge':
                     survivor    = event.surviving_segment_id
                     iextinction = event.deleted_segments_ids
-                    print current_iteration.getId(), this_bin.getId(), survivor, iextinction
                     iextinction.sort(reverse=True)
                     for index in iextinction:
                         probabilities[survivor] += probabilities[index]
+                    # We have to do this in two loops
+                    for index in iextinction:
                         del probabilities[index]
                 
                 # Splitting       
