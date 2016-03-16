@@ -68,7 +68,9 @@ parser.add_argument('--bs-samples', dest="bs_samples",
 parser.add_argument('--rates-only', dest="rates_only",
                     action='store_true', required=False,
                     help="only calculate rates for output")
-
+parser.add_argument('--single_trajectory_tracing', dest="single_trajectory_tracing", 
+                    action="store_true", default=False, required=False, 
+                    help="Enable single trajectory tracing instead of the Suarez history flags (default).")
 
 # Initialize
 args = parser.parse_args()
@@ -82,7 +84,6 @@ current_iteration = logger.loadIteration(first_iteration)
 
 state_A         = np.sort(args.state_A) 
 state_B         = np.sort(args.state_B)
-
 
 # assign initial probabilities
 N = current_iteration.getNumberOfSegments()
@@ -158,8 +159,16 @@ for i in range(first_iteration + 1, last_iteration + 1):
                     survivor    = event.surviving_segment_id
                     iextinction = event.deleted_segments_ids
                     iextinction.sort(reverse=True)
+                    
+                    from_state_history = np.nonzero(probabilities[survivor])[0][0]
+                    
                     for index in iextinction:
                         probabilities[survivor] += probabilities[index]
+                    
+                    # Only in single trajectory tracing mode shift all weight to one history
+                    if args.single_trajectory_tracing:
+                        probabilities[survivor][from_state_history] = sum(probabilities[survivor])
+                                                
                     # We have to do this in two loops
                     for index in iextinction:
                         del probabilities[index]
