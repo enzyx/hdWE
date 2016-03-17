@@ -67,7 +67,7 @@ parser.add_argument('--bs-samples', dest="bs_samples",
 parser.add_argument('--rates-only', dest="rates_only",
                     action='store_true', required=False,
                     help="only calculate rates for output")
-parser.add_argument('--single_trajectory_tracing', dest="single_trajectory_tracing", 
+parser.add_argument('--trace', dest="single_trajectory_tracing", 
                     action="store_true", default=False, required=False, 
                     help="Enable single trajectory tracing instead of the Suarez history flags (default).")
 
@@ -166,7 +166,9 @@ for i in range(first_iteration + 1, last_iteration + 1):
                     
                     # Only in single trajectory tracing mode shift all weight to one history
                     if args.single_trajectory_tracing:
-                        probabilities[survivor][from_state_history] = sum(probabilities[survivor])
+                        tot_prob = sum(probabilities[survivor])
+                        probabilities[survivor].fill(0.0) 
+                        probabilities[survivor][from_state_history] = tot_prob
                                                 
                     # We have to do this in two loops
                     for index in iextinction:
@@ -263,8 +265,9 @@ bin_prob_out.close()
 ######### OUTPUT #########
 ##########################
 sys.stderr.write('\n')
-b = args.first_ana_iteration - args.first_iteration
-e = last_iteration
+b = args.first_ana_iteration - first_iteration
+if b < 0: b = 0
+e = last_iteration - first_iteration
 
 # Data time series
 sys.stderr.write('- writing time series to .dat\n')
@@ -322,54 +325,55 @@ if args.auto:
                              auto_probability_from_B[i]))
     fout.close()
 
-# calculate PMF
-sys.stderr.write('- calculating PMFs\n')
-histogram = f.weightedHistogram(pmf_segment_data, args.pmf_bins)
-pmf = np.zeros(len(histogram), dtype=float)
-for i in range(len(histogram)):
-    if histogram[i,1] > 0.0:
-        pmf[i] = -constants.kT *  math.log(histogram[i,1])
-    else:
-        pmf[i] = 'Inf'
-pmf -= np.min(pmf)
-  
-fout = open(args.output_file + '.pmf', 'w')
-fout.write('# coord   free energy   probability')
-for i in range(len(pmf)):
-    fout.write('{:8.7e} {:8.7e} {:8.7e}\n'.format(histogram[i,0], pmf[i], histogram[i,1]))
-fout.close()
-
-# calculate PMF from A 
-histogram = f.weightedHistogram(pmf_segment_data_A, args.pmf_bins)
-pmf = np.zeros(len(histogram), dtype=float)
-for i in range(len(histogram)):
-    if histogram[i,1] > 0.0:
-        pmf[i] = -constants.kT *  math.log(histogram[i,1])
-    else:
-        pmf[i] = 'Inf'
-pmf -= np.min(pmf)
-
-fout = open(args.output_file + '_A.pmf', 'w')
-fout.write('# coord   free energy   probability')
-for i in range(len(pmf)):
-    fout.write('{:8.7e} {:8.7e} {:8.7e}\n'.format(histogram[i,0], pmf[i], histogram[i,1]))
-fout.close()
-
-# calculate PMF from B
-histogram = f.weightedHistogram(pmf_segment_data_B, args.pmf_bins)
-pmf = np.zeros(len(histogram), dtype=float)
-for i in range(len(histogram)):
-    if histogram[i,1] > 0.0:
-        pmf[i] = -constants.kT *  math.log(histogram[i,1])
-    else:
-        pmf[i] = 'Inf'
-pmf -= np.min(pmf)
-
-fout = open(args.output_file + '_B.pmf', 'w')
-fout.write('# coord   free energy   probability')
-for i in range(len(pmf)):
-    fout.write('{:8.7e} {:8.7e} {:8.7e}\n'.format(histogram[i,0], pmf[i], histogram[i,1]))
-fout.close()
+if not args.rates_only:
+    # calculate PMF
+    sys.stderr.write('- calculating PMFs\n')
+    histogram = f.weightedHistogram(pmf_segment_data, args.pmf_bins)
+    pmf = np.zeros(len(histogram), dtype=float)
+    for i in range(len(histogram)):
+        if histogram[i,1] > 0.0:
+            pmf[i] = -constants.kT *  math.log(histogram[i,1])
+        else:
+            pmf[i] = 'Inf'
+    pmf -= np.min(pmf)
+      
+    fout = open(args.output_file + '.pmf', 'w')
+    fout.write('# coord   free energy   probability')
+    for i in range(len(pmf)):
+        fout.write('{:8.7e} {:8.7e} {:8.7e}\n'.format(histogram[i,0], pmf[i], histogram[i,1]))
+    fout.close()
+    
+    # calculate PMF from A 
+    histogram = f.weightedHistogram(pmf_segment_data_A, args.pmf_bins)
+    pmf = np.zeros(len(histogram), dtype=float)
+    for i in range(len(histogram)):
+        if histogram[i,1] > 0.0:
+            pmf[i] = -constants.kT *  math.log(histogram[i,1])
+        else:
+            pmf[i] = 'Inf'
+    pmf -= np.min(pmf)
+    
+    fout = open(args.output_file + '_A.pmf', 'w')
+    fout.write('# coord   free energy   probability')
+    for i in range(len(pmf)):
+        fout.write('{:8.7e} {:8.7e} {:8.7e}\n'.format(histogram[i,0], pmf[i], histogram[i,1]))
+    fout.close()
+    
+    # calculate PMF from B
+    histogram = f.weightedHistogram(pmf_segment_data_B, args.pmf_bins)
+    pmf = np.zeros(len(histogram), dtype=float)
+    for i in range(len(histogram)):
+        if histogram[i,1] > 0.0:
+            pmf[i] = -constants.kT *  math.log(histogram[i,1])
+        else:
+            pmf[i] = 'Inf'
+    pmf -= np.min(pmf)
+    
+    fout = open(args.output_file + '_B.pmf', 'w')
+    fout.write('# coord   free energy   probability')
+    for i in range(len(pmf)):
+        fout.write('{:8.7e} {:8.7e} {:8.7e}\n'.format(histogram[i,0], pmf[i], histogram[i,1]))
+    fout.close()
 
 #### calculate velocity histograms ####
 if args.velocities:
@@ -429,7 +433,7 @@ if args.velocities:
             hist_to_save.append(np.asarray(histograms[state][i][0]))
     np.savetxt('ana_trace_flux.velo.histograms.dat', np.transpose(hist_to_save))
 
-#Analytical calculation of probabilites for the two particle system
+#Analytical calculation of probabilities for the two particle system
 if args.k >0:
     def PMF(k, R):
         r_0 = 15
@@ -437,7 +441,7 @@ if args.k >0:
     def pPMF(k,R):
         return math.exp( - PMF(k,R)/constants.kT)
     
-    def pState(k, a,b):
+    def pState(k, a, b):
         return scipy.integrate.quad(lambda r:pPMF(k,r), a, b)[0]
     
     probability_state_A_analytical = pState(args.k, state_A[0], state_A[1]) / pState(args.k, 1e-3, 1e3 )
@@ -497,7 +501,7 @@ if args.rates_only == False:
 
     if args.k >0:
         sys.stdout.write("    P(A) analytical: {:5.4e}\n".format(probability_state_A_analytical))
-	sys.stdout.flush()
+    sys.stdout.flush()
 
 flux_prob_pair = []
 for i in range(b,e):
