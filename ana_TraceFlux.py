@@ -8,7 +8,6 @@ import lib.functions_ana_general as f
 import lib.reweighting as reweighting
 import lib.constants as constants
 import math
-import matplotlib.pyplot as plt
 import scipy.integrate
 from copy import deepcopy
 
@@ -383,8 +382,6 @@ if args.velocities:
 #             v_out.write('{} {} {}\n'.format(velo_entry[0], velo_entry[1], velo_entry[2]))
 #         v_out.close()
     # print binned velocity histograms
-    # plotting parameters
-    colors={'A': 'green', 'B': 'blue'}
     n_histo_bins = 100
     v_range = 30
     histograms = []
@@ -431,32 +428,6 @@ if args.velocities:
         for state in ['A', 'B']:
             hist_to_save.append(np.asarray(histograms[state][i][0]))
     np.savetxt('ana_trace_flux.velo.histograms.dat', np.transpose(hist_to_save))
-
-    # plotting
-    for cbin_id in range(N_BINS):
-        plt.clf()
-        for state in ['A', 'B']:
-            hist, centers = histograms[state][cbin_id]
-#             n2, bins2, patches2 = plt.hist(velo_data[:,0], 
-#                                            n_histo_bins, 
-#                                            range=[-v_range,v_range],
-#                                            normed=1, 
-#                                            facecolor=colors[state],
-#                                            weights = velo_data[:,1],
-#                                            alpha=0.5, 
-#                                            label='{}-bin{}'.format(state, cbin_id))
-            plt.bar(centers, 
-                    hist, 
-                    align ='center', 
-                    width = width,
-                    alpha = 0.5,
-                    color = colors[state],
-                    label = '{}-bin{}'.format(state, cbin_id))
-        plt.legend()
-        plt.savefig('ana_trace_flux.velo.bin{}.pdf'.format(cbin_id))  
-#     plt.legend()
-#     plt.savefig('ana_trace_flux.velocities.pdf')   
-#     plt.show()
 
 #Analytical calculation of probabilites for the two particle system
 if args.k >0:
