@@ -11,6 +11,12 @@ import math
 import scipy.integrate
 from copy import deepcopy
 
+def rate(datapoints):
+    """
+    calculates rate from mean(fluxes)/mean(probabilities)
+    """
+    return np.mean(datapoints[:,0]) / np.mean(datapoints[:,1])
+
 ###### Parse command line ###### 
 parser = argparse.ArgumentParser(description=
     'Bare Model to load iterations. ')
@@ -269,6 +275,17 @@ b = args.first_ana_iteration - first_iteration
 if b < 0: b = 0
 e = last_iteration - first_iteration
 
+# write rates right away:
+sys.stderr.write('- writing rates to ana_trace_flux.quickrates\n')
+qrfile = open('ana_trace_flux.quickrates', 'w')
+qrfile.write('   A->B: \n')
+qrfile.write('         k      = {:5.4e}\n'.format(rate(np.array(zip(flux_into_B[b:e],probability_state_A[b:e])))))
+qrfile.write('         1/MFPT = {:5.4e}\n'.format(rate(np.array(zip(flux_into_B[b:e],probability_from_A[b:e])))))
+qrfile.write('   B->A: \n')
+qrfile.write('         k      = {:5.4e}\n'.format(rate(np.array(zip(flux_into_A[b:e],probability_state_B[b:e])))))
+qrfile.write('         1/MFPT = {:5.4e}\n'.format(rate(np.array(zip(flux_into_A[b:e],probability_from_B[b:e])))))
+qrfile.close()
+
 # Data time series
 sys.stderr.write('- writing time series to .dat\n')
 fout = open(args.output_file + '.dat', 'w')
@@ -450,24 +467,10 @@ if args.k >0:
 # Output
 block_size = args.bs
 
-def rate(datapoints):
-    """
-    calculates rate from mean(fluxes)/mean(probabilities)
-    """
-    return np.mean(datapoints[:,0]) / np.mean(datapoints[:,1])
 ############################
 #      Pretty print        #
 ############################
 sys.stderr.write('- calculating rates with errors\n')
-# write rates right away:
-qrfile = open('ana_trace_flux.quickrates', 'w')
-qrfile.write('   A->B: \n')
-qrfile.write('         k      = {:5.4e}\n'.format(rate(np.array(zip(flux_into_B[b:e],probability_state_A[b:e])))))
-qrfile.write('         1/MFPT = {:5.4e}\n'.format(rate(np.array(zip(flux_into_B[b:e],probability_from_A[b:e])))))
-qrfile.write('   B->A: \n')
-qrfile.write('         k      = {:5.4e}\n'.format(rate(np.array(zip(flux_into_A[b:e],probability_state_B[b:e])))))
-qrfile.write('         1/MFPT = {:5.4e}\n'.format(rate(np.array(zip(flux_into_A[b:e],probability_from_B[b:e])))))
-qrfile.close()
 
 sys.stdout.write("States:  A=[{},{}]  B=[{},{}]\n".format(state_A[0], state_A[1], state_B[0], state_B[1]))
 # State A 
