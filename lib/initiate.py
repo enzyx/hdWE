@@ -94,7 +94,7 @@ def createInitialIteration(STARTING_STRUCTURES,
                            initial_boundaries, 
                            initial_sample_region, 
                            md_module,
-                           start_bin_coordinate_ids):
+                           start_bin_coordinate_ids=None):
     """
     Creates the first iteration, with equally probable
     starting structures sorted into bins
@@ -122,10 +122,11 @@ def createInitialIteration(STARTING_STRUCTURES,
             sys.stderr.write("\033[0;31m Warning: \033[0m Given structure is not "\
                              "in sampled region. Won't use file {}\n".format(starting_structure))
             continue
-        if not all(coordinate_ids == start_bin_coordinate_ids):
-            sys.stderr.write("\033[0;31m Warning: \033[0m Given structure is not "\
-                             "in starting bin. Won't use file {}\n".format(starting_structure))
-            continue
+        if(start_bin_coordinate_ids != None):
+            if not all(coordinate_ids == start_bin_coordinate_ids):
+                sys.stderr.write("\033[0;31m Warning: \033[0m Given structure is not "\
+                                 "in starting bin. Won't use file {}\n".format(starting_structure))
+                continue
         
         # Create start bin from the first structure in starting structures.
         # If the loop arrives here, it is in the starting bin.

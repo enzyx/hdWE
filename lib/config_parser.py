@@ -53,9 +53,12 @@ def parseSampleRegion(config):
 
 def parseStartBinCoordinateIds(config):
     start_bin_coordinate_ids = []
-    config_string = config.get('hdWE', 'start-bin-coordinate-ids')
-    for value in config_string.split():
-        start_bin_coordinate_ids.append(int(value))
+    try: 
+        config_string = config.get('hdWE', 'start-bin-coordinate-ids')
+        for value in config_string.split():
+            start_bin_coordinate_ids.append(int(value))
+    except:
+        return None
     
     return start_bin_coordinate_ids
 
