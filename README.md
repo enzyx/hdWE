@@ -1,7 +1,7 @@
 # hdWE
-hdWE is an implementation of the Weighted Ensemble methodology originally
+**hdWE** is an implementation of the Weighted Ensemble methodology originally
 invented by Huber and Kim in 1996.
-hdWE stands for "Hyper-Dimensional Weighted Ensemble".
+**hdWE** stands for **Hyper-Dimensional Weighted Ensemble**.
 The code is purely written in Python 2 to guarantee a maximum of platform
 independence and provide an easy start for coding newcomers who want to understand
 and expand the implementation.
