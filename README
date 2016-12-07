@@ -1,152 +1,29 @@
-##################
-#  Basic classes #
-##################
-type                    dev             status
--------------------------------------------------
-class: Bin          
-class: Trajectory
-
-#module/class: propagate    (fabian)
-
-description:
-propagates the configurations in the updated bin/trajectory class
-using a MD program.
-The MD program specific code should be modular and easily adaptable.
-
-options: 
--MD_software
--mode	(serial, later: parallel cpu, cuda ...)
--debug  (if True, save all generated input lines and MD output )
-
-input:
--which trajectories exist/shall be propagated
--the previous end configuration, stored in the history of the trajectory,
- from which to start the propatation.
-
-output:
--only logging output, the MD output is produced externally.
-
-stuff to discuss: None
-
-#module: assign_bins    (fabian)
-
-description:
-checks whether the MD has run correctly and the output was produced.
-calculates the RMSD (or any coordinate) of all previously propagated trajectories 
-with respect to all existing bin_refcoords.
-This is done using a respective analysis module of the MD software used for
-trajectory propagation. Should again be easily adaptable.
-check wheter the  MD analysis tool ouput was produced.
-Every trajectory will have a 'bin_values' array where the RMSDs are stored.
-resorts all trajectories in the new corresponding bins, whether
-there are to many or less trajectories in one bin or not.
-saves 'where they come from'. as the history is saved, it does not matter 
-in which order they are resorted into the bins.
-
-options:
--MD_software
--mode    (serial, later; parallel)
--debug
-
-input:
--bin_refcoords
--trajectory end coords
-
-output:
--trajectories assigned to bins
--trajectory attribute with RMSD to all bin_refcoords
-
-
-stuff to discuss: 
-what happens if within the loop over the bins a new bin is created?
-
-#module: split_and_merge
-
-description:
-applies the split and merge rules to the trajectories for all bins.
-trajectories should have a property in the history that tells if 
-they splitted or merged.
-
-options:
--debug
-
-stuff to discuss: None
-
-#module: reweight (future)
-
-description:
-reweight the bin probabilities based on the bin-to-bin rates by
-using the equilibrium condition (flux_bin_ij = - flux_bin_ji for all i and j).
-This can drastically speed up convergene at the beginning.
-Probability is shifted over free energy barriers and does not have
-to flow there in 'real time'.
-
-
-
-#module: update_and_log
-
-description:
-shifts the information to become history, logs everything.
-the log should enable the restart of the script for the next iteration from here.
-With the log file(s) all the post-analysis should be possible.
-
-options:
--debug
-
-stuff to discuss: 
-How is the trajectory class logged?
-I would suggest a file that contains everything for one iteration
-and is saved every iteration.
-How does the file format look?
-
-#main: argparser     (manuel)    done
-obvious
-
-
-###################
-# Analysis Tools  #
-###################
-
-
--calculate Free Energy Landscape (for any coordinate), this is bin independent.
--calculate bin to bin rate Matrix (to get first order state to state rates, right now i dont
--remember why this does not generally give the correct rates), this is bin dependent.
--trace trajectories between defined states (with labelling) to get the rates. This is in principle bin independent.
--put together all completed trajectories between to states to get the pathways and nice 
-state to state trajectories for visualisation.
-
-##################
-# Conventions    #
-##################
-
-#trajectory and MD data in subfolder '/workdir/run/'
-filename conventions for AMBER propagation:
-00000_00000_00000.rst7 (Initial configuration, bin = 0, iteration = 0)
-XXXXX_XXXXX_XXXXX.rst7 (ITERATION_BIN_SEGMENT)
-...
-
-The saved coordinates correspond to the end configuration of the propagation in one iteration.
-The starting coordinates of this propagation are saved as the end configuration of a previous propagation.
-They are conneced via a 'history' attribute of the actual trajectory.
-
-
-# log databank per iteration in '/workdir/log/'
-XXXXX.log ?
-
-# any debugging output in '/workdir/debug/'
-
-##################
-#    Git Howto   #
-##################
-
-git clone ssh://fabi@rex/home/software/hdWE 
-
-git status
-git add trajectory.py
-
-git commit -a
-git log
-
-git push
-git pull
-
+# hdWE
+hdWE is an implementation of the Weighted Ensemble methodology originally
+invented by Huber and Kim in 1996.
+hdWE stands for "Hyper-Dimensional Weighted Ensemble".
+The code is purely written in Python 2 to guarantee a maximum of platform
+independence and provide an easy start for coding newcomers who want to understand
+and expand the implementation.
+The WE algorithm is subdivided in two basic parts: While the bookkeeping of bin
+structures, WE iterations, analysis of bin coordinates, and  stochastic weights
+of the trajectories is handled by the hdWE program itself, the molecular dynamics
+simulations are outsourced to an external MD software suite (\eg AMBER, Gromacs).
+This subdivision allowed us to focus our efforts on the design and performance
+improvement of the WE implementation itself while taking advantage of state
+of the art MD implementations at the same time.
+Two key benefits of this approach should be noted.
+First, as the weighted ensemble does not require modifications of the Hamiltonian,
+we rely on the fastest available implementations of pure MD algorithms which are
+nowadays typically accelerated with the help of General Purpose graphics processing
+Units (GPUs) and allow us to access timescale of several microseconds for a typical
+biomolecular system of approximately 50000$ atoms.
+Second, during the propagation step of a WE iteration, the trajectories are
+completely independent from each other and can therefore be propagated in
+multiple parallel MD threads for the next WE time step.
+This form of trivial parallelizability is an intrinsic advantage of the WE algorithm.
+After the trajectories have been propagated, their end structures are evaluated
+with respect to their new position on the binning coordinates and resorted into the bins.
+Then the trajectories are split and merged according to the resampling mechanism
+to ensure that the bins are evenly filled.
+Eventually the algorithm reenters the MD propagation step.
